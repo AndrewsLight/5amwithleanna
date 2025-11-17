@@ -1,223 +1,218 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>5AM with Leanna</title>
-  <style>
-    /* Basic Reset */
-    * { margin:0; padding:0; box-sizing:border-box; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5AM with Leanna</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Arial', sans-serif;
+    background: #111;
+    color: #fff;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    height:100vh;
+    overflow:hidden;
+    position:relative;
+    transition: background 2s ease;
+  }
+  h1,p{text-align:center;}
+  #regular { display:block; text-align:center; transition: opacity 1s ease; }
+  .love-letter {
+    margin:20px auto;
+    font-size:1.3rem;
+    max-width:400px;
+    background: rgba(255,255,255,0.1);
+    padding: 15px 25px;
+    border-radius:12px;
+    opacity:1;
+    transition: opacity 0.6s ease, transform 0.3s ease;
+  }
+  button {
+    padding:10px 25px;
+    font-size:1rem;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    background:#ffcc00;
+    color:#000;
+    margin-top:10px;
+    transition: transform 0.2s;
+  }
+  button:hover { transform:scale(1.1); }
 
-    body {
-      font-family: 'Arial', sans-serif;
-      background: #111;
-      color: #fff;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      height:100vh;
-      overflow:hidden;
-      position:relative;
-    }
+  #surprise {
+    display:none;
+    position:absolute;
+    top:0; left:0;
+    width:100%;
+    height:100%;
+    background: radial-gradient(#111,#000);
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    z-index:10;
+    opacity:0;
+    transition: opacity 2s ease;
+  }
 
-    h1, p {
-      text-align:center;
-    }
+  #starsCanvas {
+    position:absolute;
+    top:0; left:0;
+    width:100%;
+    height:100%;
+    z-index:1;
+  }
 
-    #regular {
-      display:block;
-      text-align:center;
-    }
+  .overlay { position:relative; z-index:5; text-align:center; }
 
-    .love-letter {
-      margin: 20px auto;
-      font-size:1.3rem;
-      max-width:400px;
-      background: rgba(255,255,255,0.1);
-      padding: 15px 25px;
-      border-radius:12px;
-      opacity:1;
-      transition: opacity 0.6s ease;
-    }
+  .cat-silhouette {
+    width:120px;
+    height:120px;
+    background:url('https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif') no-repeat center/contain;
+    margin:20px auto;
+    animation: catMove 6s infinite alternate ease-in-out;
+  }
 
-    button {
-      padding:10px 25px;
-      font-size:1rem;
-      border:none;
-      border-radius:8px;
-      cursor:pointer;
-      background:#ffcc00;
-      color:#000;
-      margin-top:10px;
-      transition: transform 0.2s;
-    }
+  @keyframes catMove {
+    0% { transform: translateX(-20px); }
+    100% { transform: translateX(20px); }
+  }
 
-    button:hover { transform:scale(1.1); }
+  .emo-text { font-style:italic; margin-top:10px; color:#ffddaa; text-shadow:0 0 8px #ffddaa; }
 
-    #surprise {
-      display:none;
-      position:absolute;
-      top:0; left:0;
-      width:100%;
-      height:100%;
-      background: radial-gradient(#111,#000);
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      z-index:10;
-    }
+  .heart {
+    position:absolute;
+    width:20px; height:20px;
+    background:red;
+    clip-path: polygon(50% 0%,61% 10%,70% 25%,50% 100%,30% 25%,39% 10%);
+    animation: floatUp 2s forwards;
+    z-index:100;
+  }
+  @keyframes floatUp {
+    0% { transform: translateY(0) scale(1); opacity:1; }
+    100% { transform: translateY(-200px) scale(0.5); opacity:0; }
+  }
 
-    #starsCanvas {
-      position:absolute;
-      top:0; left:0;
-      width:100%;
-      height:100%;
-      z-index:1;
-    }
-
-    .overlay {
-      position:relative;
-      z-index:5;
-      text-align:center;
-    }
-
-    .cat-silhouette {
-      width:100px;
-      height:100px;
-      background:url('https://i.imgur.com/2Q4h2V7.png') no-repeat center/contain;
-      margin:20px auto;
-    }
-
-    .emo-text {
-      font-style:italic;
-      margin-top:10px;
-    }
-
-    .heart {
-      position:absolute;
-      width:20px;
-      height:20px;
-      background:red;
-      clip-path: polygon(50% 0%, 61% 10%, 70% 25%, 50% 100%, 30% 25%, 39% 10%);
-      animation: floatUp 2s forwards;
-      z-index:100;
-    }
-
-    @keyframes floatUp {
-      0% { transform: translateY(0) scale(1); opacity:1; }
-      100% { transform: translateY(-200px) scale(0.5); opacity:0; }
-    }
-  </style>
+</style>
 </head>
 <body>
 
-  <!-- Regular Love Letter Library -->
-  <div id="regular">
-    <h1>Welcome back, my love 💛</h1>
-    <p>This is our love letter library. A place you can always return to whenever you want.</p>
-    <div class="love-letter" id="letterText"></div>
-    <button id="nextLetter">Next Love Letter</button>
-  </div>
+<div id="regular">
+  <h1>Welcome back, my love 💛</h1>
+  <p>This is our love letter library. A place you can always return to whenever you want.</p>
+  <div class="love-letter" id="letterText"></div>
+  <button id="nextLetter">Next Love Letter</button>
+</div>
 
-  <!-- 5AM Surprise -->
-  <div id="surprise">
-    <canvas id="starsCanvas"></canvas>
-    <div class="overlay">
-      <h1>🌌 Good Morning, Leanna!</h1>
-      <p>This secret page only appears at 5AM. A special moment just for you 💖</p>
-      <div class="cat-silhouette"></div>
-      <p class="emo-text">"Nostalgia, love, and the quiet of the early morning… all for us."</p>
-      <audio id="morningAudio" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" autoplay loop></audio>
-    </div>
+<div id="surprise">
+  <canvas id="starsCanvas"></canvas>
+  <div class="overlay">
+    <h1>🌌 Good Morning, Leanna!</h1>
+    <p>This secret page only appears at 5AM. A special moment just for you 💖</p>
+    <div class="cat-silhouette"></div>
+    <p class="emo-text">"Nostalgia, love, and the quiet of the early morning… all for us."</p>
+    <audio id="morningAudio" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" autoplay loop></audio>
   </div>
+</div>
 
 <script>
-  // 💌 Love letters array
-  const letters = [
-    "Every time I see you, my heart finds a new reason to smile.",
-    "You're the first thought in my morning and the last before I sleep.",
-    "Even when we're apart, I feel you with me always.",
-    "Your laugh is my favorite melody.",
-    "Every day with you feels like a new adventure.",
-    "You make ordinary moments extraordinary.",
-    "With you, every sunrise feels like magic."
-  ];
+const letters = [
+  "Every time I see you, my heart finds a new reason to smile.",
+  "You're the first thought in my morning and the last before I sleep.",
+  "Even when we're apart, I feel you with me always.",
+  "Your laugh is my favorite melody.",
+  "Every day with you feels like a new adventure.",
+  "You make ordinary moments extraordinary.",
+  "With you, every sunrise feels like magic."
+];
 
-  const letterText = document.getElementById('letterText');
-  const nextButton = document.getElementById('nextLetter');
-  let current = 0;
+const letterText = document.getElementById('letterText');
+const nextButton = document.getElementById('nextLetter');
+let current = 0;
+letterText.textContent = letters[current];
 
-  // Show first letter
-  letterText.textContent = letters[current];
+const clickSound = new Audio('https://freesound.org/data/previews/146/146725_2615114-lq.mp3');
 
-  nextButton.addEventListener('click', () => {
-    // Heart effect
-    const heart = document.createElement('div');
-    heart.className = 'heart';
-    heart.style.left = Math.random()*window.innerWidth + 'px';
-    heart.style.bottom = '0px';
-    document.body.appendChild(heart);
-    setTimeout(()=>heart.remove(),2000);
+nextButton.addEventListener('click', () => {
+  // play sound
+  clickSound.currentTime = 0;
+  clickSound.play();
 
-    // Fade out/in letters
-    letterText.style.opacity = 0;
-    setTimeout(() => {
-      current = (current+1) % letters.length;
-      letterText.textContent = letters[current];
-      letterText.style.opacity = 1;
-    }, 600);
-  });
+  // hearts
+  const heart = document.createElement('div');
+  heart.className = 'heart';
+  heart.style.left = Math.random()*window.innerWidth+'px';
+  heart.style.bottom = '0px';
+  document.body.appendChild(heart);
+  setTimeout(()=>heart.remove(),2000);
 
-  // ⏰ 5AM surprise
-  const surprise = document.getElementById('surprise');
-  function checkTime() {
-    const now = new Date();
-    const hours = now.getHours();
-    if (hours === 5) { // 5AM
-      document.getElementById('regular').style.display = 'none';
-      surprise.style.display = 'flex';
-    } else {
-      document.getElementById('regular').style.display = 'block';
-      surprise.style.display = 'none';
-    }
+  // fade letters
+  letterText.style.opacity=0;
+  letterText.style.transform='translateY(-10px)';
+  setTimeout(()=>{
+    current = (current+1)%letters.length;
+    letterText.textContent = letters[current];
+    letterText.style.opacity=1;
+    letterText.style.transform='translateY(0)';
+  },600);
+});
+
+// 5AM Surprise
+const surprise = document.getElementById('surprise');
+function checkTime() {
+  const now = new Date();
+  const hours = now.getHours();
+  if(hours===5){
+    document.getElementById('regular').style.display='none';
+    surprise.style.display='flex';
+    setTimeout(()=>{surprise.style.opacity=1;},100);
+    document.body.style.background='#222';
+  } else {
+    document.getElementById('regular').style.display='block';
+    surprise.style.opacity=0;
+    setTimeout(()=>{surprise.style.display='none';},1000);
+    document.body.style.background='#111';
   }
-  setInterval(checkTime,1000);
-  checkTime();
+}
+setInterval(checkTime,1000);
+checkTime();
 
-  // ✨ Star animation
-  const canvas = document.getElementById('starsCanvas');
-  const ctx = canvas.getContext('2d');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+// Star animation
+const canvas=document.getElementById('starsCanvas');
+const ctx=canvas.getContext('2d');
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
 
-  const stars = Array.from({length:150},()=>({
-    x: Math.random()*canvas.width,
-    y: Math.random()*canvas.height,
-    radius: Math.random()*1.5,
-    alpha: Math.random()
-  }));
+const stars=Array.from({length:150},()=>({
+  x:Math.random()*canvas.width,
+  y:Math.random()*canvas.height,
+  radius:Math.random()*1.5,
+  alpha:Math.random()
+}));
 
-  function animateStars() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    stars.forEach(star=>{
-      ctx.beginPath();
-      ctx.arc(star.x,star.y,star.radius,0,Math.PI*2);
-      ctx.fillStyle = `rgba(255,255,255,${star.alpha})`;
-      ctx.fill();
-      star.alpha += (Math.random()-0.5)*0.05;
-      if(star.alpha<0) star.alpha=0;
-      if(star.alpha>1) star.alpha=1;
-    });
-    requestAnimationFrame(animateStars);
-  }
-  animateStars();
-
-  window.addEventListener('resize',()=>{
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+function animateStars(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  stars.forEach(star=>{
+    ctx.beginPath();
+    ctx.arc(star.x,star.y,star.radius,0,Math.PI*2);
+    ctx.fillStyle=`rgba(255,255,255,${star.alpha})`;
+    ctx.fill();
+    star.alpha+=(Math.random()-0.5)*0.05;
+    if(star.alpha<0) star.alpha=0;
+    if(star.alpha>1) star.alpha=1;
   });
+  requestAnimationFrame(animateStars);
+}
+animateStars();
 
+window.addEventListener('resize',()=>{
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+});
 </script>
 
 </body>
