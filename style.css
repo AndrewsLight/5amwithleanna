@@ -1,0 +1,87 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Arial', sans-serif;
+  background: linear-gradient(to top, #0b0c2c, #1a1c4f);
+  color: white;
+}
+
+#container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 2;
+}
+
+#specialMessage {
+  display: none;
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 12px;
+  background: rgba(155, 89, 182, 0.7);
+  font-size: 1.5em;
+  animation: glow 1.5s infinite alternate;
+}
+
+@keyframes glow {
+  0% { box-shadow: 0 0 10px #fff; }
+  100% { box-shadow: 0 0 30px #f0a; }
+}
+
+.fade-in {
+  animation: fadein 2s forwards;
+}
+
+@keyframes fadein {
+  from {opacity: 0;}
+  to {opacity: 1;}
+}
+
+audio {
+  margin-top: 12px;
+  width: 90%;
+  max-width: 400px;
+  border-radius: 8px;
+}
+
+/* Candies */
+.candy {
+  position: absolute;
+  font-size: 1.5em;
+  animation: floatCandy linear infinite;
+}
+@keyframes floatCandy {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-15px); }
+  100% { transform: translateY(0px); }
+}
+
+/* Cats */
+.cat {
+  position: absolute;
+  font-size: 2em;
+  animation: floatCat ease-in-out infinite;
+}
+@keyframes floatCat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Sushi Easter */
+#sushiEaster {
+  margin-top: 20px;
+  cursor: pointer;
+}
+.sushiMessage {
+  display: none;
+  margin-top: 10px;
+  font-size: 1.2em;
+  color: #f0a;
+}
+#sushiEaster:hover .sushiMessage {
+  display: block;
+}
