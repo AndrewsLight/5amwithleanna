@@ -5,17 +5,18 @@
   box-sizing: border-box;
 }
 
-body {
+body, html {
+  width: 100%;
+  height: 100%;
   font-family: 'Arial', sans-serif;
   background: url('https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif') center/cover no-repeat fixed;
   color: #fff;
-  height: 100vh;
   overflow: hidden;
   position: relative;
   cursor: url('https://i.imgur.com/HEFQChC.png'), auto;
 }
 
-/* Container for content */
+/* Container for love letters */
 .container {
   background: rgba(0, 0, 0, 0.6);
   padding: 30px;
@@ -24,18 +25,10 @@ body {
   text-align: center;
   margin: auto;
   box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+  position: relative;
+  z-index: 10;
 }
 
-/* Regular Section */
-#regular {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  z-index: 2;
-}
-
-/* Love Letter Styling */
 .love-letter {
   margin: 20px auto;
   font-size: 1.3rem;
@@ -52,7 +45,6 @@ body {
   50% { text-shadow: 0 0 20px #ffebcd; }
 }
 
-/* Button Styling */
 button {
   padding: 10px 25px;
   font-size: 1rem;
@@ -71,24 +63,22 @@ button:hover {
 
 /* Surprise Section */
 #surprise {
-  display: none;
+  display: flex;
   position: absolute;
   top: 0; left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(#111, #000);
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  z-index: 10;
+  align-items: center;
+  background: radial-gradient(#111, #000);
+  z-index: 50;
   opacity: 0;
   transition: opacity 2s ease;
 }
 
-.overlay {
-  position: relative;
-  z-index: 5;
-  text-align: center;
+#surprise.show {
+  opacity: 1;
 }
 
 /* Cat Animation */
@@ -145,7 +135,15 @@ button:hover {
   border-radius: 12px;
   color: #111;
   font-weight: bold;
-  display: none;
   cursor: pointer;
   z-index: 1000;
+  transition: transform 0.2s;
+}
+
+#secretLetter:hover {
+  transform: scale(1.1);
+}
+
+.hidden {
+  display: none;
 }
