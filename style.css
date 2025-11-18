@@ -1,123 +1,15 @@
-// ------------------------------
-// FIREBASE INIT
-// ------------------------------
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "amwithleanna.firebaseapp.com",
-  databaseURL: "https://amwithleanna-default-rtdb.firebaseio.com/",
-  projectId: "amwithleanna",
-  storageBucket: "amwithleanna.appspot.com",
-  messagingSenderId: "YOUR_SENDER",
-  appId: "YOUR_APP_ID"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-// ------------------------------
-// HOWLER AUDIO
-// ------------------------------
-const bgAudio = new Howl({
-  src: ["./assets/song.mp3"],
-  loop: true,
-  volume: 0.7
-});
-
-// ------------------------------
-// UNLOCK SYSTEM
-// ------------------------------
-let hasInteracted = false;
-let unlocked = false;
-const password = "i miss you";
-
-document.addEventListener("click", () => {
-  if (!hasInteracted) {
-    hasInteracted = true;
-    bgAudio.play();
-  }
-});
-
-// ------------------------------
-// UI CLICK FIX
-// ------------------------------
-document.body.style.pointerEvents = "auto";
-
-// ------------------------------
-// PASSWORD INPUT
-// ------------------------------
-const input = document.getElementById("pwInput");
-const button = document.getElementById("pwBtn");
-const screen1 = document.getElementById("screen1");
-const screen2 = document.getElementById("screen2");
-
-button.addEventListener("click", () => {
-  if (input.value.trim().toLowerCase() === password) {
-    unlocked = true;
-    set(ref(db, "unlocked"), true);
-
-    gsap.to(screen1, {
-      opacity: 0,
-      duration: 1.2,
-      onComplete: () => {
-        screen1.style.display = "none";
-        gsap.fromTo(
-          screen2, 
-          { opacity: 0, y: 40 }, 
-          { opacity: 1, y: 0, duration: 1 }
-        );
-      }
-    });
-  } else {
-    gsap.fromTo(
-      input,
-      { x: -10 },
-      { x: 10, duration: 0.1, repeat: 3, yoyo: true }
-    );
-  }
-});
-
-// ------------------------------
-// REAL-TIME MINI GAME (2-player)
-// ------------------------------
-const gameRef = ref(db, "game/state");
-
-onValue(gameRef, (snapshot) => {
-  const gameData = snapshot.val();
-  updateGame(gameData);
-});
-
-function sendMove(player, x, y) {
-  set(gameRef, { [player]: { x, y } });
+body {
+  pointer-events: auto;
 }
 
-function updateGame(data) {
-  if (!data) return;
-
-  const p1 = document.getElementById("p1");
-  const p2 = document.getElementById("p2");
-
-  if (data.player1) {
-    p1.style.transform = `translate(${data.player1.x}px, ${data.player1.y}px)`;
-  }
-  if (data.player2) {
-    p2.style.transform = `translate(${data.player2.x}px, ${data.player2.y}px)`;
-  }
+#screen1, #screen2 {
+  transition: opacity .5s ease;
 }
 
-// Example: moving player 1
-document.addEventListener("keydown", (e) => {
-  if (!unlocked) return;
-
-  let x = 0;
-  let y = 0;
-
-  if (e.key === "w") y -= 10;
-  if (e.key === "s") y += 10;
-  if (e.key === "a") x -= 10;
-  if (e.key === "d") x += 10;
-
-  sendMove("player1", x, y);
-});
+#p1, #p2 {
+  width: 40px;
+  height: 40px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+}
