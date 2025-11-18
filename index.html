@@ -7,31 +7,32 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Main Container -->
+  <!-- Fullscreen Immersive Background -->
+  <canvas id="bgCanvas"></canvas>
+
+  <!-- Main Container for Love Letters -->
   <div id="mainContainer">
     <div class="container">
-      <h1>Welcome back, my love 💛</h1>
+      <h1>Welcome back, my love 💘</h1>
       <p>This is our love letter library. A place you can always return to whenever you want.</p>
       <div class="love-letter" id="letterText"></div>
       <button id="nextLetter">Next Love Letter</button>
     </div>
   </div>
 
-  <!-- Surprise Easter Egg (5AM Special) -->
+  <!-- Surprise Easter Egg Section -->
   <div id="surprise" class="hidden">
-    <canvas id="starsCanvas"></canvas>
-    <canvas id="petalsCanvas"></canvas>
     <div class="overlay">
-      <h1>🌌 Good Morning, Leanna!</h1>
-      <p class="special-text">This secret moment only appears at 5AM… a magical surprise just for you 💖</p>
+      <h1>🌌 Secret 5AM Moment</h1>
+      <p class="special-text">A dark, intimate surprise just for you 💖</p>
       <div class="cat-silhouette"></div>
-      <p class="emo-text">"Nostalgia, love, and quiet mornings… all for us."</p>
+      <p class="emo-text">"In the quiet darkness, our love burns brighter than the world."</p>
       <button id="playMusic">Play Music</button>
       <audio id="romanticTrack" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_1f6c3b3a7b.mp3?filename=romantic-dreams-117397.mp3" preload="auto"></audio>
     </div>
   </div>
 
-  <!-- Secret Letter Easter Egg -->
+  <!-- Secret Letter Trigger -->
   <div id="secretLetter">💌 Click me for a secret message</div>
 
   <script src="script.js"></script>
