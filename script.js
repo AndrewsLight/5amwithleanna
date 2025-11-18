@@ -35,6 +35,7 @@ window.onload = () => {
     clickSound.currentTime = 0;
     clickSound.play();
 
+    // Floating heart
     const heart = document.createElement('div');
     heart.className = 'heart';
     heart.style.left = Math.random() * window.innerWidth + 'px';
@@ -54,22 +55,33 @@ window.onload = () => {
 
   // Surprise logic
   const surprise = document.getElementById('surprise');
+  const romanticTrack = document.getElementById('romanticTrack');
   function checkTime() {
     const now = new Date();
-    if (now.getHours() === 5) {
-      document.getElementById('regular').style.display = 'none';
-      surprise.style.display = 'flex';
-      setTimeout(() => { surprise.style.opacity = 1; }, 100);
-    } else {
-      document.getElementById('regular').style.display = 'flex';
-      surprise.style.opacity = 0;
-      setTimeout(() => { surprise.style.display = 'none'; }, 1000);
+    const showSurprise = now.getHours() === 5;
+    
+    document.getElementById('regular').style.display = showSurprise ? 'none' : 'flex';
+    surprise.style.display = showSurprise ? 'flex' : 'none';
+    surprise.style.opacity = showSurprise ? 1 : 0;
+
+    if(showSurprise && romanticTrack.paused){
+      romanticTrack.play();
+    } else if(!showSurprise){
+      romanticTrack.pause();
+      romanticTrack.currentTime = 0;
     }
   }
   setInterval(checkTime, 1000);
   checkTime();
 
-  // Canvas: Stars
+  // Secret Letter
+  const secret = document.getElementById('secretLetter');
+  secret.style.display = 'block';
+  secret.addEventListener('click', () => {
+    alert("💌 Surprise! You are my whole world, Leanna 💖");
+  });
+
+  // Stars animation
   const canvas = document.getElementById('starsCanvas');
   const ctx = canvas.getContext('2d');
   canvas.width = window.innerWidth;
@@ -95,14 +107,29 @@ window.onload = () => {
   }
   animateStars();
 
-  // Canvas: Petals
+  // Petals animation
   const petalsCanvas = document.getElementById('petalsCanvas');
   const pctx = petalsCanvas.getContext('2d');
   petalsCanvas.width = window.innerWidth;
   petalsCanvas.height = window.innerHeight;
-
   const petals = Array.from({ length: 50 }, () => ({
     x: Math.random() * petalsCanvas.width,
     y: Math.random() * petalsCanvas.height,
     radius: Math.random() * 5 + 5,
     speed: Math.random() * 1 + 0.5
+  }));
+
+  function animatePetals() {
+    pctx.clearRect(0, 0, petalsCanvas.width, petalsCanvas.height);
+    petals.forEach(p => {
+      p.y += p.speed;
+      if(p.y > petalsCanvas.height) p.y = -10;
+      pctx.beginPath();
+      pctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      pctx.fillStyle = 'rgba(255,182,193,0.7)';
+      pctx.fill();
+    });
+    requestAnimationFrame(animatePetals);
+  }
+  animatePetals();
+};
