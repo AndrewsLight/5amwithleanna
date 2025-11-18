@@ -7,15 +7,15 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Regular Love Letter Section -->
   <section id="regular">
-    <h1>Welcome back, my love 💛</h1>
-    <p>This is our love letter library. A place you can always return to whenever you want.</p>
-    <div class="love-letter" id="letterText"></div>
-    <button id="nextLetter">Next Love Letter</button>
+    <div class="container">
+      <h1>Welcome back, my love 💛</h1>
+      <p>This is our love letter library. A place you can always return to whenever you want.</p>
+      <div class="love-letter" id="letterText"></div>
+      <button id="nextLetter">Next Love Letter</button>
+    </div>
   </section>
 
-  <!-- 5AM Surprise Section -->
   <section id="surprise">
     <canvas id="starsCanvas"></canvas>
     <canvas id="petalsCanvas"></canvas>
@@ -24,14 +24,12 @@
       <p>This secret page only appears at 5AM. A special moment just for you 💖</p>
       <div class="cat-silhouette"></div>
       <p class="emo-text">"Nostalgia, love, and the quiet of the early morning… all for us."</p>
-      <audio src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" autoplay loop></audio>
-      <audio src="https://www.fesliyanstudios.com/play-mp3/4387" autoplay loop></audio>
+      <button id="playMusic">Play Music</button>
+      <audio id="romanticTrack" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_1f6c3b3a7b.mp3?filename=romantic-dreams-117397.mp3" preload="auto"></audio>
     </div>
   </section>
 
-  <!-- Secret Message Button -->
   <div id="secretLetter">Click me for a secret message 💌</div>
-
   <script src="script.js"></script>
 </body>
 </html>
