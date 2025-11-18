@@ -1,74 +1,123 @@
-:root{
-  --bg-1: #060006;
-  --bg-2: #1b0022;
-  --accent: #ff4d6d;
-  --muted: #a98ea8;
-  --panel: rgba(18,8,20,0.7);
-  --glass: rgba(255,255,255,0.03);
+// ------------------------------
+// FIREBASE INIT
+// ------------------------------
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "amwithleanna.firebaseapp.com",
+  databaseURL: "https://amwithleanna-default-rtdb.firebaseio.com/",
+  projectId: "amwithleanna",
+  storageBucket: "amwithleanna.appspot.com",
+  messagingSenderId: "YOUR_SENDER",
+  appId: "YOUR_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// ------------------------------
+// HOWLER AUDIO
+// ------------------------------
+const bgAudio = new Howl({
+  src: ["./assets/song.mp3"],
+  loop: true,
+  volume: 0.7
+});
+
+// ------------------------------
+// UNLOCK SYSTEM
+// ------------------------------
+let hasInteracted = false;
+let unlocked = false;
+const password = "i miss you";
+
+document.addEventListener("click", () => {
+  if (!hasInteracted) {
+    hasInteracted = true;
+    bgAudio.play();
+  }
+});
+
+// ------------------------------
+// UI CLICK FIX
+// ------------------------------
+document.body.style.pointerEvents = "auto";
+
+// ------------------------------
+// PASSWORD INPUT
+// ------------------------------
+const input = document.getElementById("pwInput");
+const button = document.getElementById("pwBtn");
+const screen1 = document.getElementById("screen1");
+const screen2 = document.getElementById("screen2");
+
+button.addEventListener("click", () => {
+  if (input.value.trim().toLowerCase() === password) {
+    unlocked = true;
+    set(ref(db, "unlocked"), true);
+
+    gsap.to(screen1, {
+      opacity: 0,
+      duration: 1.2,
+      onComplete: () => {
+        screen1.style.display = "none";
+        gsap.fromTo(
+          screen2, 
+          { opacity: 0, y: 40 }, 
+          { opacity: 1, y: 0, duration: 1 }
+        );
+      }
+    });
+  } else {
+    gsap.fromTo(
+      input,
+      { x: -10 },
+      { x: 10, duration: 0.1, repeat: 3, yoyo: true }
+    );
+  }
+});
+
+// ------------------------------
+// REAL-TIME MINI GAME (2-player)
+// ------------------------------
+const gameRef = ref(db, "game/state");
+
+onValue(gameRef, (snapshot) => {
+  const gameData = snapshot.val();
+  updateGame(gameData);
+});
+
+function sendMove(player, x, y) {
+  set(gameRef, { [player]: { x, y } });
 }
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;font-family:Inter,Arial,Helvetica,sans-serif;background:linear-gradient(180deg,var(--bg-1),var(--bg-2));color:#fff;overflow:hidden}
 
-/* ENTRY */
-#entry.center{display:flex;align-items:center;justify-content:center;height:100vh}
-.entry-card{width:92%;max-width:520px;background:var(--panel);padding:28px;border-radius:14px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
-.entry-card h1{font-size:1.9rem;color:var(--accent);margin-bottom:6px}
-.entry-card p.muted, .hint, .muted{color:var(--muted);font-size:0.95rem}
-.password-row{display:flex;gap:8px;margin-top:12px;justify-content:center}
-#passwordInput{padding:10px;border-radius:8px;border:none;min-width:160px;background:rgba(255,255,255,0.03);color:#fff}
-#passwordBtn{padding:10px 14px;border-radius:8px;border:none;background:var(--accent);color:#111;font-weight:700;cursor:pointer}
+function updateGame(data) {
+  if (!data) return;
 
-/* WORLD LAYOUT */
-.hidden{display:none}
-#world{height:100vh;width:100vw;position:relative;display:flex}
-.canvas-layer{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none} /* <-- important: allow clicks through canvas */
+  const p1 = document.getElementById("p1");
+  const p2 = document.getElementById("p2");
 
-/* SIDEBAR */
-#sidebar{width:240px;background:linear-gradient(180deg, rgba(0,0,0,0.35),rgba(0,0,0,0.55));padding:18px;z-index:8;display:flex;flex-direction:column;gap:14px;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.02)}
-.brand{display:flex;align-items:center;gap:12px}
-.logo{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,#2b002b,#4a002b);display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:800}
-.title{font-weight:700;color:var(--accent);font-size:1rem}
-.menu{display:flex;flex-direction:column;gap:8px;margin-top:6px}
-.menu-btn{background:transparent;border:none;text-align:left;padding:10px;border-radius:8px;color:var(--muted);cursor:pointer;font-weight:600}
-.menu-btn.active, .menu-btn:hover{background:rgba(255,77,109,0.06);color:var(--accent);box-shadow:0 6px 18px rgba(255,77,109,0.07)}
-.controls{margin-top:auto;display:flex;gap:8px}
-
-/* CONTENT */
-#content{flex:1;padding:28px;display:flex;flex-direction:column;gap:12px;z-index:6}
-.content-header{display:flex;justify-content:space-between;align-items:center}
-.content-header h2{margin:0;color:var(--accent)}
-.small{background:rgba(255,255,255,0.03);border-radius:8px;padding:8px 12px;border:none;color:var(--muted);cursor:pointer}
-.card{background:var(--glass);padding:18px;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,0.5);min-height:360px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
-.letter-box{background:rgba(10,6,10,0.45);padding:16px;border-radius:12px;min-height:120px;color:var(--accent);font-size:1.15rem;line-height:1.5;text-shadow:0 0 12px rgba(255,77,109,0.1);transition:opacity .25s}
-
-/* panels */
-.panel{padding:6px;display:flex;flex-direction:column;gap:10px}
-.hidden{display:none}
-.gallery{display:flex;gap:8px;flex-wrap:wrap}
-.gallery img{width:140px;height:90px;object-fit:cover;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.5)}
-.quote-box{font-style:italic;color:var(--muted)}
-
-/* garden, game, notes */
-.garden-area{min-height:160px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.04));border-radius:10px;padding:12px;display:flex;flex-wrap:wrap;gap:10px;align-content:flex-start}
-.garden-plot{width:80px;height:80px;background:rgba(0,0,0,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.game-area{min-height:160px;background:rgba(255,255,255,0.02);border-radius:10px;padding:12px;position:relative}
-.heart-floating{position:absolute;width:40px;height:40px;border-radius:50%;pointer-events:auto}
-
-/* notes ui */
-.notes-ui{display:flex;flex-direction:column;gap:8px}
-#noteInput{min-height:70px;padding:10px;border-radius:8px;border:none;background:rgba(255,255,255,0.03);color:#fff}
-.note-actions{display:flex;gap:8px}
-#noteName{padding:8px;border-radius:8px;border:none;background:rgba(255,255,255,0.03);color:#fff}
-.notes-list{max-height:160px;overflow:auto;padding:6px;display:flex;flex-direction:column;gap:8px}
-.note-item{background:rgba(255,255,255,0.02);padding:8px;border-radius:8px}
-
-/* footer */
-.footer{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:6}
-
-/* responsive */
-@media (max-width:900px){
-  #sidebar{display:flex;position:absolute;left:8px;top:8px;width:72px;padding:10px;flex-direction:column;gap:6px;border-radius:10px}
-  .title{display:none}
-  #content{padding:16px}
-  .gallery img{width:110px;height:75px}
+  if (data.player1) {
+    p1.style.transform = `translate(${data.player1.x}px, ${data.player1.y}px)`;
+  }
+  if (data.player2) {
+    p2.style.transform = `translate(${data.player2.x}px, ${data.player2.y}px)`;
+  }
 }
+
+// Example: moving player 1
+document.addEventListener("keydown", (e) => {
+  if (!unlocked) return;
+
+  let x = 0;
+  let y = 0;
+
+  if (e.key === "w") y -= 10;
+  if (e.key === "s") y += 10;
+  if (e.key === "a") x -= 10;
+  if (e.key === "d") x += 10;
+
+  sendMove("player1", x, y);
+});
