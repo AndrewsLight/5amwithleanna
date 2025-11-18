@@ -1,5 +1,6 @@
 window.onload = () => {
   const name = "Leanna";
+
   const letters = [
     `Every time I see you, my heart finds a new reason to smile, ${name}.`,
     `${name}, you're the first thought in my morning and the last before I sleep.`,
@@ -35,7 +36,6 @@ window.onload = () => {
     clickSound.currentTime = 0;
     clickSound.play();
 
-    // Floating heart
     const heart = document.createElement('div');
     heart.className = 'heart';
     heart.style.left = Math.random() * window.innerWidth + 'px';
@@ -53,39 +53,43 @@ window.onload = () => {
     }, 600);
   });
 
-  // Surprise logic
+  // Surprise Easter Egg
   const surprise = document.getElementById('surprise');
   const romanticTrack = document.getElementById('romanticTrack');
-  function checkTime() {
-    const now = new Date();
-    const showSurprise = now.getHours() === 5;
-    
-    document.getElementById('regular').style.display = showSurprise ? 'none' : 'flex';
-    surprise.style.display = showSurprise ? 'flex' : 'none';
-    surprise.style.opacity = showSurprise ? 1 : 0;
+  const playMusicBtn = document.getElementById('playMusic');
 
-    if(showSurprise && romanticTrack.paused){
+  playMusicBtn.addEventListener('click', () => {
+    romanticTrack.play();
+  });
+
+  function check5AM() {
+    const now = new Date();
+    // Only trigger Easter egg exactly at 5AM
+    if(now.getHours() === 5 && now.getMinutes() === 0) {
+      surprise.classList.add('show');
       romanticTrack.play();
-    } else if(!showSurprise){
+    } else {
+      surprise.classList.remove('show');
       romanticTrack.pause();
       romanticTrack.currentTime = 0;
     }
   }
-  setInterval(checkTime, 1000);
-  checkTime();
+
+  setInterval(check5AM, 1000);
+  check5AM();
 
   // Secret Letter
   const secret = document.getElementById('secretLetter');
-  secret.style.display = 'block';
   secret.addEventListener('click', () => {
     alert("💌 Surprise! You are my whole world, Leanna 💖");
   });
 
-  // Stars animation
+  // Stars Animation
   const canvas = document.getElementById('starsCanvas');
   const ctx = canvas.getContext('2d');
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
+
   const stars = Array.from({ length: 150 }, () => ({
     x: Math.random() * canvas.width,
     y: Math.random() * canvas.height,
@@ -107,11 +111,12 @@ window.onload = () => {
   }
   animateStars();
 
-  // Petals animation
+  // Petals Animation
   const petalsCanvas = document.getElementById('petalsCanvas');
   const pctx = petalsCanvas.getContext('2d');
   petalsCanvas.width = window.innerWidth;
   petalsCanvas.height = window.innerHeight;
+
   const petals = Array.from({ length: 50 }, () => ({
     x: Math.random() * petalsCanvas.width,
     y: Math.random() * petalsCanvas.height,
