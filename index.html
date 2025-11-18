@@ -1,48 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Our Secret World 💛</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>5AM with Leanna — Our Secret World</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- ENTRY / WELCOME -->
+  <section id="entry" class="center">
+    <div class="entry-card">
+      <h1>Welcome to Our World</h1>
+      <p class="muted">Click anywhere to enter. To peek at the secret world, enter the password.</p>
 
-  <!-- Entry / Welcome Page -->
-  <section id="entry">
-    <div class="entry-container">
-      <h1>Welcome to Our World 💛</h1>
-      <p>Click anywhere to enter...</p>
-      <input type="password" id="passwordInput" placeholder="Enter secret password">
-      <button id="passwordBtn">Enter</button>
+      <div class="password-row">
+        <input id="passwordInput" type="text" placeholder="Enter secret password" aria-label="password" />
+        <button id="passwordBtn">Unlock</button>
+      </div>
+
+      <p class="hint muted">Tip: the secret auto-opens at 5:00 AM local time 💫</p>
+      <small class="muted">Password: <strong>i miss you</strong></small>
     </div>
+
+    <!-- entry sound triggered on first click -->
     <audio id="entrySound" src="https://freesound.org/data/previews/146/146725_2615114-lq.mp3" preload="auto"></audio>
   </section>
 
-  <!-- Main Love World -->
-  <section id="world">
-    <!-- Background Canvases -->
-    <canvas id="starsCanvas"></canvas>
-    <canvas id="petalsCanvas"></canvas>
-    <canvas id="mistCanvas"></canvas>
+  <!-- MAIN WORLD -->
+  <main id="world" class="hidden">
+    <!-- background canvases (stacked layers) -->
+    <canvas id="bgCanvas" class="canvas-layer"></canvas>
 
-    <!-- UI Overlay -->
-    <div class="overlay">
-      <h1>💛 Welcome, Leanna 💛</h1>
-      <div class="categories">
-        <button class="catBtn" data-cat="morning">Morning Letters</button>
-        <button class="catBtn" data-cat="memories">Memories</button>
-        <button class="catBtn" data-cat="surprises">Surprises</button>
-        <button class="catBtn" data-cat="quotes">Quotes & Emo Vibes</button>
-        <button class="catBtn" data-cat="secret">Secret Moments</button>
-        <button class="catBtn" data-cat="notes">Notes to You</button>
+    <!-- SIDEBAR -->
+    <aside id="sidebar">
+      <div class="brand">
+        <div class="logo">5AM</div>
+        <div class="title">5AM with Leanna</div>
       </div>
-      <div class="love-letter" id="letterText"></div>
-      <button id="nextLetter">Next</button>
-    </div>
-    <audio id="bgMusic" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_1f6c3b3a7b.mp3?filename=romantic-dreams-117397.mp3" preload="auto" loop></audio>
-  </section>
 
-</body>
+      <nav class="menu">
+        <button class="menu-btn active" data-cat="morning">Morning Letters</button>
+        <button class="menu-btn" data-cat="memories">Memories</button>
+        <button class="menu-btn" data-cat="surprises">Surprises</button>
+        <button class="menu-btn" data-cat="quotes">Quotes &amp; Vibes</button>
+        <button class="menu-btn" data-cat="secret">Secret Moments</button>
+        <button class="menu-btn" data-cat="garden">Garden</button>
+        <button class="menu-btn" data-cat="minigame">Mini-Games</button>
+        <button class="menu-btn" data-cat="notes">Notes</button>
+      </nav>
+
+      <div class="controls">
+        <button id="muteBtn" title="Mute / Unmute">🔊</button>
+        <button id="collapseBtn" title="Toggle sidebar">☰</button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <section id="content">
+      <header class="content-header">
+        <h2 id="roomTitle">Morning Letters</h2>
+        <div class="room-actions">
+          <button id="prevBtn" class="small">◀ Prev</button>
+          <button id="nextBtn" class="small">Next ▶</button>
+        </div>
+      </header>
+
+      <article id="roomBody" class="card">
+        <div id="letterBox" class="letter-box" aria-live="polite"></div>
+
+        <!-- category specific panels -->
+        <div id="memoriesPanel" class="panel hidden">
+          <div class="gallery" id="gallery"></div>
+        </div>
+
+        <div id="surprisesPanel" class="panel hidden">
+          <p class="muted">Surprises hide everywhere. Click stars, hearts and explore.</p>
+          <div class="surprise-grid" id="surpriseGrid"></div>
+        </div>
+
+        <div id="quotesPanel" class="panel hidden">
+          <div id="quoteBox" class="quote-box"></div>
+        </div>
+
+        <div id="secretPanel" class="panel hidden">
+          <h3>Secret Moment</h3>
+          <p class="muted">This opens automatically at 5:00 AM or when you enter the password.</p>
+          <div id="secretArea" class="secret-area"></div>
+        </div>
+
+        <div id="gardenPanel" class="panel hidden">
+          <h3>Our Garden</h3>
+          <p class="muted">Tap the soil to plant flowers. Grow something together.</p>
+          <div id="gardenArea" class="garden-area"></div>
+        </div>
+
+        <div id="minigamePanel" class="panel hidden">
+          <h3>Mini-Game — Catch The Hearts</h3>
+          <p class="muted">Click hearts that appear to score together. ✨</p>
+          <div id="gameArea" class="game-area"></div>
+          <div class="game-controls">
+            <button id="startGameBtn">Start Game</button>
+            <div class="score">Score: <span id="score">0</span></div>
+          </div>
+        </div>
+
+        <div id="notesPanel" class="panel hidden">
+          <h3>Notes to Each Other</h3>
+          <div class="notes-ui">
+            <textarea id="noteInput" placeholder="Write a note for Baba..."></textarea>
+            <div class="note-actions">
+              <input id="noteName" placeholder="Your name (e.g. baba)" />
+              <button id="saveNoteBtn">Save Note</button>
+            </div>
+            <div id="notesList" class="notes-list"></div>
+          </div>
+        </div>
+      </article>
+
+      <footer class="footer muted">
+        <small>Special time: 5:00 AM — visit together 💛</small>
+      </footer>
+    </section>
+
+    <!-- audio: background + special -->
+    <audio id="bgMusic" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_1f6c3b3a7b.mp3?filename=romantic-dreams-117397.mp3" loop preload="auto"></audio>
+    <audio id="eggMusic" src="https://cdn.pixabay.com/download/audio/2022/12/15/audio_0293a1d6f1.mp3?filename=sad-piano-ambient-02-116343.mp3" preload="auto"></audio>
+    <audio id="clickSfx" src="https://freesound.org/data/previews/66/66717_931655-lq.mp3" preload="auto"></audio>
+  </main>
+
 <script src="script.js"></script>
+</body>
 </html>
