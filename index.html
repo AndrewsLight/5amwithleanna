@@ -4,32 +4,44 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>5AM with Leanna — Our Secret World</title>
+
+  <!-- GSAP (polish if needed), Howler (optional) - loaded but not required -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+
+  <!-- Firebase compat libs (Realtime DB + Auth) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+  <!-- favicon (add your file to assets/images/favicon.png or change path) -->
+  <link rel="icon" href="assets/images/favicon.png" type="image/png">
+
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <!-- ENTRY / WELCOME -->
   <section id="entry" class="center">
-    <div class="entry-card">
+    <div class="entry-card" role="dialog" aria-modal="true">
       <h1>Welcome to Our World</h1>
-      <p class="muted">Click anywhere to enter. To peek at the secret world, enter the password.</p>
+      <p class="muted">Click anywhere to enter. To peek at the secret room, enter the password.</p>
 
       <div class="password-row">
         <input id="passwordInput" type="text" placeholder="Enter secret password" aria-label="password" />
-        <button id="passwordBtn">Unlock</button>
+        <button id="passwordBtn" class="accent">Unlock</button>
       </div>
 
-      <p class="hint muted">Tip: the secret auto-opens at 5:00 AM local time 💫</p>
-      <small class="muted">Password: <strong>i miss you</strong></small>
+      <p class="hint muted">Tip: password is kept between you two (password: <strong>i miss you</strong>).</p>
     </div>
 
-    <!-- entry sound triggered on first click -->
+    <!-- small click sound triggered on first click -->
     <audio id="entrySound" src="https://freesound.org/data/previews/146/146725_2615114-lq.mp3" preload="auto"></audio>
   </section>
 
   <!-- MAIN WORLD -->
-  <main id="world" class="hidden">
-    <!-- background canvases (stacked layers) -->
-    <canvas id="bgCanvas" class="canvas-layer"></canvas>
+  <main id="world" class="hidden" aria-live="polite">
+    <!-- one canvas (layers drawn programmatically) -->
+    <canvas id="bgCanvas" class="canvas-layer" ></canvas>
 
     <!-- SIDEBAR -->
     <aside id="sidebar">
@@ -43,7 +55,7 @@
         <button class="menu-btn" data-cat="memories">Memories</button>
         <button class="menu-btn" data-cat="surprises">Surprises</button>
         <button class="menu-btn" data-cat="quotes">Quotes &amp; Vibes</button>
-        <button class="menu-btn" data-cat="secret">Secret Moments</button>
+        <button class="menu-btn" data-cat="secret">Secret Room</button>
         <button class="menu-btn" data-cat="garden">Garden</button>
         <button class="menu-btn" data-cat="minigame">Mini-Games</button>
         <button class="menu-btn" data-cat="notes">Notes</button>
@@ -53,6 +65,8 @@
         <button id="muteBtn" title="Mute / Unmute">🔊</button>
         <button id="collapseBtn" title="Toggle sidebar">☰</button>
       </div>
+
+      <div class="presence" id="presenceIndicator">offline</div>
     </aside>
 
     <!-- MAIN CONTENT -->
@@ -84,7 +98,7 @@
 
         <div id="secretPanel" class="panel hidden">
           <h3>Secret Moment</h3>
-          <p class="muted">This opens automatically at 5:00 AM or when you enter the password.</p>
+          <p class="muted">This opens when you enter the password or at your special time.</p>
           <div id="secretArea" class="secret-area"></div>
         </div>
 
@@ -100,6 +114,7 @@
           <div id="gameArea" class="game-area"></div>
           <div class="game-controls">
             <button id="startGameBtn">Start Game</button>
+            <button id="joinGameBtn">Join</button>
             <div class="score">Score: <span id="score">0</span></div>
           </div>
         </div>
@@ -118,13 +133,13 @@
       </article>
 
       <footer class="footer muted">
-        <small>Special time: 5:00 AM — visit together 💛</small>
+        <small>Made with love — enjoy your world together 💛</small>
       </footer>
     </section>
 
-    <!-- audio: background + special -->
-    <audio id="bgMusic" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_1f6c3b3a7b.mp3?filename=romantic-dreams-117397.mp3" loop preload="auto"></audio>
-    <audio id="eggMusic" src="https://cdn.pixabay.com/download/audio/2022/12/15/audio_0293a1d6f1.mp3?filename=sad-piano-ambient-02-116343.mp3" preload="auto"></audio>
+    <!-- audio elements (kept for compatibility) -->
+    <audio id="bgMusic" src="assets/audio/bg-music.mp3" loop preload="auto"></audio>
+    <audio id="eggMusic" src="assets/audio/egg-music.mp3" preload="auto"></audio>
     <audio id="clickSfx" src="https://freesound.org/data/previews/66/66717_931655-lq.mp3" preload="auto"></audio>
   </main>
 
