@@ -1,0 +1,134 @@
+/* Global Reset */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Arial', sans-serif;
+  background: url('https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif') center/cover no-repeat fixed;
+  color: #fff;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  cursor: url('https://i.imgur.com/HEFQChC.png'), auto;
+}
+
+/* Regular Section */
+#regular {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  z-index: 2;
+}
+
+.love-letter {
+  margin: 20px auto;
+  font-size: 1.3rem;
+  max-width: 400px;
+  background: rgba(255,255,255,0.1);
+  padding: 15px 25px;
+  border-radius: 12px;
+  color: #ffebcd;
+  text-shadow: 0 0 8px #ffebcd;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { text-shadow: 0 0 8px #ffebcd; }
+  50% { text-shadow: 0 0 20px #ffebcd; }
+}
+
+button {
+  padding: 10px 25px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #ffcc00;
+  color: #000;
+  margin-top: 10px;
+  transition: transform 0.2s;
+}
+
+button:hover { transform: scale(1.1); }
+
+/* Surprise Section */
+#surprise {
+  display: none;
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(#111, #000);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 2s ease;
+}
+
+.overlay {
+  position: relative;
+  z-index: 5;
+  text-align: center;
+}
+
+.cat-silhouette {
+  width: 120px;
+  height: 120px;
+  background: url('https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif') no-repeat center/contain;
+  margin: 20px auto;
+  animation: catMove 6s infinite alternate ease-in-out;
+}
+
+@keyframes catMove {
+  0% { transform: translateX(-20px); }
+  100% { transform: translateX(20px); }
+}
+
+.emo-text {
+  font-style: italic;
+  margin-top: 10px;
+  color: #ffddaa;
+  text-shadow: 0 0 8px #ffddaa;
+}
+
+/* Canvas Effects */
+#starsCanvas, #petalsCanvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* Floating Heart */
+.heart {
+  position: absolute;
+  width: 20px; height: 20px;
+  background: red;
+  clip-path: polygon(50% 0%,61% 10%,70% 25%,50% 100%,30% 25%,39% 10%);
+  animation: floatUp 2s forwards;
+  z-index: 100;
+}
+
+@keyframes floatUp {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-200px) scale(0.5); opacity: 0; }
+}
+
+/* Secret Letter */
+#secretLetter {
+  position: fixed;
+  bottom: 50px; right: 50px;
+  padding: 15px 25px;
+  background: rgba(255,182,193,0.9);
+  border-radius: 12px;
+  color: #111;
+  font-weight: bold;
+  display: none;
+  cursor: pointer;
+  z-index: 1000;
+}
