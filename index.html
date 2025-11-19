@@ -1,110 +1,80 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AMwithLeanna — for Leanna</title>
-
-  <!-- Styles -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>5AM With My Baba</title>
   <link rel="stylesheet" href="style.css">
-
-  <!-- Fav icon (add file at assets/icons/favicon.png) -->
-  <link rel="icon" href="assets/icons/favicon.png" type="image/png">
-
-  <!-- Libraries -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
-
-  <!-- Firebase compat (Realtime + Auth) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head>
 <body>
-  <!-- ENTRY -->
-  <section id="entry" class="entry-screen">
-    <div class="entry-card" role="dialog" aria-modal="true">
-      <h1>hi baba,</h1>
-      <p class="entry-sub">I made this place for you. Enter the password to come in.</p>
 
-      <div class="password-row">
-        <input id="passwordInput" class="password-input" autocomplete="off" placeholder="type here..." />
-        <button id="passwordBtn" class="btn primary">Open</button>
-      </div>
+<!-- PASSWORD SCREEN -->
+<div id="passwordScreen" class="center">
+  <div class="card">
+    <h1>hi baba 🤍</h1>
+    <p class="muted">come inside our little world</p>
 
-      <p class="muted small">Tip: password is <strong>i miss you</strong></p>
-    </div>
+    <input id="passwordInput" type="text" placeholder="password...">
+    <button id="passwordBtn">enter</button>
 
-    <!-- entry click sound -->
-    <audio id="entryClick" src="assets/audio/click.mp3" preload="auto"></audio>
-  </section>
+    <p id="passwordMsg" class="error"></p>
+  </div>
+</div>
 
-  <!-- APP -->
-  <main id="app" class="hidden">
-    <!-- background canvas -->
-    <canvas id="bgCanvas" class="bg-canvas"></canvas>
+<!-- MAIN WORLD -->
+<div id="world" class="hidden">
 
-    <!-- SIDEBAR -->
-    <aside id="sidebar" class="sidebar" role="navigation">
-      <div class="brand">
-        <img src="assets/icons/heart.png" alt="heart" class="logo-icon" />
-        <div class="brand-text">AM with Leanna</div>
-      </div>
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <h2>♡ us ♡</h2>
+    <button class="tabBtn active" data-tab="letters">letters</button>
+    <button class="tabBtn" data-tab="notes">notes</button>
+    <button class="tabBtn" data-tab="game">mini game</button>
+    <button class="tabBtn" data-tab="memories">memories</button>
+  </aside>
 
-      <nav class="menu">
-        <button class="menu-btn active" data-cat="home">Home</button>
-        <button class="menu-btn" data-cat="notes">Notes</button>
-        <button class="menu-btn" data-cat="photos">Photos</button>
-        <button class="menu-btn" data-cat="minigame">Mini-Game</button>
-        <button class="menu-btn" data-cat="playlist">Playlist</button>
-        <button class="menu-btn" data-cat="messages">Messages</button>
-      </nav>
+  <!-- CONTENT -->
+  <main id="content">
 
-      <div class="sidebar-bottom">
-        <button id="muteBtn" class="icon-btn">🔊</button>
-        <div id="presence" class="presence">offline</div>
-      </div>
-    </aside>
-
-    <!-- MAIN CONTENT -->
-    <section id="content" class="content">
-      <header class="content-header">
-        <h2 id="roomTitle">Home</h2>
-        <div class="actions">
-          <button id="prevBtn" class="small-btn">◀</button>
-          <button id="nextBtn" class="small-btn">▶</button>
-        </div>
-      </header>
-
-      <article id="card" class="card">
-        <div id="homePanel" class="panel">
-          <div id="homeMessage" class="home-message">
-            <!-- text injected by script (personal voice) -->
-          </div>
-
-          <div class="home-actions">
-            <button id="openNotes" class="btn">Open Notes</button>
-            <button id="openGame" class="btn">Play With Me</button>
-          </div>
-        </div>
-
-        <!-- other panels loaded by script -->
-        <div id="notesPanel" class="panel hidden"></div>
-        <div id="photosPanel" class="panel hidden"></div>
-        <div id="minigamePanel" class="panel hidden"></div>
-        <div id="playlistPanel" class="panel hidden"></div>
-        <div id="messagesPanel" class="panel hidden"></div>
-      </article>
-
-      <footer class="footer muted">Made by you • for her 💛</footer>
+    <!-- LETTERS -->
+    <section id="letters" class="tab active">
+      <h1>baba's letters</h1>
+      <p id="letterText">
+        i love you in stupid ways.  
+        even when you're annoying.  
+        even when you're half asleep.  
+        even when we haven't met yet —  
+        you still feel like home.
+      </p>
     </section>
 
-    <!-- audio elements (Howler preferred; kept for compatibility) -->
-    <audio id="bgAudio" src="assets/audio/bg.mp3" loop preload="auto"></audio>
-    <audio id="trollSfx" src="assets/audio/troll.mp3" preload="auto"></audio>
-  </main>
+    <!-- NOTES -->
+    <section id="notes" class="tab">
+      <h1>leave me a note 🤍</h1>
+      <textarea id="noteInput" placeholder="write something for me baba..."></textarea>
+      <button id="saveNoteBtn">save note</button>
+      <div id="notesList"></div>
+    </section>
 
-  <!-- Main script -->
-  <script src="script.js"></script>
+    <!-- GAME -->
+    <section id="game" class="tab">
+      <h1>catch my heart</h1>
+      <p class="muted">click the heart before it disappears!</p>
+      <div id="gameArea"></div>
+      <button id="startGameBtn">start</button>
+      <p>score: <span id="score">0</span></p>
+    </section>
+
+    <!-- MEMORIES -->
+    <section id="memories" class="tab">
+      <h1>our little memories</h1>
+      <p class="muted">add photos later baba 🤍</p>
+      <div class="placeholder">nothing here yet but soon it'll be cute</div>
+    </section>
+
+  </main>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
