@@ -1,218 +1,85 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>For Baba — Our World</title>
-  <link rel="icon" href="https://i.imgur.com/HEFQChC.png" />
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <title>Us 💜</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <!-- ENTRY -->
-  <div id="entry" class="screen center-screen">
-    <div class="card entry-card">
-      <h1 class="accent">hi baba</h1>
-      <p class="muted">welcome home — this place is just for us</p>
-      <input id="pw" class="input" placeholder="password..." autocomplete="off" />
-      <div class="row">
-        <button id="enterBtn" class="btn primary">enter</button>
-        <button id="demoBtn" class="btn ghost">demo</button>
-      </div>
-      <p id="pwMsg" class="muted small">tip: password is <strong>i miss you</strong></p>
+    <div id="background"></div>
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="centerBox">
+        <h1>hey baba 💜</h1>
+        <p>enter the password to enter our world</p>
+        <input id="pwInput" type="password" placeholder="password..." />
+        <button id="pwBtn">Enter</button>
+        <p id="pwError"></p>
     </div>
-  </div>
 
-  <!-- APP -->
-  <div id="app" class="hidden">
+    <!-- App -->
+    <div id="appContainer" class="hidden">
 
-    <!-- animated GIF background layer -->
-    <div id="bgLayer" class="bg-layer"></div>
-
-    <!-- SIDEBAR -->
-    <aside id="sidebar" class="sidebar">
-      <div class="brand">
-        <div id="logo" class="logo">♡</div>
-        <div class="brand-text">for baba</div>
-        <button id="collapseBtn" class="icon small-ico" title="toggle sidebar">☰</button>
-      </div>
-
-      <nav class="nav">
-        <button class="nav-btn active" data-page="home">Home</button>
-        <button class="nav-btn" data-page="letters">Love Letters</button>
-        <button class="nav-btn" data-page="memories">Memories</button>
-        <button class="nav-btn" data-page="notes">Notes</button>
-        <button class="nav-btn" data-page="wheel">Movie Wheel</button>
-        <button class="nav-btn" data-page="game">Mini Game</button>
-        <button class="nav-btn" data-page="sleep">Sleep & Anniversary</button>
-        <button class="nav-btn" data-page="playlist">Playlist</button>
-        <button class="nav-btn" data-page="voices">Voice Notes</button>
-        <button class="nav-btn" data-page="settings">Settings</button>
-      </nav>
-
-      <div class="sidebar-bottom">
-        <button id="musicBtn" class="icon">🔊</button>
-        <div id="presence" class="muted">private</div>
-      </div>
-    </aside>
-
-    <!-- MAIN -->
-    <main id="main" class="main">
-
-      <!-- HOME -->
-      <section id="home" class="page active">
-        <h2>hi baba, welcome home</h2>
-        <p class="lead">I made this place for you. Pick a vibe in Settings. Click around — I added things you'll like.</p>
-        <div class="home-actions">
-          <button id="openLetters" class="btn">Open Letters</button>
-          <button id="openMemories" class="btn ghost">Our Memories</button>
-        </div>
-        <div id="annivSummary" class="panel small muted"></div>
-      </section>
-
-      <!-- LETTERS -->
-      <section id="letters" class="page hidden">
-        <h2>Love Letters</h2>
-        <div id="letterBox" class="letter-box"></div>
-        <div class="row">
-          <button id="prevLetter" class="btn small">Prev</button>
-          <button id="nextLetter" class="btn small">Next</button>
-          <button id="newLetter" class="btn ghost">Write Letter</button>
-        </div>
-      </section>
-
-      <!-- MEMORIES -->
-      <section id="memories" class="page hidden">
-        <h2>Memories</h2>
-        <div id="memActions" class="row">
-          <button id="uploadPhoto" class="btn">Upload Photo/GIF</button>
-          <button id="clearPhotos" class="btn ghost">Clear All</button>
-        </div>
-        <div id="gallery" class="gallery"></div>
-      </section>
-
-      <!-- NOTES -->
-      <section id="notes" class="page hidden">
-        <h2>Notes</h2>
-        <textarea id="noteText" placeholder="Write a quick note..."></textarea>
-        <div class="row">
-          <input id="noteName" class="input small" placeholder="your name (baba)" />
-          <button id="saveNote" class="btn">Save Note</button>
-        </div>
-        <div id="notesList" class="notes-list"></div>
-      </section>
-
-      <!-- WHEEL -->
-      <section id="wheel" class="page hidden">
-        <h2>Movie Wheel</h2>
-        <div class="wheel-wrap">
-          <div id="wheel" class="wheel"></div>
-        </div>
-        <div class="row center-row">
-          <button id="spinBtn" class="btn primary">Spin the Wheel</button>
-          <button id="addMovieBtn" class="btn ghost">Add Movie</button>
-        </div>
-        <div id="movieResult" class="muted small"></div>
-      </section>
-
-      <!-- GAME -->
-      <section id="game" class="page hidden">
-        <h2>Mini Game — Heart Race</h2>
-        <p class="muted">Catch hearts. Score more than the target to win a reward choice.</p>
-        <div id="gameArea" class="game-area"></div>
-        <div class="row">
-          <button id="startGame" class="btn primary">Start</button>
-          <div class="muted">Score: <span id="gameScore">0</span></div>
-        </div>
-        <div id="rewardChoice" class="panel hidden">
-          <p>Choose your reward for winning:</p>
-          <select id="rewardSelect">
-            <option value="movie">Pick the movie</option>
-            <option value="call">Pick a call time</option>
-            <option value="message">A special message</option>
-          </select>
-          <button id="saveReward" class="btn">Save Reward</button>
-        </div>
-      </section>
-
-      <!-- SLEEP & ANNIVERSARY -->
-      <section id="sleep" class="page hidden">
-        <h2>Sleep & Anniversary</h2>
-        <div class="row">
-          <input id="sleepTime" type="time" class="input small" />
-          <button id="setSleepBtn" class="btn">Set Night Reminder</button>
-        </div>
-        <p class="muted small">Set anniversary date to track & celebrate</p>
-        <div class="row">
-          <input id="annivDate" type="date" class="input small" />
-          <button id="saveAnniv" class="btn">Save Anniversary</button>
-        </div>
-        <div id="annivBox" class="panel small muted"></div>
-      </section>
-
-      <!-- PLAYLIST -->
-      <section id="playlist" class="page hidden">
-        <h2>Playlist</h2>
-        <div class="row">
-          <input id="songInput" class="input" placeholder="Song title or URL" />
-          <button id="addSongBtn" class="btn">Add</button>
-        </div>
-        <div id="playlistList" class="notes-list"></div>
-        <audio id="player" controls class="panel" style="width:100%;margin-top:12px"></audio>
-      </section>
-
-      <!-- VOICE NOTES -->
-      <section id="voices" class="page hidden">
-        <h2>Voice Notes</h2>
-        <div class="row">
-          <button id="recBtn" class="btn primary">Start Recording</button>
-          <button id="stopRecBtn" class="btn ghost" disabled>Stop</button>
-        </div>
-        <div id="voicesList" class="notes-list"></div>
-      </section>
-
-      <!-- SETTINGS -->
-      <section id="settings" class="page hidden">
-        <h2>Settings & Vibes</h2>
-        <div class="panel">
-          <label>Vibe</label>
-          <select id="vibeSelect" class="input small">
-            <option value="soft">Soft White + Pink</option>
-            <option value="dark">Dark Purple</option>
-            <option value="retro">Retro Neon</option>
-          </select>
-
-          <label style="margin-top:10px">Background GIF</label>
-          <select id="bgSelect" class="input small">
-            <option value="none">None - solid</option>
-            <option value="gif1">City Night (giphy)</option>
-            <option value="gif2">Soft Stars</option>
-            <option value="custom">Upload GIF</option>
-          </select>
-
-          <div class="row" style="margin-top:10px">
-            <label><input id="animToggle" type="checkbox"> Enable animations</label>
-            <label style="margin-left:10px"><input id="soundToggle" type="checkbox" checked> Enable sound</label>
-          </div>
-
-          <div style="margin-top:12px">
-            <button id="saveSettings" class="btn">Save Settings</button>
-            <button id="resetBtn" class="btn ghost">Reset Data</button>
-          </div>
+        <!-- Sidebar -->
+        <div id="sidebar">
+            <button class="sideBtn" data-tab="home">🏠 Home</button>
+            <button class="sideBtn" data-tab="chat">💬 Chat</button>
+            <button class="sideBtn" data-tab="letters">💌 Letters</button>
+            <button class="sideBtn" data-tab="gallery">🖼️ Gallery</button>
+            <button class="sideBtn" data-tab="game">🎮 Game</button>
+            <button id="toggleSidebar">☰</button>
         </div>
 
-        <div class="panel small muted" style="margin-top:12px">
-          <strong>Pro Tips</strong>
-          <ol>
-            <li>Update weekly: small assets or new letters.</li>
-            <li>Backup: export settings & notes monthly.</li>
-            <li>Enable 'Upload GIF' to customize backgrounds.</li>
-          </ol>
+        <!-- Main Content -->
+        <div id="content">
+
+            <!-- HOME -->
+            <div class="tab" id="homeTab">
+                <h2>Welcome, baba 💜</h2>
+                <p>This is our space. Just for us.</p>
+            </div>
+
+            <!-- CHAT -->
+            <div class="tab hidden" id="chatTab">
+                <h2>Chat</h2>
+                <div id="chatBox"></div>
+                <input id="chatInput" placeholder="type something…" />
+                <button id="sendChat">Send</button>
+            </div>
+
+            <!-- LETTERS -->
+            <div class="tab hidden" id="lettersTab">
+                <h2>Your Daily Letter</h2>
+                <textarea id="letterBox"></textarea>
+                <button id="saveLetter">Save</button>
+            </div>
+
+            <!-- GALLERY -->
+            <div class="tab hidden" id="galleryTab">
+                <h2>Our Memories</h2>
+                <input type="file" id="photoUpload">
+                <div id="gallery"></div>
+            </div>
+
+            <!-- GAME -->
+            <div class="tab hidden" id="gameTab">
+                <h2>Reaction Game</h2>
+                <p>Click the circle as fast as you can!</p>
+                <div id="gameArea">
+                    <div id="circle"></div>
+                </div>
+                <p id="reactionScore"></p>
+            </div>
+
         </div>
-      </section>
+    </div>
 
-    </main>
-  </div>
-
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
