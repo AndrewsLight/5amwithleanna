@@ -80,3 +80,30 @@ html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial,sans-serif;back
   .wheel{width:200px;height:200px}
 }
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* ---------- Extra small polish ---------- */
+/* heart animation for game (quick pop) */
+.heart {
+  transition: transform .2s ease, opacity .25s ease;
+  will-change: transform, opacity;
+}
+
+/* wheel labels */
+#wheelCanvas { position:relative; display:block; margin:auto; width:260px; height:260px; border-radius:50%; overflow:visible; }
+.wheel-label { pointer-events:none; color:#1a0012; font-weight:700; font-size:12px; width:90px; }
+
+/* popup styling fix */
+.popup { min-width:240px; text-align:center; }
+
+/* collapsed sidebar (click logo) */
+.sidebar.collapsed { width:72px; transition: width .28s ease; overflow:visible; }
+.sidebar.collapsed .brand-text { display:none; }
+.sidebar.collapsed .nav-btn { text-align:center; padding-left:6px; }
+
+/* small press animation for buttons */
+button:active { transform: scale(.98); }
+
+/* ensure gallery upload button looks good */
+.gallery .btn { margin-bottom:8px; }
+
+/* ensure wheel inner reset after spin */
+#wheelCanvas { transition: transform 0s; }
