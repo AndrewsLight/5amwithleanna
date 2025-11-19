@@ -2,84 +2,98 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>For Baba — 5AMWithLeanna</title>
-
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>For Baba — Our World</title>
   <link rel="icon" href="https://i.imgur.com/HEFQChC.png" />
-
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- PASSWORD / ENTRY -->
+  <!-- ENTRY -->
   <div id="entry" class="screen center-screen">
     <div class="card entry-card">
       <h1 class="accent">hi baba</h1>
-      <p class="muted">come inside — this place is for you.</p>
-
+      <p class="muted">welcome home — this place is just for us</p>
       <input id="pw" class="input" placeholder="password..." autocomplete="off" />
       <div class="row">
         <button id="enterBtn" class="btn primary">enter</button>
         <button id="demoBtn" class="btn ghost">demo</button>
       </div>
-
-      <p id="pwMsg" class="muted small">tip: try <strong>i miss you</strong></p>
+      <p id="pwMsg" class="muted small">tip: password is <strong>i miss you</strong></p>
     </div>
   </div>
 
   <!-- APP -->
   <div id="app" class="hidden">
-    <!-- background canvas (non-blocking) -->
-    <canvas id="bg" class="bg-canvas"></canvas>
 
-    <!-- sidebar -->
+    <!-- animated GIF background layer -->
+    <div id="bgLayer" class="bg-layer"></div>
+
+    <!-- SIDEBAR -->
     <aside id="sidebar" class="sidebar">
       <div class="brand">
-        <div class="logo">♡</div>
+        <div id="logo" class="logo">♡</div>
         <div class="brand-text">for baba</div>
+        <button id="collapseBtn" class="icon small-ico" title="toggle sidebar">☰</button>
       </div>
 
       <nav class="nav">
         <button class="nav-btn active" data-page="home">Home</button>
         <button class="nav-btn" data-page="letters">Love Letters</button>
+        <button class="nav-btn" data-page="memories">Memories</button>
         <button class="nav-btn" data-page="notes">Notes</button>
-        <button class="nav-btn" data-page="wheel">Spin For Movie</button>
+        <button class="nav-btn" data-page="wheel">Movie Wheel</button>
         <button class="nav-btn" data-page="game">Mini Game</button>
-        <button class="nav-btn" data-page="sleep">Sleep & Goodnight</button>
-        <button class="nav-btn" data-page="photos">Photos</button>
+        <button class="nav-btn" data-page="sleep">Sleep & Anniversary</button>
+        <button class="nav-btn" data-page="playlist">Playlist</button>
+        <button class="nav-btn" data-page="voices">Voice Notes</button>
+        <button class="nav-btn" data-page="settings">Settings</button>
       </nav>
 
       <div class="sidebar-bottom">
-        <button id="musicBtn" class="icon-btn">🔊</button>
-        <div id="presence" class="muted">offline</div>
+        <button id="musicBtn" class="icon">🔊</button>
+        <div id="presence" class="muted">private</div>
       </div>
     </aside>
 
-    <!-- main content -->
+    <!-- MAIN -->
     <main id="main" class="main">
-      <!-- home -->
+
+      <!-- HOME -->
       <section id="home" class="page active">
         <h2>hi baba, welcome home</h2>
-        <p class="lead">I made this place for you — whenever you miss me, come here and we'll be together for a while.</p>
+        <p class="lead">I made this place for you. Pick a vibe in Settings. Click around — I added things you'll like.</p>
         <div class="home-actions">
           <button id="openLetters" class="btn">Open Letters</button>
-          <button id="openNotes" class="btn ghost">Leave a Note</button>
+          <button id="openMemories" class="btn ghost">Our Memories</button>
         </div>
+        <div id="annivSummary" class="panel small muted"></div>
       </section>
 
-      <!-- letters -->
+      <!-- LETTERS -->
       <section id="letters" class="page hidden">
         <h2>Love Letters</h2>
         <div id="letterBox" class="letter-box"></div>
         <div class="row">
           <button id="prevLetter" class="btn small">Prev</button>
           <button id="nextLetter" class="btn small">Next</button>
+          <button id="newLetter" class="btn ghost">Write Letter</button>
         </div>
       </section>
 
-      <!-- notes -->
+      <!-- MEMORIES -->
+      <section id="memories" class="page hidden">
+        <h2>Memories</h2>
+        <div id="memActions" class="row">
+          <button id="uploadPhoto" class="btn">Upload Photo/GIF</button>
+          <button id="clearPhotos" class="btn ghost">Clear All</button>
+        </div>
+        <div id="gallery" class="gallery"></div>
+      </section>
+
+      <!-- NOTES -->
       <section id="notes" class="page hidden">
-        <h2>Notes for each other</h2>
-        <textarea id="noteText" placeholder="Write a short note..."></textarea>
+        <h2>Notes</h2>
+        <textarea id="noteText" placeholder="Write a quick note..."></textarea>
         <div class="row">
           <input id="noteName" class="input small" placeholder="your name (baba)" />
           <button id="saveNote" class="btn">Save Note</button>
@@ -87,11 +101,11 @@
         <div id="notesList" class="notes-list"></div>
       </section>
 
-      <!-- wheel -->
+      <!-- WHEEL -->
       <section id="wheel" class="page hidden">
-        <h2>Spin for Movie Night</h2>
+        <h2>Movie Wheel</h2>
         <div class="wheel-wrap">
-          <div id="wheelCanvas" class="wheel"></div>
+          <div id="wheel" class="wheel"></div>
         </div>
         <div class="row center-row">
           <button id="spinBtn" class="btn primary">Spin the Wheel</button>
@@ -100,43 +114,103 @@
         <div id="movieResult" class="muted small"></div>
       </section>
 
-      <!-- game -->
+      <!-- GAME -->
       <section id="game" class="page hidden">
-        <h2>Mini Game — Catch Hearts</h2>
-        <p class="muted">Tap hearts as they appear. 15 seconds, see the score.</p>
+        <h2>Mini Game — Heart Race</h2>
+        <p class="muted">Catch hearts. Score more than the target to win a reward choice.</p>
         <div id="gameArea" class="game-area"></div>
         <div class="row">
           <button id="startGame" class="btn primary">Start</button>
           <div class="muted">Score: <span id="gameScore">0</span></div>
         </div>
+        <div id="rewardChoice" class="panel hidden">
+          <p>Choose your reward for winning:</p>
+          <select id="rewardSelect">
+            <option value="movie">Pick the movie</option>
+            <option value="call">Pick a call time</option>
+            <option value="message">A special message</option>
+          </select>
+          <button id="saveReward" class="btn">Save Reward</button>
+        </div>
       </section>
 
-      <!-- sleep -->
+      <!-- SLEEP & ANNIVERSARY -->
       <section id="sleep" class="page hidden">
-        <h2>Sleep & Goodnight</h2>
-        <p class="muted">Set a nightly time for a sweet goodnight popup.</p>
+        <h2>Sleep & Anniversary</h2>
         <div class="row">
           <input id="sleepTime" type="time" class="input small" />
-          <button id="setSleepBtn" class="btn">Set Goodnight</button>
+          <button id="setSleepBtn" class="btn">Set Night Reminder</button>
         </div>
-        <p class="muted small">You can write the message that will pop at that time:</p>
-        <textarea id="goodnightMsg" placeholder="goodnight baba, i love you..."></textarea>
+        <p class="muted small">Set anniversary date to track & celebrate</p>
+        <div class="row">
+          <input id="annivDate" type="date" class="input small" />
+          <button id="saveAnniv" class="btn">Save Anniversary</button>
+        </div>
+        <div id="annivBox" class="panel small muted"></div>
       </section>
 
-      <!-- photos -->
-      <section id="photos" class="page hidden">
-        <h2>Photos & GIFs</h2>
-        <div class="gallery" id="gallery">
-          <!-- demo gifs -->
-          <img src="https://media.giphy.com/media/l0Exk8EUzSLsrErEQ/giphy.gif" alt="demo" />
-          <img src="https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif" alt="demo" />
-          <img src="https://i.imgur.com/8Km9tLL.jpg" alt="demo" />
+      <!-- PLAYLIST -->
+      <section id="playlist" class="page hidden">
+        <h2>Playlist</h2>
+        <div class="row">
+          <input id="songInput" class="input" placeholder="Song title or URL" />
+          <button id="addSongBtn" class="btn">Add</button>
+        </div>
+        <div id="playlistList" class="notes-list"></div>
+        <audio id="player" controls class="panel" style="width:100%;margin-top:12px"></audio>
+      </section>
+
+      <!-- VOICE NOTES -->
+      <section id="voices" class="page hidden">
+        <h2>Voice Notes</h2>
+        <div class="row">
+          <button id="recBtn" class="btn primary">Start Recording</button>
+          <button id="stopRecBtn" class="btn ghost" disabled>Stop</button>
+        </div>
+        <div id="voicesList" class="notes-list"></div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="settings" class="page hidden">
+        <h2>Settings & Vibes</h2>
+        <div class="panel">
+          <label>Vibe</label>
+          <select id="vibeSelect" class="input small">
+            <option value="soft">Soft White + Pink</option>
+            <option value="dark">Dark Purple</option>
+            <option value="retro">Retro Neon</option>
+          </select>
+
+          <label style="margin-top:10px">Background GIF</label>
+          <select id="bgSelect" class="input small">
+            <option value="none">None - solid</option>
+            <option value="gif1">City Night (giphy)</option>
+            <option value="gif2">Soft Stars</option>
+            <option value="custom">Upload GIF</option>
+          </select>
+
+          <div class="row" style="margin-top:10px">
+            <label><input id="animToggle" type="checkbox"> Enable animations</label>
+            <label style="margin-left:10px"><input id="soundToggle" type="checkbox" checked> Enable sound</label>
+          </div>
+
+          <div style="margin-top:12px">
+            <button id="saveSettings" class="btn">Save Settings</button>
+            <button id="resetBtn" class="btn ghost">Reset Data</button>
+          </div>
+        </div>
+
+        <div class="panel small muted" style="margin-top:12px">
+          <strong>Pro Tips</strong>
+          <ol>
+            <li>Update weekly: small assets or new letters.</li>
+            <li>Backup: export settings & notes monthly.</li>
+            <li>Enable 'Upload GIF' to customize backgrounds.</li>
+          </ol>
         </div>
       </section>
+
     </main>
-
-    <!-- floating secret secret -->
-    <div id="popup" class="popup hidden"></div>
   </div>
 
   <script src="script.js"></script>
