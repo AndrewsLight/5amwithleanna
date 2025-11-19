@@ -1,116 +1,105 @@
-:root {
-  --bg: #0d0b10;
-  --panel: #1a171f;
-  --accent: #ffbfd9;
-  --text: #ffffff;
-  --muted: #c7bfcf;
-}
-
 body {
-  background: var(--bg);
-  margin: 0;
-  color: var(--text);
-  font-family: "Inter", sans-serif;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #ffffff;
 }
 
-.hidden { display: none; }
-
-.center {
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+/* Password */
+#passwordScreen {
+    text-align: center;
+    margin-top: 120px;
 }
 
-.card {
-  background: var(--panel);
-  padding: 25px;
-  border-radius: 12px;
-  text-align: center;
-  width: 80%;
-  max-width: 340px;
-}
-
-input, textarea {
-  width: 100%;
-  padding: 10px;
-  border-radius: 8px;
-  border: none;
-  background: #ffffff10;
-  color: var(--text);
-  margin-top: 10px;
+#pwInput {
+    padding: 10px;
+    width: 220px;
+    border-radius: 8px;
+    border: 1px solid #ffb3c6;
 }
 
 button {
-  margin-top: 10px;
-  width: 100%;
-  padding: 10px;
-  border-radius: 8px;
-  background: var(--accent);
-  border: none;
-  font-weight: bold;
-  color: #000;
-  cursor: pointer;
+    padding: 10px 15px;
+    margin-top: 10px;
+    border: none;
+    background: #ff8bb3;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
 }
 
-.error { color: #ff7a7a; margin-top: 5px; }
-
-/* MAIN LAYOUT */
-#world {
-  display: flex;
-  height: 100vh;
+button:hover {
+    background: #ff6e9e;
 }
 
+.error {
+    color: red;
+}
+
+/* Main App */
+.hidden {
+    display: none;
+}
+
+#app {
+    display: flex;
+}
+
+/* Sidebar */
 #sidebar {
-  width: 160px;
-  background: var(--panel);
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+    width: 220px;
+    background: #000;
+    color: white;
+    height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
-#sidebar h2 {
-  text-align: center;
-  color: var(--accent);
+#sidebar button {
+    background: #ff8bb3;
+    width: 100%;
+    margin-top: 10px;
 }
 
-.tabBtn {
-  background: #ffffff08;
-  color: var(--muted);
-  border: none;
-  padding: 10px;
-  text-align: left;
-  border-radius: 8px;
-}
-
-.tabBtn.active {
-  background: var(--accent);
-  color: #000;
-}
-
+/* Content */
 #content {
-  padding: 20px;
-  flex: 1;
-  overflow-y: auto;
+    padding: 20px;
+    flex-grow: 1;
 }
 
-.tab { display: none; }
-.tab.active { display: block; }
-
-/* GAME */
-#gameArea {
-  margin: 20px 0;
-  width: 100%;
-  height: 200px;
-  background: #ffffff05;
-  border-radius: 12px;
-  position: relative;
+.page {
+    animation: fadeIn 0.4s ease;
 }
 
-.heart {
-  position: absolute;
-  font-size: 30px;
-  cursor: pointer;
-  user-select: none;
+/* Game */
+#heartBtn {
+    font-size: 50px;
+    padding: 20px;
+    border-radius: 50%;
+}
+
+/* Notes */
+#notesBox {
+    width: 90%;
+    height: 300px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ffb3c6;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+    #app {
+        flex-direction: column;
+    }
+
+    #sidebar {
+        width: 100%;
+        height: auto;
+    }
 }
