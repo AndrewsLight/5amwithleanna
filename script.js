@@ -5,13 +5,13 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
 // FIREBASE CONFIG
 // --------------------------------------------------
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
+  apiKey: "AIzaSyAtFL1HSIRy0I4Fh-sqPBENEhJhUmoaTGI",
   authDomain: "amwithleanna.firebaseapp.com",
   databaseURL: "https://amwithleanna-default-rtdb.firebaseio.com/",
   projectId: "amwithleanna",
   storageBucket: "amwithleanna.appspot.com",
-  messagingSenderId: "YOUR_SENDER",
-  appId: "YOUR_APP_ID"
+  messagingSenderId: "334460134718",
+  appId: "1:334460134718:web:f552c5077f6d0675e8386f"
 };
 
 const app = initializeApp(firebaseConfig);
