@@ -1,67 +1,144 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>For My Baba</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>For Baba — 5AMWithLeanna</title>
+
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="https://i.imgur.com/HEFQChC.png" />
+
 </head>
-
 <body>
+  <!-- PASSWORD / ENTRY -->
+  <div id="entry" class="screen center-screen">
+    <div class="card entry-card">
+      <h1 class="accent">hi baba</h1>
+      <p class="muted">come inside — this place is for you.</p>
 
-    <!-- PASSWORD SCREEN -->
-    <div id="passwordScreen">
-        <h2>hey baba… 👀</h2>
-        <p>enter our little code:</p>
-        <input type="password" id="pwInput" placeholder="password">
-        <button onclick="checkPassword()">enter</button>
-        <p id="pwError" class="error"></p>
+      <input id="pw" class="input" placeholder="password..." autocomplete="off" />
+      <div class="row">
+        <button id="enterBtn" class="btn primary">enter</button>
+        <button id="demoBtn" class="btn ghost">demo</button>
+      </div>
+
+      <p id="pwMsg" class="muted small">tip: try <strong>i miss you</strong></p>
     </div>
+  </div>
 
-    <!-- MAIN APP -->
-    <div id="app" class="hidden">
+  <!-- APP -->
+  <div id="app" class="hidden">
+    <!-- background canvas (non-blocking) -->
+    <canvas id="bg" class="bg-canvas"></canvas>
 
-        <!-- SIDEBAR -->
-        <div id="sidebar">
-            <h2>For Baba 💗</h2>
-            <button onclick="showPage('home')">Home</button>
-            <button onclick="showPage('notes')">Notes</button>
-            <button onclick="showPage('game')">Mini Game</button>
-            <button onclick="showPage('sleep')">Sleep Time</button>
+    <!-- sidebar -->
+    <aside id="sidebar" class="sidebar">
+      <div class="brand">
+        <div class="logo">♡</div>
+        <div class="brand-text">for baba</div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-btn active" data-page="home">Home</button>
+        <button class="nav-btn" data-page="letters">Love Letters</button>
+        <button class="nav-btn" data-page="notes">Notes</button>
+        <button class="nav-btn" data-page="wheel">Spin For Movie</button>
+        <button class="nav-btn" data-page="game">Mini Game</button>
+        <button class="nav-btn" data-page="sleep">Sleep & Goodnight</button>
+        <button class="nav-btn" data-page="photos">Photos</button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <button id="musicBtn" class="icon-btn">🔊</button>
+        <div id="presence" class="muted">offline</div>
+      </div>
+    </aside>
+
+    <!-- main content -->
+    <main id="main" class="main">
+      <!-- home -->
+      <section id="home" class="page active">
+        <h2>hi baba, welcome home</h2>
+        <p class="lead">I made this place for you — whenever you miss me, come here and we'll be together for a while.</p>
+        <div class="home-actions">
+          <button id="openLetters" class="btn">Open Letters</button>
+          <button id="openNotes" class="btn ghost">Leave a Note</button>
         </div>
+      </section>
 
-        <!-- CONTENT -->
-        <div id="content">
-            <!-- HOME -->
-            <div id="home" class="page">
-                <h1>hi baba 💗</h1>
-                <p>welcome to our little place… i made this for us.</p>
-            </div>
-
-            <!-- NOTES -->
-            <div id="notes" class="page hidden">
-                <h1>notes for you</h1>
-                <textarea id="notesBox" placeholder="write something for each other…"></textarea>
-            </div>
-
-            <!-- GAME -->
-            <div id="game" class="page hidden">
-                <h1>mini game 🎮</h1>
-                <p>tap the heart as fast as you can:</p>
-                <button id="heartBtn">💗</button>
-                <p id="score">score: 0</p>
-            </div>
-
-            <!-- SLEEP -->
-            <div id="sleep" class="page hidden">
-                <h1>sleep time ritual 😴</h1>
-                <p>a place for us before we go to sleep…</p>
-                <p>“goodnight baba, i love you.”</p>
-            </div>
+      <!-- letters -->
+      <section id="letters" class="page hidden">
+        <h2>Love Letters</h2>
+        <div id="letterBox" class="letter-box"></div>
+        <div class="row">
+          <button id="prevLetter" class="btn small">Prev</button>
+          <button id="nextLetter" class="btn small">Next</button>
         </div>
+      </section>
 
-    </div>
+      <!-- notes -->
+      <section id="notes" class="page hidden">
+        <h2>Notes for each other</h2>
+        <textarea id="noteText" placeholder="Write a short note..."></textarea>
+        <div class="row">
+          <input id="noteName" class="input small" placeholder="your name (baba)" />
+          <button id="saveNote" class="btn">Save Note</button>
+        </div>
+        <div id="notesList" class="notes-list"></div>
+      </section>
 
-    <script src="script.js"></script>
+      <!-- wheel -->
+      <section id="wheel" class="page hidden">
+        <h2>Spin for Movie Night</h2>
+        <div class="wheel-wrap">
+          <div id="wheelCanvas" class="wheel"></div>
+        </div>
+        <div class="row center-row">
+          <button id="spinBtn" class="btn primary">Spin the Wheel</button>
+          <button id="addMovieBtn" class="btn ghost">Add Movie</button>
+        </div>
+        <div id="movieResult" class="muted small"></div>
+      </section>
+
+      <!-- game -->
+      <section id="game" class="page hidden">
+        <h2>Mini Game — Catch Hearts</h2>
+        <p class="muted">Tap hearts as they appear. 15 seconds, see the score.</p>
+        <div id="gameArea" class="game-area"></div>
+        <div class="row">
+          <button id="startGame" class="btn primary">Start</button>
+          <div class="muted">Score: <span id="gameScore">0</span></div>
+        </div>
+      </section>
+
+      <!-- sleep -->
+      <section id="sleep" class="page hidden">
+        <h2>Sleep & Goodnight</h2>
+        <p class="muted">Set a nightly time for a sweet goodnight popup.</p>
+        <div class="row">
+          <input id="sleepTime" type="time" class="input small" />
+          <button id="setSleepBtn" class="btn">Set Goodnight</button>
+        </div>
+        <p class="muted small">You can write the message that will pop at that time:</p>
+        <textarea id="goodnightMsg" placeholder="goodnight baba, i love you..."></textarea>
+      </section>
+
+      <!-- photos -->
+      <section id="photos" class="page hidden">
+        <h2>Photos & GIFs</h2>
+        <div class="gallery" id="gallery">
+          <!-- demo gifs -->
+          <img src="https://media.giphy.com/media/l0Exk8EUzSLsrErEQ/giphy.gif" alt="demo" />
+          <img src="https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif" alt="demo" />
+          <img src="https://i.imgur.com/8Km9tLL.jpg" alt="demo" />
+        </div>
+      </section>
+    </main>
+
+    <!-- floating secret secret -->
+    <div id="popup" class="popup hidden"></div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
