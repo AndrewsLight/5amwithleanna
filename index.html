@@ -1,80 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>5AM With My Baba</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For My Baba</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<!-- PASSWORD SCREEN -->
-<div id="passwordScreen" class="center">
-  <div class="card">
-    <h1>hi baba 🤍</h1>
-    <p class="muted">come inside our little world</p>
+    <!-- PASSWORD SCREEN -->
+    <div id="passwordScreen">
+        <h2>hey baba… 👀</h2>
+        <p>enter our little code:</p>
+        <input type="password" id="pwInput" placeholder="password">
+        <button onclick="checkPassword()">enter</button>
+        <p id="pwError" class="error"></p>
+    </div>
 
-    <input id="passwordInput" type="text" placeholder="password...">
-    <button id="passwordBtn">enter</button>
+    <!-- MAIN APP -->
+    <div id="app" class="hidden">
 
-    <p id="passwordMsg" class="error"></p>
-  </div>
-</div>
+        <!-- SIDEBAR -->
+        <div id="sidebar">
+            <h2>For Baba 💗</h2>
+            <button onclick="showPage('home')">Home</button>
+            <button onclick="showPage('notes')">Notes</button>
+            <button onclick="showPage('game')">Mini Game</button>
+            <button onclick="showPage('sleep')">Sleep Time</button>
+        </div>
 
-<!-- MAIN WORLD -->
-<div id="world" class="hidden">
+        <!-- CONTENT -->
+        <div id="content">
+            <!-- HOME -->
+            <div id="home" class="page">
+                <h1>hi baba 💗</h1>
+                <p>welcome to our little place… i made this for us.</p>
+            </div>
 
-  <!-- SIDEBAR -->
-  <aside id="sidebar">
-    <h2>♡ us ♡</h2>
-    <button class="tabBtn active" data-tab="letters">letters</button>
-    <button class="tabBtn" data-tab="notes">notes</button>
-    <button class="tabBtn" data-tab="game">mini game</button>
-    <button class="tabBtn" data-tab="memories">memories</button>
-  </aside>
+            <!-- NOTES -->
+            <div id="notes" class="page hidden">
+                <h1>notes for you</h1>
+                <textarea id="notesBox" placeholder="write something for each other…"></textarea>
+            </div>
 
-  <!-- CONTENT -->
-  <main id="content">
+            <!-- GAME -->
+            <div id="game" class="page hidden">
+                <h1>mini game 🎮</h1>
+                <p>tap the heart as fast as you can:</p>
+                <button id="heartBtn">💗</button>
+                <p id="score">score: 0</p>
+            </div>
 
-    <!-- LETTERS -->
-    <section id="letters" class="tab active">
-      <h1>baba's letters</h1>
-      <p id="letterText">
-        i love you in stupid ways.  
-        even when you're annoying.  
-        even when you're half asleep.  
-        even when we haven't met yet —  
-        you still feel like home.
-      </p>
-    </section>
+            <!-- SLEEP -->
+            <div id="sleep" class="page hidden">
+                <h1>sleep time ritual 😴</h1>
+                <p>a place for us before we go to sleep…</p>
+                <p>“goodnight baba, i love you.”</p>
+            </div>
+        </div>
 
-    <!-- NOTES -->
-    <section id="notes" class="tab">
-      <h1>leave me a note 🤍</h1>
-      <textarea id="noteInput" placeholder="write something for me baba..."></textarea>
-      <button id="saveNoteBtn">save note</button>
-      <div id="notesList"></div>
-    </section>
+    </div>
 
-    <!-- GAME -->
-    <section id="game" class="tab">
-      <h1>catch my heart</h1>
-      <p class="muted">click the heart before it disappears!</p>
-      <div id="gameArea"></div>
-      <button id="startGameBtn">start</button>
-      <p>score: <span id="score">0</span></p>
-    </section>
-
-    <!-- MEMORIES -->
-    <section id="memories" class="tab">
-      <h1>our little memories</h1>
-      <p class="muted">add photos later baba 🤍</p>
-      <div class="placeholder">nothing here yet but soon it'll be cute</div>
-    </section>
-
-  </main>
-</div>
-
-<script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
