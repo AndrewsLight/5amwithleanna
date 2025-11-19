@@ -9,7 +9,7 @@ function checkPassword() {
         document.getElementById("passwordScreen").classList.add("hidden");
         document.getElementById("app").classList.remove("hidden");
     } else {
-        error.innerText = "you entered it wrong dummy baba 😭💀";
+        error.innerText = "you entered it wrong dumb baba 😭";
     }
 }
 
