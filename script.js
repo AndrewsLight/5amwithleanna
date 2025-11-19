@@ -1,499 +1,516 @@
-// script.js — Updated robust version with animations, sounds, wheel labels, photo uploads, sidebar toggle
+/* script.js — final polished client-side app
+   - Local-first: uses localStorage for persistence
+   - Features: password, sidebar (collapse), GIF backgrounds, letters, notes, gallery, wheel with labels, mini-game, playlist, voice notes, anniversary tracker, settings
+   - No external back-end required. Hooks available for Firebase later.
+*/
 (() => {
   'use strict';
 
-  // ------- Config -------
-  const CORRECT_PW = 'i miss you';
-  const TROLL_DELAY_MS = 90_000;
+  /* ====== CONFIG / DEFAULTS ====== */
+  const PW = 'i miss you';
   const DEFAULT_MOVIES = ["About Time","Midnight in Paris","The Time Traveler's Wife","Big","Groundhog Day","Eternal Sunshine"];
+  const DEFAULT_BG_GIFS = {
+    none: '',
+    gif1: 'https://media.giphy.com/media/l0Exk8EUzSLsrErEQ/giphy.gif',
+    gif2: 'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif'
+  };
 
-  // ------- Utility helpers -------
+  /* ====== HELPERS ====== */
   const $ = sel => document.querySelector(sel);
   const $$ = sel => Array.from(document.querySelectorAll(sel));
-  const safe = fn => { try { fn(); } catch (e) { console.error(e); } };
+  const safe = fn => { try { fn(); } catch(e) { console.error(e); } };
+  const now = () => new Date();
+  function setLS(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+  function getLS(k, fallback=null){ try { const v = JSON.parse(localStorage.getItem(k)); return v===null?fallback:v||fallback; } catch(e){ return fallback; } }
   function escapeHtml(s){ return (s||'').toString().replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-  function showTemp(el, text, ms=1800){ if (!el) return; const prev = el.textContent; el.textContent = text; setTimeout(()=> el.textContent = prev, ms); }
-  function shake(el){ if (!el) return; el.animate([{ transform:'translateX(-6px)' },{ transform:'translateX(6px)' },{ transform:'translateX(0)' }], { duration:350 }); }
+  function showTemp(el, txt, ms=1800){ if(!el) return; const prev = el.textContent; el.textContent = txt; setTimeout(()=> el.textContent = prev, ms); }
+  function shake(el){ if(!el) return el; el.animate([{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'translateX(0)'}],{duration:360}); }
 
-  // ------- DOM ready -------
+  /* ====== DOM ELEMENTS (lazy) ====== */
+  function el(id){ return document.getElementById(id); }
+
+  /* ====== AUDIO SETUP ====== */
+  let audioAllowed = false;
+  const bgAudio = new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_1f6c3b3a7b.mp3?filename=romantic-dreams-117397.mp3');
+  bgAudio.loop = true; bgAudio.volume = 0.55;
+  const clickSfx = new Audio('https://freesound.org/data/previews/66/66717_931655-lq.mp3');
+  clickSfx.volume = 0.55;
+
+  function allowAudioOnce(){
+    if(audioAllowed) return;
+    audioAllowed = true;
+    bgAudio.play().catch(()=>{});
+  }
+  document.addEventListener('click', allowAudioOnce, { once: true });
+
+  function playClick(){
+    if(!getLS('settings')?.soundEnabled) return;
+    try{ clickSfx.currentTime = 0; clickSfx.play().catch(()=>{}); } catch(e){}
+  }
+
+  /* ====== BOOT (wait for DOM) ====== */
   document.addEventListener('DOMContentLoaded', () => {
-    // Get elements safely
-    const entry = $('#entry');
-    const app = $('#app');
-    const pwInput = $('#pw');
-    const enterBtn = $('#enterBtn');
-    const demoBtn = $('#demoBtn');
-    const pwMsg = $('#pwMsg');
+    // core nodes
+    const entry = $('#entry'), app = $('#app');
+    const pwInput = $('#pw'), enterBtn = $('#enterBtn'), demoBtn = $('#demoBtn'), pwMsg = $('#pwMsg');
+    const sidebar = $('.sidebar'), collapseBtn = $('#collapseBtn'), logo = $('.logo');
+    const navBtns = $$('.nav-btn'), pages = $$('.page');
+    const bgLayer = $('#bgLayer'), musicBtn = $('#musicBtn');
+    const openLetters = $('#openLetters'), openMemories = $('#openMemories');
 
-    const navBtns = $$('.nav-btn');
-    const pages = $$('.page');
+    /* Defensive: ensure elements exist */
+    if(!entry || !app){ console.error('Core DOM missing.'); return; }
 
-    const openLettersBtn = $('#openLetters');
-    const openNotesBtn = $('#openNotes');
-
-    const letterBoxEl = $('#letterBox');
-    const prevLetterBtn = $('#prevLetter');
-    const nextLetterBtn = $('#nextLetter');
-
-    const noteText = $('#noteText');
-    const noteName = $('#noteName');
-    const saveNoteBtn = $('#saveNote');
-    const notesList = $('#notesList');
-
-    const spinBtn = $('#spinBtn');
-    const addMovieBtn = $('#addMovieBtn');
-    const wheelEl = $('#wheelCanvas');
-    const movieResult = $('#movieResult');
-
-    const startGameBtn = $('#startGame');
-    const gameArea = $('#gameArea');
-    const gameScoreEl = $('#gameScore');
-
-    const setSleepBtn = $('#setSleepBtn');
-    const sleepTimeInput = $('#sleepTime');
-    const goodnightMsgInput = $('#goodnightMsg');
-
-    const popup = $('#popup');
-    const musicBtn = $('#musicBtn');
-
-    const sidebar = $('.sidebar');
-    const logo = $('.logo');
-
-    // Defensive checks
-    if (!entry || !app) {
-      console.error('Missing core DOM elements (entry/app). Check index.html');
-      return;
-    }
-
-    // ------- Audio setup (robust) -------
-    let audioAllowed = false;
-    let bgAudio = new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_1f6c3b3a7b.mp3?filename=romantic-dreams-117397.mp3');
-    bgAudio.loop = true;
-    bgAudio.volume = 0.55;
-
-    // small SFX
-    let clickSfx = new Audio('https://freesound.org/data/previews/66/66717_931655-lq.mp3'); // click
-    clickSfx.volume = 0.6;
-
-    function allowAudioOnce() {
-      if (audioAllowed) return;
-      audioAllowed = true;
-      // try play (may be blocked until user gesture; this fn is called on a user click)
-      bgAudio.play().catch(()=>{ /* ignore */ });
-    }
-    document.addEventListener('click', allowAudioOnce, { once: true });
-
-    if (musicBtn) {
-      musicBtn.addEventListener('click', () => {
-        if (!audioAllowed) allowAudioOnce();
-        if (bgAudio.paused) { bgAudio.play().catch(()=>{}); musicBtn.textContent = '🔊'; }
-        else { bgAudio.pause(); musicBtn.textContent = '🔇'; }
-        // click sound
-        try { clickSfx.currentTime = 0; clickSfx.play().catch(()=>{}); } catch(e){}
-      });
-    }
-
-    // helper to play click
-    function playClick() { try { clickSfx.currentTime = 0; clickSfx.play().catch(()=>{}); } catch(e){} }
-
-    // ------- Background canvas (already in your code, keep it) -------
-    const bgCanvas = $('#bg');
-    const ctx = bgCanvas && bgCanvas.getContext ? bgCanvas.getContext('2d') : null;
-    let W = innerWidth, H = innerHeight, dpr = Math.max(1, devicePixelRatio || 1);
-    function resizeCanvas() {
-      W = innerWidth; H = innerHeight;
-      if (!ctx) return;
-      bgCanvas.width = W*dpr; bgCanvas.height = H*dpr;
-      bgCanvas.style.width = W + 'px'; bgCanvas.style.height = H + 'px';
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    const stars = Array.from({length:110}, ()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+0.2,a:Math.random()*0.9+0.05}));
-    const petals = Array.from({length:36}, ()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*5+3,s:Math.random()*0.4+0.2,rot:Math.random()*Math.PI*2,a:Math.random()*0.6+0.2}));
-    const heartsRender = [];
-    function spawnVisualHeart(x,y){ heartsRender.push({x,y,vx:(Math.random()-0.5)*0.6,vy:-(Math.random()*1.2+0.6),r:Math.random()*8+8,life:1}); playClick(); }
-    function drawBg(){
-      if (!ctx) return;
-      ctx.clearRect(0,0,W,H);
-      const g = ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#120012'); g.addColorStop(1,'#040004');
-      ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
-
-      stars.forEach(s=>{
-        s.a += (Math.random()-0.5)*0.02; s.a = Math.max(0.02,Math.min(1,s.a));
-        ctx.beginPath(); ctx.fillStyle = `rgba(255,255,255,${s.a})`; ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fill();
-      });
-      petals.forEach(p=>{
-        p.y += p.s; if (p.y>H+20) p.y=-20; p.rot += 0.01;
-        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
-        ctx.beginPath(); ctx.fillStyle = `rgba(255,111,163,${p.a})`; ctx.ellipse(0,0,p.r,p.r/2,0,0,Math.PI*2); ctx.fill(); ctx.restore();
-      });
-
-      for (let i=heartsRender.length-1;i>=0;i--){
-        const h=heartsRender[i]; h.vy += 0.02; h.x += h.vx; h.y += h.vy; h.life -= 0.01;
-        ctx.save(); ctx.translate(h.x,h.y); ctx.rotate(Math.sin(h.x+h.y)*0.2);
-        ctx.fillStyle = `rgba(255,111,163,${Math.max(0,h.life)})`;
-        ctx.beginPath(); ctx.moveTo(0,-h.r/2); ctx.bezierCurveTo(h.r,-h.r*1.2,h.r*1.4,h.r/2,0,h.r); ctx.bezierCurveTo(-h.r*1.4,h.r/2,-h.r,-h.r*1.2,0,-h.r/2); ctx.fill();
-        ctx.restore();
-        if (h.life <= 0) heartsRender.splice(i,1);
+    /* ====== SETTINGS LOAD ====== */
+    const storedSettings = getLS('settings', {
+      vibe:'soft',
+      bg:'gif1',
+      customBg:null,
+      animations:true,
+      soundEnabled:true
+    });
+    // apply UI checkboxes (will be saved when user changes)
+    function applySettingsToUI(){
+      // vibe affects CSS variables — simplified mapping
+      if(storedSettings.vibe === 'soft'){
+        document.documentElement.style.setProperty('--accent', '#ff88b3');
+        document.documentElement.style.setProperty('--bg','#08060a');
+      } else if(storedSettings.vibe === 'dark'){
+        document.documentElement.style.setProperty('--accent', '#9b7cff');
+        document.documentElement.style.setProperty('--bg','#050012');
+      } else {
+        document.documentElement.style.setProperty('--accent','#00ffd1');
+        document.documentElement.style.setProperty('--bg','#060811');
       }
-
-      requestAnimationFrame(drawBg);
+      // background GIF
+      if(storedSettings.bg === 'custom' && storedSettings.customBg){
+        bgLayer.style.backgroundImage = `url('${storedSettings.customBg}')`;
+      } else if(storedSettings.bg && DEFAULT_BG_GIFS[storedSettings.bg]){
+        bgLayer.style.backgroundImage = `url('${DEFAULT_BG_GIFS[storedSettings.bg]}')`;
+      } else {
+        bgLayer.style.backgroundImage = '';
+      }
+      // sound toggle
+      if(storedSettings.soundEnabled) musicBtn.textContent = '🔊'; else musicBtn.textContent = '🔇';
     }
-    requestAnimationFrame(drawBg);
+    applySettingsToUI();
 
-    // ------- Entry / password -------
-    function openApp() {
+    /* ====== Password / Entry logic ====== */
+    function openApp(){
       entry.classList.add('hidden');
       app.classList.remove('hidden');
-      spawnVisualHeart(window.innerWidth/2, window.innerHeight/2);
-      allowAudioOnce();
-      scheduleTroll();
+      applySettingsToUI();
+      playClick();
+      // ensure first page home active
+      document.querySelector("[data-page='home']")?.click();
+      // enable audio if desired
+      if(storedSettings.soundEnabled) { allowAudioOnce(); bgAudio.play().catch(()=>{}); }
     }
-
-    function tryPassword() {
+    function tryPassword(){
       const v = (pwInput.value||'').trim().toLowerCase();
-      if (v === CORRECT_PW) {
-        playClick();
+      if(v === PW){
         openApp();
       } else {
-        showTemp(pwMsg, 'you entered it wrong dummy baba 😭', 2200);
+        pwMsg.textContent = 'you entered it wrong dummy baba 😭';
         shake(pwInput);
         playClick();
+        setTimeout(()=> pwMsg.textContent = 'tip: password is i miss you', 2500);
       }
     }
+    enterBtn?.addEventListener('click', tryPassword);
+    demoBtn?.addEventListener('click', ()=> { pwInput.value = PW; tryPassword(); });
+    pwInput?.addEventListener('keydown', (e)=>{ if(e.key==='Enter') tryPassword(); });
 
-    if (enterBtn) enterBtn.addEventListener('click', tryPassword);
-    if (demoBtn) demoBtn.addEventListener('click', () => { pwInput.value = CORRECT_PW; tryPassword(); });
-    if (pwInput) pwInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryPassword(); });
+    /* ====== Sidebar collapse & navigation ====== */
+    collapseBtn?.addEventListener('click', ()=> {
+      sidebar.classList.toggle('collapsed');
+      playClick();
+    });
+    logo?.addEventListener('click', ()=> {
+      sidebar.classList.toggle('collapsed');
+      playClick();
+    });
 
-    // ------- Nav -------
     navBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        navBtns.forEach(b => b.classList.remove('active'));
+      btn.addEventListener('click', ()=> {
+        navBtns.forEach(b=>b.classList.remove('active'));
         btn.classList.add('active');
         const page = btn.dataset.page;
-        pages.forEach(p => p.classList.add('hidden'));
-        const target = document.getElementById(page);
-        if (target) {
-          target.classList.remove('hidden');
-          spawnVisualHeart(window.innerWidth/2, window.innerHeight/2);
-        }
+        pages.forEach(p=>p.classList.add('hidden'));
+        document.getElementById(page)?.classList.remove('hidden');
+        playClick();
       });
     });
 
-    // quick openers
-    if (openLettersBtn) openLettersBtn.addEventListener('click', () => { document.querySelector("[data-page='letters']").click(); });
-    if (openNotesBtn) openNotesBtn.addEventListener('click', () => { document.querySelector("[data-page='notes']").click(); });
-
-    // ------- Letters (typewriter) -------
-    const letters = [
-      "hi baba,\nI made this place for you.\nWhenever you miss me, come back here.\n— always, me",
-      "baba,\nYou are my favourite feeling.\nI think about you in the quiet.\n— km",
-      "We may be apart but we're close in here.\nSmall things: a silly gif, a quick note, a song.\nCome here when you're lonely."
-    ];
-    let letterIndex = 0;
-
-    function typeWriter(text, el, speed = 22) {
-      if (!el) return;
+    /* ====== Letters (CRUD) ====== */
+    let letters = getLS('letters', [
+      "hi baba,\nI made this place for you.\nWhenever you miss me, come back here.\n— always, me"
+    ]);
+    const letterBox = $('#letterBox');
+    let letterIdx = 0;
+    function renderLetter(i){
+      letterIdx = (i+letters.length)%letters.length;
+      typeWriter(letters[letterIdx], letterBox);
+    }
+    function typeWriter(text, el, speed=20){
+      if(!el) return;
       el.innerHTML = '';
-      let i = 0;
-      const frag = document.createDocumentFragment();
-      for (let c of text) {
-        const span = document.createElement('span');
-        span.textContent = c;
-        span.style.opacity = 0;
-        span.style.display = 'inline-block';
-        span.style.transform = 'translateY(6px)';
-        frag.appendChild(span);
-      }
-      el.appendChild(frag);
+      let i=0;
+      for(const ch of text){ const s = document.createElement('span'); s.textContent = ch; s.style.opacity=0; s.style.display='inline-block'; s.style.transform='translateY(6px)'; el.appendChild(s); }
       const spans = Array.from(el.querySelectorAll('span'));
       (function step(){
-        if (i < spans.length) {
-          spans[i].style.transition = 'opacity .12s, transform .12s';
-          spans[i].style.opacity = 1;
-          spans[i].style.transform = 'translateY(0)';
-          if (i % 4 === 0) playClick();
-          i++;
-          setTimeout(step, speed);
+        if(i < spans.length){
+          spans[i].style.transition='opacity .12s, transform .12s';
+          spans[i].style.opacity=1; spans[i].style.transform='translateY(0)';
+          if(i % 4 === 0) playClick();
+          i++; setTimeout(step, speed);
         }
       }());
     }
+    $('#nextLetter')?.addEventListener('click', ()=> renderLetter(letterIdx+1));
+    $('#prevLetter')?.addEventListener('click', ()=> renderLetter(letterIdx-1));
+    $('#newLetter')?.addEventListener('click', ()=> {
+      const text = prompt('Write a new letter for baba (keep it short):');
+      if(text){ letters.push(text); setLS('letters', letters); renderLetter(letters.length-1); playClick(); }
+    });
+    renderLetter(0);
 
-    function showLetter(i) {
-      letterIndex = (i + letters.length) % letters.length;
-      typeWriter(letters[letterIndex], letterBoxEl);
-    }
-
-    if (nextLetterBtn) nextLetterBtn.addEventListener('click', () => showLetter(letterIndex + 1));
-    if (prevLetterBtn) prevLetterBtn.addEventListener('click', () => showLetter(letterIndex - 1));
-    showLetter(0);
-
-    // ------- Notes (localStorage) -------
+    /* ====== Notes ====== */
     function loadNotes(){
-      if (!notesList) return;
-      notesList.innerHTML = '';
-      const notes = JSON.parse(localStorage.getItem('am_notes') || '[]');
+      const notes = getLS('notes', []);
+      const list = $('#notesList'); if(!list) return;
+      list.innerHTML = '';
       notes.slice().reverse().forEach(n => {
-        const div = document.createElement('div'); div.className = 'note-item';
-        div.innerHTML = `<strong>${escapeHtml(n.name)}</strong> <small class="muted"> • ${new Date(n.t).toLocaleString()}</small><div>${escapeHtml(n.text)}</div>`;
-        notesList.appendChild(div);
+        const d = document.createElement('div'); d.className='note-item';
+        d.innerHTML = `<strong>${escapeHtml(n.name)}</strong> <small class="muted">• ${new Date(n.t).toLocaleString()}</small><div>${escapeHtml(n.text)}</div><div style="margin-top:6px"><button class="btn ghost small del-note">delete</button></div>`;
+        list.appendChild(d);
+        d.querySelector('.del-note').addEventListener('click', ()=>{
+          const idx = notes.findIndex(x=>x.t===n.t && x.text===n.text);
+          if(idx>=0){ notes.splice(idx,1); setLS('notes', notes); loadNotes(); playClick(); }
+        });
       });
     }
-    if (saveNoteBtn) saveNoteBtn.addEventListener('click', () => {
-      const text = (noteText.value||'').trim();
-      if (!text) { showTemp(notesList, 'write something first ❤️'); return; }
-      const name = (noteName.value||'baba').trim() || 'baba';
-      const notes = JSON.parse(localStorage.getItem('am_notes') || '[]');
-      notes.push({ text, name, t: Date.now() });
-      localStorage.setItem('am_notes', JSON.stringify(notes));
-      noteText.value = ''; noteName.value = '';
-      loadNotes();
-      playClick();
+    $('#saveNote')?.addEventListener('click', ()=> {
+      const text = ($('#noteText')?.value||'').trim(); if(!text) return showTemp($('#notesList'),'write something first');
+      const name = ($('#noteName')?.value||'').trim() || 'baba';
+      const notes = getLS('notes', []); notes.push({text,name,t:Date.now()}); setLS('notes', notes); $('#noteText').value=''; $('#noteName').value=''; loadNotes(); playClick();
     });
     loadNotes();
 
-    // ------- Wheel (labels on wheel, rotation logic) -------
-    let movies = JSON.parse(localStorage.getItem('am_movies') || 'null') || DEFAULT_MOVIES.slice();
-    localStorage.setItem('am_movies', JSON.stringify(movies));
-
-    function refreshWheelVisual() {
-      if (!wheelEl) return;
-      const segCount = Math.max(1, movies.length);
-      const colors = ['#ffb0cf','#ffdfe9','#ffcfe0','#ffeef6','#ffd0ea','#ffdfe9'];
-      const stops = [];
-      for (let i=0;i<segCount;i++){
-        const a = (i/segCount)*360;
-        const b = ((i+1)/segCount)*360;
-        stops.push(`${colors[i%colors.length]} ${a}deg ${b}deg`);
-      }
-      wheelEl.style.background = `conic-gradient(${stops.join(',')})`;
-
-      // Remove old labels
-      wheelEl.innerHTML = '';
-      const radius = wheelEl.clientWidth/2 || 130;
-      const center = radius;
-      // create labels around wheel
-      for (let i=0;i<segCount;i++){
-        const angle = (i + 0.5) * (360 / segCount); // middle of segment
-        const rad = (angle - 90) * Math.PI / 180;
-        const label = document.createElement('div');
-        label.className = 'wheel-label';
-        label.style.position = 'absolute';
-        label.style.left = `${center + Math.cos(rad) * (radius*0.65)}px`;
-        label.style.top  = `${center + Math.sin(rad) * (radius*0.65)}px`;
-        label.style.transform = `translate(-50%,-50%) rotate(${angle}deg)`;
-        label.style.width = '90px';
-        label.style.textAlign = 'center';
-        label.style.fontSize = '12px';
-        label.style.pointerEvents = 'none';
-        label.style.color = '#1a0012';
-        label.style.fontWeight = '700';
-        label.innerText = movies[i] ? movies[i].slice(0,20) : `Option ${i+1}`;
-        wheelEl.appendChild(label);
-      }
-    }
-    refreshWheelVisual();
-
-    function pickFromWheelAnimation(){
-      if (!spinBtn || !wheelEl) return;
-      if (movies.length === 0) { showTemp(movieResult, 'add movies first'); return; }
-      spinBtn.disabled = true;
-      const spins = 6;
-      const randomAngle = Math.floor(Math.random()*360);
-      const deg = spins*360 + randomAngle;
-      wheelEl.style.transition = 'transform 4s cubic-bezier(.22,.9,.2,1)';
-      wheelEl.style.transform = `rotate(${deg}deg)`;
-      setTimeout(()=>{
-        const final = deg % 360;
-        const seg = Math.floor(final / (360 / movies.length));
-        const chosen = movies[(movies.length - 1 - seg + movies.length) % movies.length] || movies[0];
-        movieResult.textContent = `Tonight: ${chosen}`;
-        spinBtn.disabled = false;
-        // Reset transform after short delay so further spins are smooth
-        setTimeout(()=> { wheelEl.style.transition='none'; wheelEl.style.transform='none'; }, 50);
-      }, 4200);
-      playClick();
-    }
-
-    if (spinBtn) spinBtn.addEventListener('click', pickFromWheelAnimation);
-    if (addMovieBtn) addMovieBtn.addEventListener('click', () => {
-      const t = prompt('Add a movie title (cancel to stop):');
-      if (t) {
-        movies.push(t);
-        localStorage.setItem('am_movies', JSON.stringify(movies));
-        refreshWheelVisual();
-        showTemp(movieResult, `${t} added`);
-        playClick();
-      }
-    });
-
-    // ------- mini game (animated hearts & reward flow) -------
-    let gameRunning = false, gameScore = 0, gameInterval = null;
-    function spawnGameHeartAnimated() {
-      if (!gameArea) return;
-      const el = document.createElement('div');
-      el.className = 'heart';
-      el.textContent = '💗';
-      const w = gameArea.clientWidth, h = gameArea.clientHeight;
-      const size = 36;
-      const left = Math.random()*(w - size);
-      const top  = Math.random()*(h - size);
-      el.style.left = `${left}px`; el.style.top = `${top}px`;
-      el.style.opacity = '0';
-      el.style.transform = 'scale(0.6) translateY(8px)';
-      gameArea.appendChild(el);
-      // animate in (CSS transitions help)
-      requestAnimationFrame(()=> {
-        el.style.transition = 'opacity .18s ease, transform .6s cubic-bezier(.2,.8,.2,1)';
-        el.style.opacity = '1'; el.style.transform = 'scale(1) translateY(0)';
-      });
-      const remove = ()=> el.remove();
-      el.addEventListener('click', ()=>{
-        gameScore++; gameScoreEl.textContent = gameScore;
-        spawnVisualHeart(window.innerWidth/2, window.innerHeight/2);
-        // click pop - scale quickly
-        el.animate([{ transform: 'scale(1.2)' }, { transform: 'scale(0.4)' }], { duration: 220 });
-        setTimeout(remove, 80);
-      });
-      // auto-remove with fade
-      setTimeout(()=> {
-        el.style.transition = 'opacity .3s ease, transform .3s ease';
-        el.style.opacity = '0'; el.style.transform = 'translateY(-20px) scale(.8)';
-        setTimeout(()=> { try { el.remove(); } catch(e){} }, 350);
-      }, 900);
-    }
-
-    if (startGameBtn) startGameBtn.addEventListener('click', () => {
-      if (!gameArea) return;
-      if (gameRunning) return;
-      gameRunning = true; gameScore = 0; gameScoreEl.textContent = '0';
-      const duration = 15_000;
-      const spawnRate = 700;
-      gameInterval = setInterval(() => { spawnGameHeartAnimated(); }, spawnRate);
-      setTimeout(() => {
-        clearInterval(gameInterval);
-        gameRunning = false;
-        // reward flow: allow chooser if score >= some threshold
-        if (gameScore >= 7) {
-          const reward = prompt(`you won! choose a reward for tonight (movie/playlist/message):`, 'movie');
-          if (reward) showTemp(popup, `Reward noted: ${reward}`, 2600);
-        } else {
-          showTemp(popup, `nice! final score ${gameScore}`, 2000);
-        }
-      }, duration);
-      playClick();
-    });
-
-    // ------- Photos (upload + persist base64) -------
-    const gallery = $('#gallery');
-    function renderGallery() {
-      if (!gallery) return;
+    /* ====== Memories (gallery) ====== */
+    function renderGallery(){
+      const gallery = $('#gallery'); if(!gallery) return;
       gallery.innerHTML = '';
-      const photos = JSON.parse(localStorage.getItem('am_photos') || '[]');
-      // upload control
-      const uploadBtn = document.createElement('button'); uploadBtn.className = 'btn ghost'; uploadBtn.textContent = 'Upload photo/gif';
-      uploadBtn.addEventListener('click', () => {
-        const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*,image/gif';
+      const photos = getLS('photos', []);
+      const uploadBtn = document.createElement('button'); uploadBtn.className='btn ghost'; uploadBtn.textContent='Upload photo/gif';
+      uploadBtn.addEventListener('click', ()=> {
+        const inp = document.createElement('input'); inp.type='file'; inp.accept='image/*,image/gif';
         inp.onchange = e => {
-          const file = e.target.files[0];
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = () => {
-            photos.push({ src: reader.result, t: Date.now() });
-            localStorage.setItem('am_photos', JSON.stringify(photos));
-            renderGallery();
-            playClick();
+          const f = e.target.files[0]; if(!f) return;
+          const r = new FileReader();
+          r.onload = ()=> {
+            photos.push({src:r.result,t:Date.now()});
+            setLS('photos', photos); renderGallery(); playClick();
           };
-          reader.readAsDataURL(file);
+          r.readAsDataURL(f);
         };
         inp.click();
       });
+      const clearBtn = document.createElement('button'); clearBtn.className='btn ghost'; clearBtn.textContent='Clear All';
+      clearBtn.addEventListener('click', ()=> {
+        if(confirm('Clear all memories?')){ setLS('photos', []); renderGallery(); playClick(); }
+      });
       gallery.appendChild(uploadBtn);
-
-      photos.forEach(p => {
-        const img = document.createElement('img'); img.src = p.src; img.style.width='140px'; img.style.height='90px'; img.style.objectFit='cover'; img.style.borderRadius='8px'; img.style.cursor='pointer';
-        img.addEventListener('click', () => {
+      gallery.appendChild(clearBtn);
+      photos.slice().reverse().forEach((p,idx)=>{
+        const img = document.createElement('img'); img.src = p.src; img.alt = 'mem';
+        img.addEventListener('click', ()=> {
           const overlay = document.createElement('div'); overlay.style.position='fixed'; overlay.style.left=0; overlay.style.top=0; overlay.style.width='100%'; overlay.style.height='100%'; overlay.style.background='rgba(0,0,0,0.9)'; overlay.style.display='flex'; overlay.style.alignItems='center'; overlay.style.justifyContent='center'; overlay.style.zIndex=9999;
           const im = document.createElement('img'); im.src = p.src; im.style.maxWidth='92%'; im.style.maxHeight='92%'; im.style.borderRadius='12px';
-          overlay.appendChild(im);
+          const del = document.createElement('button'); del.className='btn ghost'; del.textContent='delete'; del.style.position='absolute'; del.style.right='20px'; del.style.top='20px';
+          del.addEventListener('click', ()=> { const arr = getLS('photos',[]); arr.splice(arr.length-1-idx,1); setLS('photos',arr); overlay.remove(); renderGallery(); playClick(); });
+          overlay.appendChild(im); overlay.appendChild(del);
           overlay.addEventListener('click', ()=> overlay.remove());
           document.body.appendChild(overlay);
         });
         gallery.appendChild(img);
       });
     }
+    $('#uploadPhoto')?.addEventListener('click', ()=> { document.querySelector('#gallery .btn')?.click(); });
+    $('#clearPhotos')?.addEventListener('click', ()=> { if(confirm('Clear all memories?')){ setLS('photos',[]); renderGallery(); }});
     renderGallery();
 
-    // ------- Sleep schedule (goodnight popup) -------
-    let sleepTimerId = null;
-    if (setSleepBtn) setSleepBtn.addEventListener('click', () => {
-      const time = sleepTimeInput.value;
-      const msg = (goodnightMsgInput.value||'').trim() || 'goodnight baba, i love you';
-      if (!time) { showTemp(popup, 'choose a time first', 1800); return; }
-      scheduleGoodnight(time, msg);
-      showTemp(popup, `Goodnight set for ${time}`, 1600);
+    /* ====== Wheel (labels + spin) ====== */
+    let movies = getLS('movies', DEFAULT_MOVIES.slice());
+    function refreshWheel(){
+      const wheel = $('#wheel'); if(!wheel) return;
+      wheel.innerHTML = ''; // clear
+      const seg = Math.max(1, movies.length);
+      const colors = ['#ffb0cf','#ffdfe9','#ffcfe0','#ffeef6','#ffd0ea','#ffdfe9'];
+      // background gradient
+      const stops = [];
+      for(let i=0;i<seg;i++){
+        const a = (i/seg)*360; const b = ((i+1)/seg)*360; stops.push(`${colors[i%colors.length]} ${a}deg ${b}deg`);
+      }
+      wheel.style.background = `conic-gradient(${stops.join(',')})`;
+      const radius = wheel.clientWidth/2 || 130;
+      const center = radius;
+      for(let i=0;i<seg;i++){
+        const angle = (i + 0.5) * (360/seg);
+        const rad = (angle - 90) * Math.PI / 180;
+        const label = document.createElement('div'); label.className='wheel-label';
+        label.style.left = `${center + Math.cos(rad)*(radius*0.62)}px`;
+        label.style.top  = `${center + Math.sin(rad)*(radius*0.62)}px`;
+        label.style.transform = `translate(-50%,-50%) rotate(${angle}deg)`;
+        label.innerText = movies[i] ? movies[i].slice(0,22) : `Option ${i+1}`;
+        wheel.appendChild(label);
+      }
+    }
+    refreshWheel();
+    $('#spinBtn')?.addEventListener('click', ()=> {
+      if(movies.length===0) return showTemp($('#movieResult'),'add movies first');
+      $('#spinBtn').disabled = true;
+      const spins = 6; const randomAngle = Math.floor(Math.random()*360); const deg = spins*360 + randomAngle;
+      $('#wheel').style.transition = 'transform 4s cubic-bezier(.22,.9,.2,1)'; $('#wheel').style.transform = `rotate(${deg}deg)`;
+      setTimeout(()=> {
+        const final = deg % 360; const seg = Math.floor(final / (360/movies.length));
+        const chosen = movies[(movies.length-1-seg + movies.length)%movies.length] || movies[0];
+        $('#movieResult').textContent = `Tonight: ${chosen}`;
+        $('#spinBtn').disabled = false;
+        $('#wheel').style.transition = 'none'; $('#wheel').style.transform = 'none';
+        playClick();
+      }, 4200);
+    });
+    $('#addMovieBtn')?.addEventListener('click', ()=> {
+      const t = prompt('Add movie title:'); if(t){ movies.push(t); setLS('movies', movies); refreshWheel(); playClick(); }
+    });
+
+    /* ====== Mini-game (improved) ====== */
+    let gameRunning=false, gameScore=0, gameInterval=null;
+    function spawnGameHeart(){
+      const area = $('#gameArea'); if(!area) return;
+      const el = document.createElement('div'); el.className='heart'; el.textContent='💗';
+      const w = area.clientWidth, h = area.clientHeight, size=36;
+      el.style.left = Math.random()*(w-size)+'px'; el.style.top = Math.random()*(h-size)+'px'; el.style.opacity='0'; el.style.transform='scale(.6) translateY(6px)';
+      area.appendChild(el);
+      requestAnimationFrame(()=> { el.style.transition='opacity .18s, transform .5s cubic-bezier(.2,.8,.2,1)'; el.style.opacity='1'; el.style.transform='scale(1) translateY(0)'; });
+      const remove = ()=> { try{ el.remove(); }catch(e){} };
+      el.addEventListener('click', ()=> { gameScore++; $('#gameScore').textContent = gameScore; spawnVisualHeart(window.innerWidth/2, window.innerHeight/2); el.animate([{transform:'scale(1.2)'},{transform:'scale(.4)'}],{duration:220}); setTimeout(remove,80); });
+      setTimeout(()=> { el.style.opacity='0'; el.style.transform='translateY(-20px) scale(.8)'; setTimeout(remove,320); }, 900);
+    }
+    function spawnVisualHeart(x,y){ /* quick canvas-free particle: just a visual DOM heart */ const container = document.createElement('div'); container.style.position='fixed'; container.style.left=x+'px'; container.style.top=y+'px'; container.style.zIndex=9999; const h = document.createElement('div'); h.textContent='💗'; h.style.fontSize='28px'; container.appendChild(h); document.body.appendChild(container); setTimeout(()=> container.remove(),800); }
+    $('#startGame')?.addEventListener('click', ()=> {
+      if(gameRunning) return;
+      gameRunning=true; gameScore=0; $('#gameScore').textContent='0';
+      const duration = 15_000; const rate = 650;
+      gameInterval = setInterval(spawnGameHeart, rate);
+      setTimeout(()=> {
+        clearInterval(gameInterval); gameRunning=false;
+        if(gameScore >= 10){ $('#rewardChoice').classList.remove('hidden'); showTemp($('#rewardChoice'),'You can choose a reward!'); } else { showTemp($('#gameArea',),'Nice try! final: '+gameScore); }
+        playClick();
+      }, duration);
+      playClick();
+    });
+    $('#saveReward')?.addEventListener('click', ()=> {
+      const r = $('#rewardSelect')?.value||'movie'; setLS('lastReward', r); $('#rewardChoice').classList.add('hidden'); showTemp($('#gameArea'), 'Reward saved: '+r); playClick();
+    });
+
+    /* ====== Playlist (add/play) ====== */
+    function renderPlaylist(){
+      const list = $('#playlistList'); if(!list) return;
+      list.innerHTML = '';
+      const songs = getLS('songs', []);
+      songs.forEach((s,idx)=>{
+        const div = document.createElement('div'); div.className='note-item';
+        div.innerHTML = `${escapeHtml(s.title||s)} <div style="margin-top:6px"><button class="btn small play" data-idx="${idx}">Play</button> <button class="btn ghost small del" data-idx="${idx}">Delete</button></div>`;
+        list.appendChild(div);
+      });
+      // attach handlers
+      list.querySelectorAll('.play').forEach(b => b.addEventListener('click', (e)=> {
+        const i = parseInt(e.currentTarget.dataset.idx,10); const songs = getLS('songs',[]); const src = songs[i].url||songs[i].title||''; $('#player').src = src; $('#player').play().catch(()=>{}); playClick();
+      }));
+      list.querySelectorAll('.del').forEach(b => b.addEventListener('click', (e)=> {
+        const i = parseInt(e.currentTarget.dataset.idx,10); const songs = getLS('songs',[]); songs.splice(i,1); setLS('songs',songs); renderPlaylist(); playClick();
+      }));
+    }
+    $('#addSongBtn')?.addEventListener('click', ()=> {
+      const t = $('#songInput')?.value?.trim(); if(!t) return showTemp($('#playlistList'),'Enter a song title or URL');
+      const songs = getLS('songs',[]); songs.push({title:t,url:t}); setLS('songs',songs); $('#songInput').value=''; renderPlaylist(); playClick();
+    });
+    renderPlaylist();
+
+    /* ====== Voice notes (MediaRecorder) ====== */
+    let mediaRecorder = null, chunks = [];
+    async function startRecording(){
+      if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return alert('Recording not supported on this device.');
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = e => chunks.push(e.data);
+        mediaRecorder.onstop = async () => {
+          const blob = new Blob(chunks, { type: 'audio/webm' }); chunks = [];
+          const reader = new FileReader();
+          reader.onload = ()=> {
+            const data = reader.result;
+            const arr = getLS('voices',[]); arr.push({src:data,t:Date.now()}); setLS('voices',arr); renderVoices(); playClick();
+          };
+          reader.readAsDataURL(blob);
+        };
+        mediaRecorder.start(); $('#recBtn').disabled=true; $('#stopRecBtn').disabled=false; showTemp($('#voicesList'),'Recording...');
+      } catch(e){ alert('Microphone access denied or not available.'); }
+    }
+    function stopRecording(){ if(mediaRecorder) mediaRecorder.stop(); $('#recBtn').disabled=false; $('#stopRecBtn').disabled=true; }
+    $('#recBtn')?.addEventListener('click', startRecording); $('#stopRecBtn')?.addEventListener('click', stopRecording);
+    function renderVoices(){
+      const list = $('#voicesList'); if(!list) return; list.innerHTML=''; const voices = getLS('voices',[]);
+      voices.slice().reverse().forEach((v,idx)=>{
+        const d = document.createElement('div'); d.className='note-item';
+        d.innerHTML = `<audio controls src="${v.src}"></audio><div style="margin-top:6px"><button class="btn ghost small del-voice">delete</button></div>`;
+        d.querySelector('.del-voice').addEventListener('click', ()=> { const arr=getLS('voices',[]); arr.splice(arr.length-1-idx,1); setLS('voices',arr); renderVoices(); });
+        list.appendChild(d);
+      });
+    }
+    renderVoices();
+
+    /* ====== Sleep & Anniversary ====== */
+    function scheduleGoodnight(timeStr, message){
+      if(!timeStr) return;
+      const [hh,mm] = timeStr.split(':').map(s=>parseInt(s,10));
+      const nowDt = new Date(); let target = new Date(nowDt.getFullYear(), nowDt.getMonth(), nowDt.getDate(), hh, mm, 0);
+      if(target <= nowDt) target.setDate(target.getDate()+1);
+      const delta = target - nowDt;
+      setTimeout(()=> {
+        const p = document.createElement('div'); p.className='popup'; p.innerHTML = `<div>${escapeHtml(message)}</div><div style="margin-top:10px;text-align:center"><button class="btn primary ok">ok</button></div>`;
+        document.body.appendChild(p); p.querySelector('.ok').addEventListener('click', ()=> p.remove());
+      }, delta);
+      setLS('goodnight', {time:timeStr,msg:message});
+      showTemp($('#annivBox'),`Goodnight set for ${timeStr}`);
+    }
+    $('#setSleepBtn')?.addEventListener('click', ()=> {
+      const t = $('#sleepTime')?.value; const m = ($('#goodnightMsg')?.value||'goodnight baba, i love you').trim();
+      if(!t) return showTemp($('#annivBox'),'Choose a time first');
+      scheduleGoodnight(t,m); playClick();
+    });
+
+    $('#saveAnniv')?.addEventListener('click', ()=> {
+      const d = ($('#annivDate')?.value||'').trim(); if(!d) return showTemp($('#annivBox'),'Pick a date');
+      setLS('anniv', {date:d});
+      showTemp($('#annivBox'),'Anniversary saved'); updateAnnivSummary(); playClick();
+    });
+    function updateAnnivSummary(){
+      const box = $('#annivSummary'); if(!box) return;
+      const ann = getLS('anniv', null);
+      if(!ann || !ann.date){ box.textContent = "No anniversary set."; return; }
+      const nowDt = new Date(); const [y,m,d] = ann.date.split('-').map(n=>parseInt(n,10));
+      let target = new Date(nowDt.getFullYear(), m-1, d);
+      if(target < nowDt) target.setFullYear(nowDt.getFullYear()+1);
+      const diff = Math.ceil((target - nowDt)/(1000*60*60*24));
+      box.textContent = `Anniversary in ${diff} days (${ann.date})`;
+      // celebration on day
+      if(Math.abs((target-nowDt)) < 1000*60*60*24){
+        const p = document.createElement('div'); p.className='popup'; p.innerHTML = `<div style="font-weight:700">Happy Anniversary 🎉</div><div style="margin-top:8px">Celebrate today ❤️</div><div style="margin-top:10px;text-align:center"><button class="btn primary ok">ok</button></div>`;
+        document.body.appendChild(p); p.querySelector('.ok').addEventListener('click', ()=> p.remove());
+      }
+    }
+    updateAnnivSummary();
+
+    /* ====== Settings UI & Save ====== */
+    function loadUISettings(){
+      $('#vibeSelect')?.value = storedSettings.vibe || 'soft';
+      $('#bgSelect')?.value = storedSettings.bg || 'gif1';
+      $('#animToggle')?.checked = storedSettings.animations;
+      $('#soundToggle')?.checked = storedSettings.soundEnabled;
+    }
+    loadUISettings();
+    $('#saveSettings')?.addEventListener('click', ()=> {
+      const s = {
+        vibe: $('#vibeSelect')?.value || 'soft',
+        bg: $('#bgSelect')?.value || 'gif1',
+        customBg: storedSettings.customBg || null,
+        animations: !!$('#animToggle')?.checked,
+        soundEnabled: !!$('#soundToggle')?.checked
+      };
+      setLS('settings', s); Object.assign(storedSettings, s); applySettingsToUI(); showTemp($('#settings'),'Settings saved'); playClick();
+    });
+    $('#bgSelect')?.addEventListener('change', ()=> {
+      const v = $('#bgSelect')?.value;
+      if(v === 'custom'){ const f = prompt('Paste a GIF/image URL to use as background (or cancel):'); if(f){ storedSettings.customBg = f; setLS('settings', storedSettings); applySettingsToUI(); renderGallery(); } }
+    });
+    $('#resetBtn')?.addEventListener('click', ()=> {
+      if(confirm('Reset all local data (notes, photos, songs, settings)?')){ localStorage.clear(); location.reload(); }
+    });
+
+    function applySettingsToUI(){
+      const s = getLS('settings', storedSettings);
+      // vibe
+      if(s.vibe==='soft'){ document.documentElement.style.setProperty('--accent','#ff88b3'); document.documentElement.style.setProperty('--bg','#08060a'); }
+      else if(s.vibe==='dark'){ document.documentElement.style.setProperty('--accent','#9b7cff'); document.documentElement.style.setProperty('--bg','#050012'); }
+      else { document.documentElement.style.setProperty('--accent','#00ffd1'); document.documentElement.style.setProperty('--bg','#060811'); }
+      // background
+      if(s.bg === 'custom' && s.customBg){ $('#bgLayer').style.backgroundImage = `url('${s.customBg}')`; } 
+      else if(DEFAULT_BG_GIFS[s.bg]){ $('#bgLayer').style.backgroundImage = `url('${DEFAULT_BG_GIFS[s.bg]}')`; }
+      else $('#bgLayer').style.backgroundImage = '';
+      // sound
+      if(s.soundEnabled){ musicBtn.textContent='🔊'; } else { musicBtn.textContent='🔇'; bgAudio.pause(); }
+      // persist
+      setLS('settings', s);
+    }
+    function refreshEverything(){
+      renderGallery(); renderPlaylist(); renderVoices(); renderWheel(); loadNotes(); updateAnnivSummary();
+    }
+
+    /* ====== Misc render helpers ====== */
+    function renderPlaylist(){ const list = $('#playlistList'); if(!list) return; list.innerHTML=''; const songs = getLS('songs',[]); songs.forEach((s,idx)=>{ const d=document.createElement('div'); d.className='note-item'; d.innerHTML = `${escapeHtml(s.title||s)} <div style="margin-top:6px"><button class="btn small play" data-idx="${idx}">Play</button> <button class="btn ghost small del" data-idx="${idx}">Delete</button></div>`; list.appendChild(d); }); list.querySelectorAll('.play').forEach(b=>b.addEventListener('click', e=>{ const i=parseInt(e.currentTarget.dataset.idx,10); const songs=getLS('songs',[]); $('#player').src = songs[i].url||songs[i].title||''; $('#player').play().catch(()=>{}); })); list.querySelectorAll('.del').forEach(b=>b.addEventListener('click', e=>{ const i=parseInt(e.currentTarget.dataset.idx,10); const songs=getLS('songs',[]); songs.splice(i,1); setLS('songs',songs); renderPlaylist(); }));
+    }
+    function renderVoices(){ const list=$('#voicesList'); if(!list) return; list.innerHTML=''; const voices=getLS('voices',[]); voices.slice().reverse().forEach((v,idx)=>{ const d=document.createElement('div'); d.className='note-item'; d.innerHTML = `<audio controls src="${v.src}"></audio><div style="margin-top:6px"><button class="btn ghost small del-voice">delete</button></div>`; d.querySelector('.del-voice').addEventListener('click', ()=> { const arr=getLS('voices',[]); arr.splice(arr.length-1-idx,1); setLS('voices',arr); renderVoices(); }); list.appendChild(d); }); }
+    function renderWheel(){ refreshWheel(); } // alias
+
+    // renderPlaylist Items on load
+    renderPlaylist(); renderVoices();
+
+    /* ====== utility: refreshWheel (external wrapper for earlier function) ====== */
+    function refreshWheel(){
+      const wheel = $('#wheel'); if(!wheel) return;
+      movies = getLS('movies', DEFAULT_MOVIES.slice());
+      wheel.innerHTML = '';
+      const seg = Math.max(1, movies.length);
+      const colors = ['#ffb0cf','#ffdfe9','#ffcfe0','#ffeef6','#ffd0ea','#ffdfe9'];
+      const stops = [];
+      for(let i=0;i<seg;i++){ const a=(i/seg)*360, b=((i+1)/seg)*360; stops.push(`${colors[i%colors.length]} ${a}deg ${b}deg`); }
+      wheel.style.background = `conic-gradient(${stops.join(',')})`;
+      const radius = wheel.clientWidth/2 || 130; const center = radius;
+      for(let i=0;i<seg;i++){
+        const angle = (i+0.5)*(360/seg); const rad=(angle-90)*Math.PI/180;
+        const label = document.createElement('div'); label.className='wheel-label';
+        label.style.left = `${center + Math.cos(rad)*(radius*0.62)}px`;
+        label.style.top  = `${center + Math.sin(rad)*(radius*0.62)}px`;
+        label.style.transform = `translate(-50%,-50%) rotate(${angle}deg)`;
+        label.innerText = movies[i] ? movies[i].slice(0,22) : `Option ${i+1}`;
+        wheel.appendChild(label);
+      }
+    }
+
+    /* ====== init call ====== */
+    applySettingsToUI();
+    refreshWheel();
+    renderGallery();
+    renderPlaylist();
+    renderVoices();
+    loadNotes();
+    updateAnnivSummary();
+
+    // music button behavior
+    musicBtn?.addEventListener('click', ()=> {
+      const s = getLS('settings', storedSettings);
+      s.soundEnabled = !s.soundEnabled; setLS('settings', s); applySettingsToUI();
+      if(s.soundEnabled){ allowAudioOnce(); bgAudio.play().catch(()=>{}); } else { bgAudio.pause(); }
       playClick();
     });
 
-    function scheduleGoodnight(timeStr, message) {
-      if (!timeStr) return;
-      if (sleepTimerId) { clearTimeout(sleepTimerId); sleepTimerId = null; }
-      const [hh, mm] = timeStr.split(':').map(s => parseInt(s,10));
-      const now = new Date();
-      const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0, 0);
-      if (target <= now) target.setDate(target.getDate() + 1);
-      const delta = target - now;
-      sleepTimerId = setTimeout(()=> {
-        showGoodnightPopup(message);
-        scheduleGoodnight(timeStr, message);
-      }, delta);
-    }
-    function showGoodnightPopup(message){
-      const p = document.createElement('div'); p.className='popup';
-      p.innerHTML = `<div style="font-size:1rem">${escapeHtml(message)}</div><div style="margin-top:12px;text-align:center"><button id="closeGood" class="btn primary">ok</button></div>`;
-      document.body.appendChild(p);
-      document.getElementById('closeGood').addEventListener('click', ()=> p.remove());
-    }
-
-    // ------- Troll (one-time) -------
-    let trollShown = false;
-    function scheduleTroll() {
-      setTimeout(()=> {
-        if (trollShown) return;
-        trollShown = true;
-        const p = document.createElement('div'); p.className = 'popup';
-        p.innerHTML = `<div style="font-weight:700">you’re still here?</div><div class="muted" style="margin-top:8px">baby… you miss me that much?</div><div style="margin-top:12px;text-align:center"><button id="okT" class="btn ghost">ok</button></div>`;
-        document.body.appendChild(p);
-        $('#okT')?.addEventListener('click', ()=> p.remove());
-      }, TROLL_DELAY_MS);
-    }
-
-    // ------- Sidebar collapse (tap logo to toggle) -------
-    if (logo) {
-      logo.style.cursor = 'pointer';
-      logo.addEventListener('click', () => {
-        sidebar.classList.toggle('collapsed');
-        playClick();
-      });
-    }
-
-    // small initial UI activation
-    const homeNav = document.querySelector("[data-page='home']");
-    if (homeNav) homeNav.click();
-
-    // make sure wheel and gallery are fresh
-    refreshWheelVisual();
-    renderGallery();
-
-    // expose some functions for debug (optional)
-    window._am_debug = { spawnVisualHeart, refreshWheelVisual, openApp };
+    // quick action shortcuts
+    openMemories?.addEventListener('click', ()=> document.querySelector("[data-page='memories']").click());
+    openLetters?.addEventListener('click', ()=> document.querySelector("[data-page='letters']").click());
 
   }); // DOMContentLoaded end
 
-  // ------- Functions that need to be available top-level (defined after DOM ready closure for clarity) -------
-  // refreshWheelVisual defined inside DOMContentLoaded where wheelEl exists — create stub here to prevent console errors if called earlier
-  function refreshWheelVisual(){ safe(()=> document.getElementById('wheelCanvas') && document.getElementById('wheelCanvas').style && null); }
-})();
+})(); // IIFE end
