@@ -1,85 +1,367 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Us 💜</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>5 AM with Leanna — Our Story</title>
+  <meta name="description" content="A sunrise journey of love ending with a proposal." />
+  <!-- Open Graph / Twitter -->
+  <meta property="og:title" content="5 AM with Leanna — Our Story" />
+  <meta property="og:description" content="A sunrise journey of love ending with a proposal." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/assets/og-sunrise.png" />
+  <meta name="twitter:card" content="summary_large_image" />
 
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+  <!-- Preconnect + Google Fonts (Great Vibes + Montserrat) -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="style.css">
+  <!-- Critical inline CSS (minimized but readable) -->
+  <style>
+    :root{
+      --sun-1:#FFC2A1;--sun-2:#FF8FB6;--sun-3:#B2A4FF;--sun-4:#A8D8FF;
+      --surface:#FFFFFF;--surface-2:#FAFAFA;--text:#2B2B2B;--muted:#6B6B6B;--gold:#D4AF37;
+      --max-w:1200px;--pad-mobile:24px;--pad-desktop:56px;
+      --radius:14px;
+    }
+    /* Basic reset */
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Montserrat,Arial,sans-serif;color:var(--text);background:var(--surface-2);-webkit-font-smoothing:antialiased}
+    a{color:inherit}
+    header,main,footer{display:block}
+
+    /* Sunrise animated background */
+    .bg-sunrise{position:fixed;inset:0;z-index:-2;background:linear-gradient(180deg,var(--sun-1),var(--sun-2),var(--sun-3),var(--sun-4));background-size:400% 400%;animation:slowDawn 30s linear infinite;opacity:0.98}
+    @keyframes slowDawn{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+    @media (prefers-reduced-motion:reduce){.bg-sunrise, .animated{animation:none}}
+
+    .wrapper{max-width:var(--max-w);margin:0 auto;padding:48px 24px}
+    header{position:sticky;top:0;backdrop-filter:blur(6px);background:rgba(255,255,255,0.6);border-bottom:1px solid rgba(0,0,0,0.04);z-index:10}
+    nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 24px}
+    .logo{font-family:'Great Vibes',cursive;font-size:1.35rem;color:var(--text);text-decoration:none}
+    .nav-links{display:flex;gap:12px}
+    .nav-links a{font-weight:600;font-size:0.95rem;padding:8px;border-radius:8px}
+    .skip{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
+    .skip:focus{left:12px;top:12px;width:auto;height:auto;background:#fff;padding:8px;border-radius:4px}
+
+    main{padding:48px 0}
+    /* Hero */
+    .hero{display:grid;grid-template-columns:1fr;align-items:center;gap:24px;padding:48px;border-radius:16px;background:linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.55));box-shadow:0 8px 30px rgba(11,12,15,0.06)}
+    .hero h1{font-family:'Great Vibes',cursive;font-size:clamp(2rem,5vw,3.6rem);margin:0;line-height:1}
+    .hero p{font-size:1.05rem;color:var(--muted);margin:8px 0 0}
+    .hero .cta{margin-top:18px}
+    .btn{display:inline-flex;align-items:center;gap:10px;background:white;border:0;padding:12px 18px;border-radius:12px;font-weight:600;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.06);transition:transform .18s ease,box-shadow .18s}
+    .btn:hover{transform:scale(1.02)}
+    .btn-primary{background:linear-gradient(90deg,var(--sun-2),var(--sun-3));color:white}
+    .btn-outline{background:transparent;border:1px solid rgba(43,43,43,0.06)}
+
+    /* Sections */
+    section{margin:56px 0;padding:24px;border-radius:12px}
+    .section-title{font-size:1.25rem;font-weight:600;margin:0 0 12px}
+    .muted{color:var(--muted)}
+
+    /* Timeline/Milestones */
+    .timeline{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+    .card{background:var(--surface);padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(11,12,15,0.04);min-height:110px;display:flex;flex-direction:column;justify-content:space-between;cursor:default}
+    .card h4{margin:0 0 6px;font-family:'Great Vibes',cursive;font-size:1.1rem}
+    .card p{margin:0;color:var(--muted)}
+
+    /* Gallery */
+    .gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+    .tile{background:#fff;border-radius:10px;overflow:hidden;min-height:96px;display:flex;align-items:center;justify-content:center}
+    .tile img{width:100%;height:100%;object-fit:cover;display:block}
+
+    /* Future microcards */
+    .future-grid{display:flex;flex-wrap:wrap;gap:12px}
+    .micro{background:linear-gradient(180deg,rgba(255,255,255,0.8),rgba(255,255,255,0.9));padding:14px;border-radius:10px;min-width:180px}
+
+    /* Proposal */
+    .proposal{display:grid;gap:12px;align-items:center;text-align:center;padding:28px}
+    .proposal .lead{font-size:1.05rem;color:var(--muted)}
+    .proposal .final{font-family:'Great Vibes',cursive;font-size:2rem;margin:6px 0}
+    .accept-wrap{display:flex;gap:12px;justify-content:center;margin-top:12px}
+
+    /* Footer */
+    footer{padding:28px 0;text-align:center;color:var(--muted);font-size:0.95rem}
+
+    /* Focus states */
+    :focus{outline:3px solid rgba(212,175,55,0.18);outline-offset:2px}
+
+    /* Lightbox dialog */
+    .dialog{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:24px}
+    .dialog[open]{display:flex}
+    .dialog .inner{max-width:920px;width:100%;background:var(--surface);border-radius:12px;padding:18px;box-shadow:0 30px 80px rgba(11,12,15,0.4)}
+
+    @media(min-width:900px){.hero{grid-template-columns:1fr 420px}}
+    @media(min-width:1200px){.wrapper{padding:56px}}
+  </style>
 </head>
-
 <body>
-    <div id="background"></div>
-
-    <!-- Login Screen -->
-    <div id="loginScreen" class="centerBox">
-        <h1>hey baba 💜</h1>
-        <p>enter the password to enter our world</p>
-        <input id="pwInput" type="password" placeholder="password..." />
-        <button id="pwBtn">Enter</button>
-        <p id="pwError"></p>
-    </div>
-
-    <!-- App -->
-    <div id="appContainer" class="hidden">
-
-        <!-- Sidebar -->
-        <div id="sidebar">
-            <button class="sideBtn" data-tab="home">🏠 Home</button>
-            <button class="sideBtn" data-tab="chat">💬 Chat</button>
-            <button class="sideBtn" data-tab="letters">💌 Letters</button>
-            <button class="sideBtn" data-tab="gallery">🖼️ Gallery</button>
-            <button class="sideBtn" data-tab="game">🎮 Game</button>
-            <button id="toggleSidebar">☰</button>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="bg-sunrise" aria-hidden="true"></div>
+  <header role="banner">
+    <div class="wrapper">
+      <nav aria-label="Primary navigation">
+        <a class="logo" href="#">5 AM with Leanna</a>
+        <div class="nav-links" aria-hidden="false">
+          <a href="#story">Story</a>
+          <a href="#memories">Memories</a>
+          <a href="#future">Future</a>
+          <a href="#proposal">Proposal</a>
         </div>
-
-        <!-- Main Content -->
-        <div id="content">
-
-            <!-- HOME -->
-            <div class="tab" id="homeTab">
-                <h2>Welcome, baba 💜</h2>
-                <p>This is our space. Just for us.</p>
-            </div>
-
-            <!-- CHAT -->
-            <div class="tab hidden" id="chatTab">
-                <h2>Chat</h2>
-                <div id="chatBox"></div>
-                <input id="chatInput" placeholder="type something…" />
-                <button id="sendChat">Send</button>
-            </div>
-
-            <!-- LETTERS -->
-            <div class="tab hidden" id="lettersTab">
-                <h2>Your Daily Letter</h2>
-                <textarea id="letterBox"></textarea>
-                <button id="saveLetter">Save</button>
-            </div>
-
-            <!-- GALLERY -->
-            <div class="tab hidden" id="galleryTab">
-                <h2>Our Memories</h2>
-                <input type="file" id="photoUpload">
-                <div id="gallery"></div>
-            </div>
-
-            <!-- GAME -->
-            <div class="tab hidden" id="gameTab">
-                <h2>Reaction Game</h2>
-                <p>Click the circle as fast as you can!</p>
-                <div id="gameArea">
-                    <div id="circle"></div>
-                </div>
-                <p id="reactionScore"></p>
-            </div>
-
-        </div>
+      </nav>
     </div>
+  </header>
 
-    <script src="script.js"></script>
+  <main id="main" class="wrapper" role="main">
+    <!-- HERO -->
+    <section id="hero" class="hero" aria-labelledby="hero-heading">
+      <div>
+        <h1 id="hero-heading">Leanna, this is where our mornings begin.</h1>
+        <p>At 5 AM, the world is quiet—but my heart is loud with love for you.</p>
+        <div class="cta">
+          <button class="btn btn-primary" id="beginBtn">Begin the journey</button>
+        </div>
+      </div>
+      <div aria-hidden="true">
+        <!-- decorative sunrise card -->
+        <div style="background:linear-gradient(180deg,rgba(255,255,255,0.6),rgba(255,255,255,0.4));padding:26px;border-radius:14px;display:flex;flex-direction:column;gap:12px;align-items:flex-start">
+          <div style="width:84px;height:84px;border-radius:12px;background:linear-gradient(135deg,var(--sun-1),var(--sun-3));box-shadow:0 8px 30px rgba(0,0,0,0.06)"></div>
+          <div style="font-weight:600">5 AM with Leanna</div>
+          <div style="color:var(--muted);font-size:0.95rem">A sunrise love letter</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STORY / TIMELINE -->
+    <section id="story" aria-labelledby="storyTitle">
+      <h2 id="storyTitle" class="section-title">How it began</h2>
+      <p class="muted">From our first hello to every late-night call, you’ve turned ordinary hours into extraordinary memories.</p>
+      <div class="timeline" role="list" aria-label="Milestones">
+        <article class="card" role="listitem" tabindex="0">
+          <h4>First message</h4>
+          <p>You said hi. I said hey. Somehow everything changed.</p>
+        </article>
+        <article class="card" role="listitem" tabindex="0">
+          <h4>The first call</h4>
+          <p>Your voice made the distance feel smaller.</p>
+        </article>
+        <article class="card" role="listitem" tabindex="0">
+          <h4>Our inside joke</h4>
+          <p>The one that still makes me smile at 5 AM.</p>
+        </article>
+        <article class="card" role="listitem" tabindex="0">
+          <h4>The song</h4>
+          <p>It played, and I thought—this feels like us.</p>
+        </article>
+        <article class="card" role="listitem" tabindex="0">
+          <h4>A promise</h4>
+          <p>No matter the miles, I choose you. Every morning.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- MEMORIES / GALLERY -->
+    <section id="memories" aria-labelledby="memTitle">
+      <h2 id="memTitle" class="section-title">Moments I keep</h2>
+      <p class="muted">Little screenshots, songs, and memories that turned time into meaning.</p>
+      <div class="gallery" aria-live="polite">
+        <!-- placeholders generated as inline SVG images for now -->
+        <button class="tile" data-src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'><defs><linearGradient id='g' x1='0' x2='1'><stop offset='0' stop-color='%23FFC2A1'/><stop offset='0.5' stop-color='%23FF8FB6'/><stop offset='1' stop-color='%23B2A4FF'/></linearGradient></defs><rect width='100%' height='100%' fill='url(%23g)' rx='12'/></svg>" aria-label="Placeholder image 1" tabindex="0">
+          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'><rect width='100%25' height='100%25' fill='%23FFC2A1' rx='8'/></svg>" alt="Sunrise placeholder 1" loading="lazy">
+        </button>
+        <button class="tile" data-src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'><rect width='100%25' height='100%25' fill='%23FF8FB6' rx='12'/></svg>" aria-label="Placeholder image 2" tabindex="0">
+          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'><rect width='100%25' height='100%25' fill='%23FF8FB6' rx='8'/></svg>" alt="Sunrise placeholder 2" loading="lazy">
+        </button>
+        <button class="tile" data-src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'><rect width='100%25' height='100%25' fill='%23B2A4FF' rx='12'/></svg>" aria-label="Placeholder image 3" tabindex="0">
+          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'><rect width='100%25' height='100%25' fill='%23B2A4FF' rx='8'/></svg>" alt="Sunrise placeholder 3" loading="lazy">
+        </button>
+        <button class="tile" data-src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'><rect width='100%25' height='100%25' fill='%23A8D8FF' rx='12'/></svg>" aria-label="Placeholder image 4" tabindex="0">
+          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'><rect width='100%25' height='100%25' fill='%23A8D8FF' rx='8'/></svg>" alt="Sunrise placeholder 4" loading="lazy">
+        </button>
+      </div>
+
+      <!-- Lightbox dialog -->
+      <dialog class="dialog" id="lightbox" aria-label="Image preview">
+        <div class="inner">
+          <button id="closeLight" class="btn" aria-label="Close preview">Close</button>
+          <div id="lightImgWrap" style="margin-top:12px"></div>
+        </div>
+      </dialog>
+    </section>
+
+    <!-- FUTURE -->
+    <section id="future" aria-labelledby="futureTitle">
+      <h2 id="futureTitle" class="section-title">What I see in our future</h2>
+      <p class="muted">I see us building a life together, one sunrise at a time.</p>
+      <div class="future-grid" role="list">
+        <div class="micro" role="listitem"><strong>Quiet mornings</strong><div class="muted">Coffee, slow talks, sunrise</div></div>
+        <div class="micro" role="listitem"><strong>Shared routines</strong><div class="muted">Small rituals that feel like home</div></div>
+        <div class="micro" role="listitem"><strong>Laughter</strong><div class="muted">The kind that wakes your heart</div></div>
+      </div>
+    </section>
+
+    <!-- PROPOSAL -->
+    <section id="proposal" aria-labelledby="proposalTitle" class="proposal" role="region">
+      <h2 id="proposalTitle" class="section-title">Proposal</h2>
+      <p class="lead">Leanna, every morning with you feels like 5 AM—quiet, beautiful, full of promise.</p>
+      <div class="final">Leanna,<br>You are my dawn, my promise, my forever.<br>Will you marry me?</div>
+      <div class="accept-wrap">
+        <button id="yesBtn" class="btn btn-primary">Yes 💍</button>
+        <a class="btn btn-outline" id="talkLink" href="mailto:leanna@5amwithleanna.online?subject=I%20said%20yes!&body=Hi%20love%2C%0A%0AI%20opened%205amwithleanna.online%20and%20I%20said%20YES!%20Let%E2%80%99s%20talk%20about%20our%20next%20steps.%0A%0A%E2%80%94%20Leanna">Let’s talk</a>
+      </div>
+      <div id="confirmation" aria-live="polite" style="margin-top:12px;color:var(--muted)"></div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="wrapper">
+      <div>Made for Leanna, at 5 AM · © <span id="year"></span></div>
+      <div style="margin-top:8px"><a href="mailto:leanna@5amwithleanna.online">leanna@5amwithleanna.online</a></div>
+      <div style="margin-top:12px;color:var(--muted);font-size:0.85rem"><a href="/privacy">Privacy</a> · <a href="/contact">Contact</a></div>
+    </div>
+  </footer>
+
+  <!-- App JS (small, vanilla) -->
+  <script>
+    // Basic helpers & accessibility
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Smooth scroll for Begin the journey
+    const beginBtn = document.getElementById('beginBtn');
+    beginBtn.addEventListener('click',()=>{document.querySelector('#story').scrollIntoView({behavior:'smooth'});document.querySelector('#story').querySelector('[tabindex]')?.focus();});
+
+    // Tiles -> lightbox
+    const tiles = document.querySelectorAll('.tile');
+    const light = document.getElementById('lightbox');
+    const lightWrap = document.getElementById('lightImgWrap');
+    const closeLight = document.getElementById('closeLight');
+    tiles.forEach(t=>{
+      t.addEventListener('click',openTile);
+      t.addEventListener('keydown',(e)=>{ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); openTile.call(t); } });
+    });
+    function openTile(e){
+      const src = this.dataset.src || this.querySelector('img')?.src;
+      lightWrap.innerHTML = '<img src="'+src+'" alt="Memory preview" style="width:100%;height:auto;border-radius:8px">';
+      if(typeof light.showModal==='function'){ light.showModal(); } else { light.setAttribute('open',''); }
+      closeLight.focus();
+    }
+    closeLight.addEventListener('click',()=>{ if(typeof light.close==='function') light.close(); else light.removeAttribute('open'); });
+    // ESC to close
+    document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(light.open){ if(typeof light.close==='function') light.close(); else light.removeAttribute('open'); } }});
+
+    // Confetti — tiny implementation
+    function tinyConfetti(x,y){
+      const count = 40; const colors = ['#D4AF37','#FF8FB6','#A8D8FF','#FFC2A1'];
+      for(let i=0;i<count;i++){ const el = document.createElement('div'); el.style.position='fixed'; el.style.left=(x||window.innerWidth/2)+'px'; el.style.top=(y||window.innerHeight/2)+'px'; el.style.width='8px'; el.style.height='12px'; el.style.background=colors[i%colors.length]; el.style.borderRadius='2px'; el.style.opacity='0.95'; el.style.transform='translate(-50%,-50%) rotate('+ (Math.random()*360)+'deg)'; el.style.zIndex=9999; el.style.pointerEvents='none'; document.body.appendChild(el);
+        const dx = (Math.random()-0.5)*800; const dy = Math.random()*600+100; const dur = 1200+Math.random()*800;
+        el.animate([{transform:'translate(0,0) rotate(0deg)',opacity:1},{transform:'translate('+dx+'px,'+dy+'px) rotate(360deg)',opacity:0}],{duration:dur, easing:'cubic-bezier(.2,.8,.2,1)'});
+        setTimeout(()=>el.remove(),dur+50);
+      }
+    }
+
+    // Accept flow
+    const yesBtn = document.getElementById('yesBtn');
+    const confirmation = document.getElementById('confirmation');
+    yesBtn.addEventListener('click',async (e)=>{
+      // Confetti (respect reduced motion)
+      if(window.matchMedia('(prefers-reduced-motion: reduce)').matches===false){
+        const rect = yesBtn.getBoundingClientRect(); tinyConfetti(rect.left+rect.width/2, rect.top+rect.height/2);
+      }
+      // Show acceptance message inline
+      confirmation.textContent = 'Thank you for saying yes. Let\'s start our forever.';
+      confirmation.style.color = 'var(--text)';
+      // Attempt to open mailto in new window (fallback handled by href on the talkLink)
+      try{ const mailto = document.getElementById('talkLink').href; window.open(mailto); }catch(err){/* ignore */}
+      // Update URL to /accept (history pushState) so /accept can be bookmarked
+      try{ history.replaceState({},'', '/accept'); }catch(e){/* some hosts block */}
+    });
+
+    // Accessibility: ensure keyboard focus for proposal if navigated via /accept
+    if(location.pathname.endsWith('/accept')){ document.getElementById('proposal').scrollIntoView({behavior:'instant'}); document.getElementById('yesBtn').focus(); }
+
+    // Tiny performance touches: defer heavy work
+    window.addEventListener('load',()=>{
+      // Preload assets for OG image if exists
+      const img = new Image(); img.src='/assets/og-sunrise.png';
+    });
+  </script>
+
+  <!-- README + deploy notes (visible to developer in the source/zip) -->
+  <!--
+  README
+  ======
+  What you received
+  - Single-file production-ready site: index.html (this file)
+  - Uses Google Fonts: Great Vibes (headings) + Montserrat (body)
+  - Mailto set to: leanna@5amwithleanna.online
+  - Placeholder images: inline SVG data URIs in the gallery (replace in /assets or update tile data-src)
+  - OG image reference: /assets/og-sunrise.png (include a 1200x630 PNG at that path for social previews)
+
+  How to split files (optional)
+  - index.html is self-contained. If you prefer separate files:
+    - Extract the <style> block into styles.css and reference it.
+    - Move the <script> to app.js and include <script defer src="/app.js"></script> before </body>.
+
+  Replacing media
+  - Add assets into /assets/ (images, og-sunrise.png, audio sample e.g. /assets/ambient.mp3).
+  - To enable the audio player, add a small <audio controls id="songPlayer" preload="none"><source src="/assets/ambient.mp3"></audio> element in the Memories section and wire up play/pause in app.js.
+
+  Fonts self-hosting note
+  - If you want to self-host Great Vibes & Montserrat, download woff2 files and update @font-face in a CSS file. Steps are linked here: https://developers.google.com/fonts/docs/developer_api
+
+  Firebase Hosting (primary deploy)
+  1. Install Firebase CLI: npm install -g firebase-tools
+  2. firebase login
+  3. firebase init hosting (choose your project; set public directory to 'public')
+  4. Copy this index.html to the 'public' folder. Add assets/ there as well.
+  5. firebase deploy --only hosting
+
+  Example firebase.json (put at project root):
+  {
+    "hosting": {
+      "public": "public",
+      "ignore": ["firebase.json","**/.*","**/node_modules/**"],
+      "rewrites": [ { "source": "/accept", "destination": "/index.html" } ]
+    }
+  }
+
+  DNS tips
+  - Firebase hosting gives you a set of A/AAAA records or CNAME depending on setup. In Firebase console -> Hosting -> Connect domain: follow steps to verify domain ownership and add records.
+
+  Netlify fallback (optional one-click)
+  - Add a netlify.toml to repo with:
+    [build]
+    publish = "public"
+    command = ""
+    [[redirects]]
+    from = "/accept"
+    to = "/index.html"
+    status = 200
+
+  Accessibility notes
+  - Landmark roles, aria-live used for confirmation, dialog element used for lightbox.
+  - Focus states visible and keyboard support for tiles and controls.
+  - Motion respects prefers-reduced-motion.
+
+  Replacements checklist (where to edit)
+  - Mailto: find "leanna@5amwithleanna.online" in file and replace
+  - OG image: replace /assets/og-sunrise.png
+  - Gallery placeholders: update button[data-src] attributes and <img src=> values or replace tiles with <img srcset=> pointing to actual files
+  - Audio: add /assets/ambient.mp3 and integrate as noted above
+
+  Notes / safe defaults used
+  - Script font: Great Vibes (via Google Fonts)
+  - Body font: Montserrat (via Google Fonts)
+  - Used inline SVG placeholders (no external image required)
+  - Mailto-based "Let's talk" target provided as requested and used for the secondary CTA
+  - Firebase hosting configuration provided above as guidance
+
+  Troubleshooting
+  - If mailto links do not open on mobile, ensure device has a default mail app configured. The "Let's talk" also works as plain anchor if opened.
+
+  End of README
+  -->
 </body>
 </html>
