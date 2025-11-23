@@ -1,8 +1,0 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Login — 5 AM with Leanna</title><link rel="stylesheet" href="styles.css"></head><body>
-<main class="container"><h2>Login</h2><p class="lead">Sign in (Firebase Email/Password recommended).</p>
-<form id="loginForm"><input id="loginEmail" placeholder="Email" style="width:100%;padding:8px;margin-top:8px"><input id="loginPass" placeholder="Password" type="password" style="width:100%;padding:8px;margin-top:8px"><div style="margin-top:8px"><button class="btn btn-primary" type="submit">Sign In</button></div></form>
-<script>document.getElementById('loginForm').addEventListener('submit',function(e){e.preventDefault(); localStorage.setItem('authUser',document.getElementById('loginEmail').value); alert('Signed in (local mock)'); window.location.href='index.html';});</script>
-</main>
-</body></html>
