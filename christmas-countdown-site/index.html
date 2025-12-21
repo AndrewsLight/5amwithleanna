@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>counting the days until Christmas with Jett 💖</title>
+<meta name="description" content="counting the days until Christmas with Jett 💖" />
+
+<!-- Favicon -->
+<link rel="icon" href="assets/images/favicon.png" type="image/png" />
+
+<!-- Pixel font -->
+<style>
+@font-face {
+  font-family: 'PixelMirage';
+  src: url('assets/fonts/PixelMirage-OGxp6.otf') format('opentype');
+  font-display: swap;
+}
+
+:root {
+  --bg-overlay: rgba(0,0,0,0.55);
+  --gold: #ffcc00;
+  --green: #00ff00;
+  --red: #ff3b3b;
+  --shadow-red: 0 0 8px #ff0000;
+  --ui-shadow: 0 0 20px rgba(255,204,0,0.35);
+  --border: #fff;
+}
+
+* { box-sizing: border-box; }
+html, body { height:100%; margin:0; font-family:'PixelMirage', monospace; color:#fff; text-align:center; background:#0b1b35; overflow-x:hidden; }
+
+/* Background layers */
+.background {
+  position: fixed;
+  inset:0;
+  z-index: 0; /* fixed z-index to ensure visibility */
+  background: url('assets/images/background.gif') no-repeat center center fixed;
+  background-size: cover;
+}
+.bg-overlay {
+  position: fixed;
+  inset:0;
+  z-index:1;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.65));
+}
+
+/* Page container */
+.container { position: relative; z-index:2; max-width:980px; margin:0 auto; padding:24px; }
+header { margin:16px 0 8px; opacity:0.95; }
+.site-title {
+  display:inline-block;
+  padding:8px 12px;
+  background: var(--bg-overlay);
+  border:2px solid var(--border);
+  border-radius:8px;
+  box-shadow: var(--ui-shadow);
+  letter-spacing:1px;
+  font-size:20px;
+}
+
+/* Countdown */
+.countdown { margin-top:60px; }
+.clock-wrapper {
+  position: relative;
+  display: inline-block;
+  background: var(--bg-overlay);
+  border:3px solid var(--border);
+  border-radius:12px;
+  padding:28px 48px;
+  box-shadow:0 8px 0 var(--border), var(--ui-shadow);
+  background-image:
+    linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 12px 12px, 12px 12px;
+}
+
+.hat {
+  position:absolute;
+  top:-68px;
+  left:50%;
+  transform:translateX(-50%);
+  width:120px;
+  filter: drop-shadow(0 4px 0 rgba(0,0,0,0.25));
+  pointer-events:none;
+  animation: hatWiggle 2.8s ease-in-out infinite;
+}
+@keyframes hatWiggle {
+  0%,100% { transform: translateX(-50%) rotate(-4deg); }
+  50% { transform: translateX(-50%) rotate(4deg); }
+}
+
+.timer-label { display:block; margin-bottom:10px; color:var(--gold); text-shadow:0 0 10px rgba(255,204,0,0.6); font-size:16px; }
+#timer { font-size:28px; letter-spacing:2px; text-shadow: var(--shadow-red); color: var(--green); }
+
+/* Decorations */
+.decoration { position:absolute; width:50px; height:50px; pointer-events:none; animation: float 6s ease-in-out infinite; image-rendering: pixelated; z-index:2; }
+@keyframes float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
+
+/* Daily note popup */
+.daily-popup {
+  position:fixed; top:20%; left:50%; transform:translateX(-50%);
+  background: rgba(20,20,20,0.95); padding:20px;
+  border:2px solid #fff; border-radius:12px; box-shadow:0 0 15px rgba(255,204,0,0.5);
+  z-index:30; text-align:center;
+}
+.daily-popup button {
+  margin-top:12px; padding:6px 12px; border-radius:8px; background:var(--gold); border:none; cursor:pointer;
+}
+.daily-popup button:hover { background:#ff9900; }
+
+/* Note icon for multi messages */
+.note-icon { position: fixed; bottom:20px; right:20px; width:64px; height:64px; cursor:pointer; z-index:25; image-rendering: pixelated; transition: transform 150ms ease; }
+.note-icon:hover { transform: translateY(-2px); }
+
+/* Multi-message modal */
+.modal { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.7); z-index:40; }
+.modal-content { position: relative; background:#1a1a1a; margin:9% auto; padding:24px; max-width:640px; border:3px solid var(--border); border-radius:12px; box-shadow: var(--ui-shadow); text-align:left; }
+.modal-title { margin:0 0 12px; color:var(--gold); }
+.modal-text { line-height:1.65; color:#f2f2f2; }
+.signature { margin-top:18px; font-style:italic; color:#00ffcc; }
+.close { position:absolute; right:12px; top:10px; width:32px; height:32px; line-height:28px; text-align:center; border:2px solid var(--border); border-radius:8px; color:var(--gold); cursor:pointer; box-shadow:var(--ui-shadow); background:transparent; }
+.close:hover { background:#2a2a2a; }
+
+footer { margin:40px 0 24px; opacity:0.85; font-size:12px; }
+.tiny { opacity:0.7; }
+
+/* Responsive */
+@media (max-width:540px){
+  .clock-wrapper { padding:22px 24px; }
+  .hat { width:96px; top:-60px; }
+  #timer { font-size:22px; }
+  .daily-popup { width:90%; padding:16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Background layers -->
+<div class="background"></div>
+<div class="bg-overlay"></div>
+
+<div class="container">
+<header>
+  <div class="site-title">U-uh… it’s Christmas soon… I thought you’d like this 😅</div>
+</header>
+
+<main>
+<section class="countdown">
+  <h1 style="margin-bottom:18px;">🎄 Christmas Countdown 🎄</h1>
+  <div class="clock-wrapper">
+    <img src="assets/images/santa-hat.png" alt="" class="hat">
+    <span class="timer-label" aria-hidden="true">Counting down to December 25 ❤️</span>
+    <div id="timer" role="timer" aria-live="polite" aria-atomic="true">Loading…</div>
+  </div>
+  <!-- Decorations -->
+  <img src="assets/images/heart.gif" class="decoration" style="top:20%; left:10%;">
+  <img src="assets/images/gift.gif" class="decoration" style="top:50%; left:80%;">
+</section>
+
+<!-- Daily popup will be injected here -->
+
+<!-- Note icon for main multi-message note -->
+<img src="assets/images/note-icon.gif" alt="Open note" class="note-icon" id="noteTrigger" title="Open note">
+
+<!-- Multi-message modal -->
+<div id="note-modal" class="modal">
+  <div class="modal-content">
+    <button class="close" id="noteClose">×</button>
+    <h2 class="modal-title">✨ Christmas Message ✨</h2>
+    <p class="modal-text" id="modalText"></p>
+    <p class="signature">— Andrew 💖</p>
+    <div style="text-align:right; margin-top:10px;">
+      <button id="prevMsg">&lt;</button>
+      <button id="nextMsg">&gt;</button>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<footer>
+  I… I made this for you, Kacchan… don’t get too smug 😳<br>
+  <span class="tiny">© 2025 • Andrew • to Jett</span>
+</footer>
+</div>
+
+<audio id="bg-music" src="assets/music/christmas.mp3" loop></audio>
+
+<script>
+// ===== Countdown =====
+function updateCountdown(){
+  const christmas = new Date("December 25, 2025 00:00:00").getTime();
+  const now = new Date().getTime();
+  const diff = christmas - now;
+
+  if(diff <=0){
+    document.getElementById('timer').textContent="00 DAYS : 00 HOURS : 00 MINUTES : 00 SECONDS";
+    window.location.href = 'final-surprise.html';
+    return;
+  }
+
+  const days = Math.floor(diff / (1000*60*60*24));
+  const hours = Math.floor((diff/(1000*60*60))%24);
+  const minutes = Math.floor((diff/(1000*60))%60);
+  const seconds = Math.floor((diff/1000)%60);
+
+  document.getElementById("timer").textContent=
+    `${pad(days)} DAYS : ${pad(hours)} HOURS : ${pad(minutes)} MINUTES : ${pad(seconds)} SECONDS`;
+}
+function pad(n){return n.toString().padStart(2,'0');}
+setInterval(updateCountdown,1000);
+updateCountdown();
+
+// ===== Daily Notes =====
+const dailyNotes=[
+  "I made this little countdown just for us… hope it makes waiting fun 😳🎄",
+  "U-uh… Jett… I hope you’re having a good day 😳",
+  "I… I tried not to think about you all day… but I failed 😅",
+  "K-Kacchan, d-did you notice I sent that gif first? 😳",
+  "Um… I was kinda hoping you’d reply faster… but it’s okay 😢💌",
+  "I… I think I sent too many heart emojis… oh no 😳💖",
+  "Kacchan… your last message made me… smile too much 😳",
+  "U-um… I hope this little note makes you laugh a bit 😅🎄",
+  "I… I was practicing how to text you funny things… did it work? 😳",
+  "U-uh… it’s silly but I’m really looking forward to your next message 😳"
+];
+
+const today = new Date();
+const startDate = new Date("December 1, 2025");
+let dayIndex = Math.floor((today - startDate)/(1000*60*60*24));
+if(dayIndex<0) dayIndex=0;
+if(dayIndex>=dailyNotes.length) dayIndex=dailyNotes.length-1;
+
+if(localStorage.getItem('dailyNoteShown')!==today.toDateString()){
+  showDailyPopup(dailyNotes[dayIndex]);
+  localStorage.setItem('dailyNoteShown', today.toDateString());
+}
+
+function showDailyPopup(message){
+  const popup=document.createElement('div');
+  popup.className='daily-popup';
+  popup.innerHTML=`<p>${message}</p><button id="closeDaily">Got it</button>`;
+  document.body.appendChild(popup);
+  document.getElementById('closeDaily').addEventListener('click',()=>popup.remove());
+}
+
+// ===== Multi-message modal =====
+const messages=[
+  "Hey Jett… I made something small for you 😳",
+  "I… I hope it’s not too cheesy 😅",
+  "But I wanted to leave a little surprise for you every day 💌",
+  "I… I’m really shy… but I hope you like it ❤️"
+];
+let msgIndex=0;
+const modal=document.getElementById('note-modal');
+const modalText=document.getElementById('modalText');
+const noteTrigger=document.getElementById('noteTrigger');
+const noteClose=document.getElementById('noteClose');
+const prevBtn=document.getElementById('prevMsg');
+const nextBtn=document.getElementById('nextMsg');
+const bgMusic=document.getElementById('bg-music');
+let musicStarted=false;
+
+function openModal(){
+  modal.style.display='block';
+  modalText.textContent=messages[msgIndex];
+  if(!musicStarted){bgMusic.play().catch(()=>{}); musicStarted=true;}
+}
+function closeModal(){modal.style.display='none';}
+function showMessage(index){msgIndex=index; modalText.textContent=messages[msgIndex];}
+
+noteTrigger.addEventListener('click',openModal);
+noteClose.addEventListener('click',closeModal);
+prevBtn.addEventListener('click',()=>{if(msgIndex>0)showMessage(msgIndex-1);});
+nextBtn.addEventListener('click',()=>{if(msgIndex<messages.length-1)showMessage(msgIndex+1);});
+modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape' && modal.style.display==='block')closeModal();});
+</script>
+</body>
+</html>
