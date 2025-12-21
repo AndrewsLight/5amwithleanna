@@ -5,43 +5,79 @@
   <title>Anime Party — Home</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: Poppins, system-ui; background:#0d0d0f; color:#fff; margin:0; }
-    .wrap { max-width: 700px; margin: 40px auto; padding: 0 16px; }
-    h1 { margin-bottom: 8px; }
-    .card { background:#16161a; border:1px solid #23232a; border-radius:12px; padding:16px; }
-    .row { display:flex; gap:10px; margin-top:10px; }
-    .input { flex:1; padding:10px; border-radius:8px; border:1px solid #23232a; background:#101014; color:#fff; }
-    .btn { padding:10px 14px; border:none; border-radius:8px; background:#ff4fd8; color:#fff; font-weight:600; cursor:pointer; }
+    :root {
+      --bg:#0d0d0f; --panel:#16161a; --text:#fff; --muted:#a1a1aa;
+      --accent:#ff4fd8; --border:#23232a;
+    }
+    body { font-family:Poppins,system-ui; background:var(--bg); color:var(--text); margin:0; }
+    .wrap { max-width:700px; margin:40px auto; padding:0 16px; }
+    h1 { margin-bottom:8px; }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; margin-top:16px; }
+    .row { display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; }
+    .input { flex:1; padding:10px; border-radius:8px; border:1px solid var(--border); background:#101014; color:var(--text); }
+    .btn { padding:10px 14px; border:none; border-radius:8px; background:var(--accent); color:#fff; font-weight:600; cursor:pointer; }
     .btn.secondary { background:#2a2a32; }
+    .status { color:var(--muted); font-size:.9rem; margin-top:8px; }
+    @media(max-width:600px){
+      .row{flex-direction:column;}
+      .btn{width:100%;}
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Anime Party</h1>
-    <p>Create or join a room to chat while watching together.</p>
+    <p>Login, set your username, then create or join a room to chat and watch together.</p>
 
+    <!-- Login card -->
     <div class="card">
-      <h3>Create a room</h3>
+      <h3>Login</h3>
       <div class="row">
-        <input id="hostName" class="input" placeholder="Your name (host)" />
-        <button class="btn" onclick="createRoom()">Create</button>
+        <input id="email" class="input" placeholder="Email" />
+        <input id="password" class="input" type="password" placeholder="Password" />
+      </div>
+      <div class="row">
+        <button class="btn" onclick="signupEmail()">Sign Up</button>
+        <button class="btn secondary" onclick="loginEmail()">Login</button>
+        <button class="btn secondary" onclick="loginAnon()">Login Anonymously</button>
+      </div>
+      <div id="loginStatus" class="status">Not logged in</div>
+    </div>
+
+    <!-- Username card -->
+    <div class="card">
+      <h3>Set Display Name</h3>
+      <div class="row">
+        <input id="username" class="input" placeholder="Your display name" />
+        <button class="btn" onclick="setUsername()">Save</button>
+      </div>
+      <div id="userStatus" class="status">No username set</div>
+    </div>
+
+    <!-- Room actions -->
+    <div class="card">
+      <h3>Create a Room</h3>
+      <div class="row">
+        <button class="btn" onclick="createRoom()">Create Room</button>
       </div>
     </div>
 
-    <div class="card" style="margin-top:16px;">
-      <h3>Join a room</h3>
+    <div class="card">
+      <h3>Join a Room</h3>
       <div class="row">
         <input id="roomIdJoin" class="input" placeholder="Room ID" />
-        <input id="guestName" class="input" placeholder="Your name" />
-        <button class="btn secondary" onclick="joinRoom()">Join</button>
+        <button class="btn secondary" onclick="joinRoom()">Join Room</button>
       </div>
     </div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, onAuthStateChanged } 
+      from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
     import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
+    // Your Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyBVVvi5Xxr-ypjQqV2p8XgcRsYtfsVmfts",
       authDomain: "anime-party-ab793.firebaseapp.com",
@@ -53,29 +89,75 @@
     };
 
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getDatabase(app);
 
-    function randId() {
-      return Math.random().toString(36).slice(2, 8); // 6-char ID
+    let displayName = null;
+
+    // Auth functions
+    async function signupEmail(){
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        document.getElementById("loginStatus").textContent = "Signed up and logged in as " + email;
+      } catch(err){ alert(err.message); }
     }
 
-    async function createRoom() {
-      const name = document.getElementById("hostName").value.trim() || "Host";
-      const roomId = "room-" + randId();
-      const createdAt = Date.now();
-
-      await set(ref(db, "rooms/" + roomId + "/meta"), { createdBy: name, createdAt });
-      // Empty chat node is optional; it gets created when first message arrives.
-
-      // Navigate to room as host (we pass name for chat display)
-      window.location.href = `room.html?roomId=${encodeURIComponent(roomId)}&name=${encodeURIComponent(name)}`;
+    async function loginEmail(){
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        document.getElementById("loginStatus").textContent = "Logged in as " + email;
+      } catch(err){ alert(err.message); }
     }
 
-    function joinRoom() {
+    async function loginAnon(){
+      try {
+        await signInAnonymously(auth);
+        document.getElementById("loginStatus").textContent = "Logged in anonymously";
+      } catch(err){ alert(err.message); }
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      if(user){
+        document.getElementById("loginStatus").textContent = "Logged in: " + (user.email || "Anonymous");
+      } else {
+        document.getElementById("loginStatus").textContent = "Not logged in";
+      }
+    });
+
+    // Username
+    function setUsername(){
+      const name = document.getElementById("username").value.trim();
+      if(!name){ alert("Enter a username"); return; }
+      displayName = name;
+      document.getElementById("userStatus").textContent = "Username set: " + name;
+    }
+
+    // Room creation
+    async function createRoom(){
+      if(!auth.currentUser){ alert("Login first"); return; }
+      if(!displayName){ alert("Set a username first"); return; }
+      const roomId = "room-" + Math.random().toString(36).slice(2,8);
+      await set(ref(db, "rooms/" + roomId), {
+        meta: { hostId: auth.currentUser.uid, hostName: displayName, createdAt: Date.now() },
+        chat: {},
+        guests: {}
+      });
+      window.location.href = `room.html?roomId=${roomId}&name=${encodeURIComponent(displayName)}`;
+    }
+
+    // Join room
+    async function joinRoom(){
+      if(!auth.currentUser){ alert("Login first"); return; }
+      if(!displayName){ alert("Set a username first"); return; }
       const roomId = document.getElementById("roomIdJoin").value.trim();
-      const name = document.getElementById("guestName").value.trim() || "Guest";
-      if (!roomId) { alert("Enter a Room ID."); return; }
-      window.location.href = `room.html?roomId=${encodeURIComponent(roomId)}&name=${encodeURIComponent(name)}`;
+      if(!roomId){ alert("Enter a Room ID"); return; }
+      const guestId = "guest-" + Math.random().toString(36).slice(2,8);
+      await set(ref(db, "rooms/" + roomId + "/guests/" + guestId), { name: displayName, uid: auth.currentUser.uid });
+      window.location.href = `room.html?roomId=${roomId}&name=${encodeURIComponent(displayName)}`;
     }
   </script>
 </body>
