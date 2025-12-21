@@ -2,127 +2,152 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Anime Party — Home</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Anime Party — Official Watch Together</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="dark" />
-  <style>
-    :root {
-      --bg:#0d0d0f; --surface:#121216; --panel:#17171c;
-      --border:#252531; --text:#ffffff; --muted:#b3b3bd;
-      --accent:#ff4fd8; --accent-2:#7c3aed;
-    }
-    *{box-sizing:border-box;}
-    body {
-      margin:0; font-family:"Poppins",system-ui;
-      background: radial-gradient(1000px 600px at 20% -10%, #1c1030 0%, var(--bg) 45%, var(--bg) 100%);
-      color:var(--text);
-    }
+  <meta name="theme-color" content="#ff4fd8" />
+  <meta name="description" content="Watch anime together in real time. Create rooms, chat, and share the moment." />
 
-    /* Header */
-    .site-header {
-      position:sticky; top:0; z-index:50;
-      background:linear-gradient(90deg,var(--panel),#1b1b21);
-      border-bottom:1px solid var(--border);
-      padding:14px 22px; display:flex; justify-content:space-between; align-items:center;
-      animation:fadeDown .6s ease;
-    }
-    @keyframes fadeDown { from{opacity:0; transform:translateY(-20px);} to{opacity:1; transform:translateY(0);} }
-    .brand-wrap{display:flex;align-items:center;gap:12px;}
-    .logo{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#2a2a34,#1e1e26);}
-    .brand{display:grid;line-height:1.1;}
-    .brand .title{font-weight:800;}
-    .brand .tag{color:var(--muted);font-size:.9rem;}
-    .nav{display:flex;gap:16px;}
-    .nav a{color:var(--muted);text-decoration:none;font-weight:600;padding:8px 10px;border-radius:8px;transition:.2s;}
-    .nav a:hover{color:var(--accent);background:rgba(255,79,216,.08);}
-    .nav .active{color:var(--accent);background:rgba(255,79,216,.08);}
+  <!-- Open Graph -->
+  <meta property="og:title" content="Anime Party" />
+  <meta property="og:description" content="Watch anime together in real time." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/og/animeparty.jpg" />
 
-    /* Layout */
-    .container{max-width:900px;margin:26px auto;padding:0 16px;}
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:16px;box-shadow:0 12px 40px rgba(0,0,0,.35);animation:fadeUp .6s ease;}
-    @keyframes fadeUp { from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:translateY(0);} }
-    .card h3{margin:0 0 10px;}
-    .row{display:flex;gap:10px;flex-wrap:wrap;}
-    .input{flex:1;padding:12px;border-radius:10px;border:1px solid var(--border);background:#101014;color:var(--text);}
-    .btn{padding:12px 16px;border:none;border-radius:10px;font-weight:700;color:#fff;background:var(--accent);cursor:pointer;transition:.2s;}
-    .btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,79,216,.25);}
-    .btn.secondary{background:#2a2a32;}
-    .btn.ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}
-    .status{color:var(--muted);font-size:.9rem;margin-top:8px;min-height:20px;}
-    .hidden{display:none!important;}
-    @media(max-width:600px){.row{flex-direction:column;} .btn{width:100%;}}
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
 
-    /* Animations for status */
-    .toast{position:fixed;bottom:20px;right:20px;background:var(--accent-2);color:#fff;padding:12px 18px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.4);opacity:0;transform:translateY(20px);transition:.4s;}
-    .toast.show{opacity:1;transform:translateY(0);}
-  </style>
+  <!-- App Manifest -->
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png" />
+
+  <!-- Preload fonts (optional if self-hosted) -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
+  <!-- Accessibility: skip link -->
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- Header -->
   <header class="site-header">
     <div class="brand-wrap">
-      <div class="logo"></div>
+      <div class="logo" aria-hidden="true"></div>
       <div class="brand">
         <span class="title">Anime Party</span>
         <span class="tag">Watch together, your way</span>
       </div>
     </div>
-    <nav class="nav">
-      <a class="active" href="#">Home</a>
-      <a href="#">Library</a>
-      <a href="#">Profile</a>
+    <nav class="nav" aria-label="Primary">
+      <a class="active" href="#" aria-current="page">Home</a>
+      <button id="navRoom" class="nav-btn" disabled>Room</button>
+      <a href="#" class="ghost-link">Library</a>
+      <a href="#" class="ghost-link">Profile</a>
     </nav>
   </header>
 
-  <div class="container">
-    <!-- Auth -->
-    <section class="card" id="cardAuth">
-      <h3>Login</h3>
-      <div class="row">
-        <input id="email" class="input" placeholder="Email" />
-        <input id="password" class="input" type="password" placeholder="Password" />
+  <!-- Hero -->
+  <section class="hero" id="main" aria-label="Intro">
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <h1>Your official anime watch-together platform</h1>
+        <p>Login, set your display name, then create or join a room. Mobile-first, real-time, and polished.</p>
+        <div class="badges">
+          <span class="badge">Realtime</span>
+          <span class="badge">Secure</span>
+          <span class="badge">Responsive</span>
+          <span class="badge">PWA</span>
+        </div>
       </div>
-      <div class="row" style="margin-top:10px;">
-        <button class="btn" id="btnSignup">Sign up</button>
+      <div class="hero-art" aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <!-- Main cards -->
+  <div class="container">
+    <!-- Authentication -->
+    <section class="card" id="cardAuth" aria-labelledby="authTitle">
+      <h3 id="authTitle">Login</h3>
+      <div class="row">
+        <div class="field">
+          <label for="email" class="label">Email</label>
+          <input id="email" class="input" placeholder="you@domain.com" autocomplete="email" inputmode="email" />
+        </div>
+        <div class="field">
+          <label for="password" class="label">Password</label>
+          <div class="password-wrap">
+            <input id="password" class="input" type="password" placeholder="••••••••" autocomplete="current-password" />
+            <button class="btn icon only" id="togglePass" aria-label="Toggle password visibility">👁️</button>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="btnSignup">Sign up</button>
         <button class="btn secondary" id="btnLogin">Login</button>
         <button class="btn ghost" id="btnAnon">Anonymous</button>
       </div>
+      <div class="row links">
+        <button class="link-btn" id="btnReset">Forgot password?</button>
+      </div>
       <div id="loginStatus" class="status">Not logged in</div>
+      <div id="verifyBanner" class="banner hidden">Please verify your email to enable room actions. <button class="btn tiny" id="btnSendVerify">Send verification</button></div>
     </section>
 
     <!-- Profile -->
-    <section class="card" id="cardProfile">
-      <h3>Profile</h3>
+    <section class="card" id="cardProfile" aria-labelledby="profileTitle">
+      <h3 id="profileTitle">Profile</h3>
       <div class="row">
-        <input id="displayName" class="input" placeholder="Your display name" />
-        <button class="btn" id="btnSaveName">Save</button>
+        <div class="field">
+          <label for="displayName" class="label">Display name</label>
+          <input id="displayName" class="input" placeholder="Your display name" maxlength="32" />
+        </div>
+        <button class="btn primary" id="btnSaveName">Save</button>
       </div>
       <div id="profileStatus" class="status">No display name set</div>
     </section>
 
     <!-- Rooms (gated) -->
-    <section class="card hidden" id="cardRooms">
-      <h3>Rooms</h3>
+    <section class="card hidden" id="cardRooms" aria-labelledby="roomsTitle">
+      <h3 id="roomsTitle">Rooms</h3>
+      <p class="sub">Create a new room or join with an invite code.</p>
       <div class="row">
-        <button class="btn" id="btnCreate">Create Room</button>
+        <button class="btn primary" id="btnCreate">Create room</button>
+        <button class="btn ghost" id="btnCopyInvite" disabled>Copy invite</button>
       </div>
-      <div class="row" style="margin-top:10px;">
-        <input id="roomIdJoin" class="input" placeholder="Room ID" />
-        <button class="btn secondary" id="btnJoin">Join Room</button>
+      <div class="row">
+        <div class="field">
+          <label for="roomIdJoin" class="label">Room ID</label>
+          <input id="roomIdJoin" class="input" placeholder="room-abc123" />
+        </div>
+        <button class="btn secondary" id="btnJoin">Join room</button>
       </div>
       <div id="roomsStatus" class="status"></div>
     </section>
   </div>
 
-  <div class="toast" id="toast"></div>
+  <!-- Toasts -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+  <!-- Scripts -->
   <script type="module">
+    // Firebase (ES modules via CDN)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import {
+      getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+      signInAnonymously, onAuthStateChanged, updateProfile, sendEmailVerification,
+      sendPasswordResetEmail
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
     import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
+    // Replace with your Firebase config
     const firebaseConfig = {
       apiKey: "YOUR_API_KEY",
-      authDomain: "5amwithleanna.online",
+      authDomain: "anime-party-ab793.firebaseapp.com",
       databaseURL: "https://anime-party-ab793-default-rtdb.firebaseio.com",
       projectId: "anime-party-ab793",
       storageBucket: "anime-party-ab793.firebasestorage.app",
@@ -130,31 +155,228 @@
       appId: "1:220188656976:web:a699a028f1e9cd8bcdd855"
     };
 
+    // Initialize
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
 
+    // Elements
+    const navRoom = document.getElementById("navRoom");
     const cardRooms = document.getElementById("cardRooms");
     const loginStatus = document.getElementById("loginStatus");
     const profileStatus = document.getElementById("profileStatus");
     const roomsStatus = document.getElementById("roomsStatus");
+    const verifyBanner = document.getElementById("verifyBanner");
     const toast = document.getElementById("toast");
+    const emailEl = document.getElementById("email");
+    const passEl = document.getElementById("password");
+    const nameEl = document.getElementById("displayName");
+    const btnSignup = document.getElementById("btnSignup");
+    const btnLogin = document.getElementById("btnLogin");
+    const btnAnon = document.getElementById("btnAnon");
+    const btnReset = document.getElementById("btnReset");
+    const btnSendVerify = document.getElementById("btnSendVerify");
+    const btnSaveName = document.getElementById("btnSaveName");
+    const btnCreate = document.getElementById("btnCreate");
+    const btnCopyInvite = document.getElementById("btnCopyInvite");
+    const btnJoin = document.getElementById("btnJoin");
+    const roomIdJoinEl = document.getElementById("roomIdJoin");
+    const togglePass = document.getElementById("togglePass");
 
-    function showToast(msg){
+    // Small helpers
+    const randId = () => Math.random().toString(36).slice(2, 8);
+    const showToast = (msg) => {
       toast.textContent = msg;
       toast.classList.add("show");
-      setTimeout(()=>toast.classList.remove("show"),3000);
-    }
+      setTimeout(() => toast.classList.remove("show"), 3000);
+    };
+    const gateReady = () => {
+      const u = auth.currentUser;
+      return !!(u && (u.isAnonymous || u.emailVerified) && u.displayName && u.displayName.trim().length > 0);
+    };
 
-    function updateGate(){
-      const user = auth.currentUser;
-      if(user && user.displayName){
-        cardRooms.classList.remove("hidden");
-        roomsStatus.textContent = "Ready. Create or join a room.";
-      } else {
-        cardRooms.classList.add("hidden");
-        roomsStatus.textContent = "Login and set display name first.";
+    // Password visibility
+    togglePass.addEventListener("click", () => {
+      const type = passEl.getAttribute("type") === "password" ? "text" : "password";
+      passEl.setAttribute("type", type);
+      togglePass.textContent = type === "password" ? "👁️" : "🙈";
+    });
+
+    // Auth actions
+    btnSignup.addEventListener("click", async () => {
+      const email = emailEl.value.trim();
+      const pass = passEl.value.trim();
+      if (!email || !pass) return showToast("Enter email and password");
+      try {
+        await createUserWithEmailAndPassword(auth, email, pass);
+        loginStatus.textContent = "Signed up and logged in: " + email;
+        verifyBanner.classList.remove("hidden");
+        showToast("Welcome! Please verify your email.");
+      } catch (err) {
+        showToast(err.message);
       }
+    });
+
+    btnLogin.addEventListener("click", async () => {
+      const email = emailEl.value.trim();
+      const pass = passEl.value.trim();
+      if (!email || !pass) return showToast("Enter email and password");
+      try {
+        await signInWithEmailAndPassword(auth, email, pass);
+        loginStatus.textContent = "Logged in: " + email;
+        verifyBanner.classList.toggle("hidden", auth.currentUser?.emailVerified);
+        showToast("Logged in successfully");
+      } catch (err) {
+        showToast(err.message);
+      }
+    });
+
+    btnAnon.addEventListener("click", async () => {
+      try {
+        await signInAnonymously(auth);
+        loginStatus.textContent = "Logged in anonymously";
+        verifyBanner.classList.add("hidden");
+        showToast("Anonymous session started");
+      } catch (err) {
+        showToast(err.message);
+      }
+    });
+
+    btnReset.addEventListener("click", async () => {
+      const email = emailEl.value.trim();
+      if (!email) return showToast("Enter your email first");
+      try {
+        await sendPasswordResetEmail(auth, email);
+        showToast("Password reset email sent");
+      } catch (err) {
+        showToast(err.message);
+      }
+    });
+
+    btnSendVerify.addEventListener("click", async () => {
+      const u = auth.currentUser;
+      if (!u || !u.email) return showToast("Login with email first");
+      try {
+        await sendEmailVerification(u);
+        showToast("Verification email sent");
+      } catch (err) {
+        showToast(err.message);
+      }
+    });
+
+    // Profile: display name
+    btnSaveName.addEventListener("click", async () => {
+      const u = auth.currentUser;
+      if (!u) return showToast("Login first");
+      const name = nameEl.value.trim();
+      if (!name) return showToast("Enter a display name");
+      if (name.length < 2) return showToast("Display name too short");
+      try {
+        await updateProfile(u, { displayName: name });
+        profileStatus.textContent = "Display name set: " + name;
+        showToast("Profile updated");
+        updateGate();
+      } catch (err) {
+        showToast(err.message);
+      }
+    });
+
+    // Gate logic
+    function updateGate() {
+      const u = auth.currentUser;
+      const emailVerified = u?.emailVerified || false;
+      const hasName = !!(u && u.displayName && u.displayName.trim().length > 0);
+
+      // Banner only for email users not verified
+      verifyBanner.classList.toggle("hidden", !(u && u.email && !emailVerified));
+
+      // Room card visible when: anonymous OR verified email, and display name set
+      const ready = gateReady();
+      cardRooms.classList.toggle("hidden", !ready);
+
+      // Nav room button
+      navRoom.disabled = !ready;
+      navRoom.classList.toggle("enabled", ready);
+
+      if (u) {
+        loginStatus.textContent = "Logged in: " + (u.email || "Anonymous");
+      } else {
+        loginStatus.textContent = "Not logged in";
+      }
+
+      // Rooms status
+      roomsStatus.textContent = ready ? "Ready. Create or join a room." : "Login, verify (or anonymous), and set a display name.";
     }
 
-    document.getElementById("btnSignup").
+    // Create room
+    btnCreate.addEventListener("click", async () => {
+      if (!gateReady()) return showToast("Complete login and profile first");
+      const u = auth.currentUser;
+      const roomId = "room-" + randId();
+      try {
+        await set(ref(db, "rooms/" + roomId), {
+          meta: {
+            hostId: u.uid,
+            hostName: u.displayName,
+            createdAt: Date.now(),
+            overlayVisible: true
+          },
+          chat: {},
+          guests: {}
+        });
+        const inviteUrl = `${location.origin}/room.html?roomId=${encodeURIComponent(roomId)}&name=${encodeURIComponent(u.displayName)}`;
+        btnCopyInvite.disabled = false;
+        btnCopyInvite.onclick = async () => {
+          await navigator.clipboard.writeText(inviteUrl);
+          showToast("Invite link copied");
+        };
+        // Navigate to room
+        window.location.href = inviteUrl;
+      } catch (err) {
+        showToast(err.message);
+      }
+    });
+
+    // Join room
+    btnJoin.addEventListener("click", async () => {
+      if (!gateReady()) return showToast("Complete login and profile first");
+      const u = auth.currentUser;
+      const roomId = roomIdJoinEl.value.trim();
+      if (!roomId) return showToast("Enter a Room ID");
+      const guestId = "guest-" + randId();
+      try {
+        await set(ref(db, `rooms/${roomId}/guests/${guestId}`), {
+          name: u.displayName,
+          uid: u.uid,
+          joinedAt: Date.now()
+        });
+        window.location.href = `${location.origin}/room.html?roomId=${encodeURIComponent(roomId)}&name=${encodeURIComponent(u.displayName)}`;
+      } catch (err) {
+        showToast(err.message);
+      }
+    });
+
+    // Nav "Room" defensive link
+    navRoom.addEventListener("click", () => {
+      if (!gateReady()) return showToast("Complete login and profile first");
+      // If ready but no active room, stay here (room selection is explicit)
+      showToast("Create or join a room first");
+    });
+
+    // Auth state listener
+    onAuthStateChanged(auth, (user) => {
+      updateGate();
+    });
+
+    // PWA: register service worker
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+      });
+    }
+
+    // Initial gate
+    updateGate();
+  </script>
+</body>
+</html>
