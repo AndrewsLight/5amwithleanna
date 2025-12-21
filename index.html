@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Anime Party — Home</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: Poppins, system-ui; background:#0d0d0f; color:#fff; margin:0; }
+    .wrap { max-width: 700px; margin: 40px auto; padding: 0 16px; }
+    h1 { margin-bottom: 8px; }
+    .card { background:#16161a; border:1px solid #23232a; border-radius:12px; padding:16px; }
+    .row { display:flex; gap:10px; margin-top:10px; }
+    .input { flex:1; padding:10px; border-radius:8px; border:1px solid #23232a; background:#101014; color:#fff; }
+    .btn { padding:10px 14px; border:none; border-radius:8px; background:#ff4fd8; color:#fff; font-weight:600; cursor:pointer; }
+    .btn.secondary { background:#2a2a32; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Anime Party</h1>
+    <p>Create or join a room to chat while watching together.</p>
+
+    <div class="card">
+      <h3>Create a room</h3>
+      <div class="row">
+        <input id="hostName" class="input" placeholder="Your name (host)" />
+        <button class="btn" onclick="createRoom()">Create</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h3>Join a room</h3>
+      <div class="row">
+        <input id="roomIdJoin" class="input" placeholder="Room ID" />
+        <input id="guestName" class="input" placeholder="Your name" />
+        <button class="btn secondary" onclick="joinRoom()">Join</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBVVvi5Xxr-ypjQqV2p8XgcRsYtfsVmfts",
+      authDomain: "anime-party-ab793.firebaseapp.com",
+      databaseURL: "https://anime-party-ab793-default-rtdb.firebaseio.com",
+      projectId: "anime-party-ab793",
+      storageBucket: "anime-party-ab793.firebasestorage.app",
+      messagingSenderId: "220188656976",
+      appId: "1:220188656976:web:a699a028f1e9cd8bcdd855"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    function randId() {
+      return Math.random().toString(36).slice(2, 8); // 6-char ID
+    }
+
+    async function createRoom() {
+      const name = document.getElementById("hostName").value.trim() || "Host";
+      const roomId = "room-" + randId();
+      const createdAt = Date.now();
+
+      await set(ref(db, "rooms/" + roomId + "/meta"), { createdBy: name, createdAt });
+      // Empty chat node is optional; it gets created when first message arrives.
+
+      // Navigate to room as host (we pass name for chat display)
+      window.location.href = `room.html?roomId=${encodeURIComponent(roomId)}&name=${encodeURIComponent(name)}`;
+    }
+
+    function joinRoom() {
+      const roomId = document.getElementById("roomIdJoin").value.trim();
+      const name = document.getElementById("guestName").value.trim() || "Guest";
+      if (!roomId) { alert("Enter a Room ID."); return; }
+      window.location.href = `room.html?roomId=${encodeURIComponent(roomId)}&name=${encodeURIComponent(name)}`;
+    }
+  </script>
+</body>
+</html>
