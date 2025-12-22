@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Shinkai Deep Sea Chat",
+  "version": "1.0",
+  "description": "Floating anime-inspired deep sea chat overlay for Andoru Shinkai.",
+  "permissions": [
+    "storage",
+    "notifications"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["app.js"],
+      "css": ["style.css"]
+    }
+  ],
+  "icons": {
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "action": {
+    "default_title": "Shinkai Chat",
+    "default_icon": "icon.png"
+  }
+}
