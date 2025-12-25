@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>🌸 Sakura Chat — かわいいテキスト</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Fonts: Japanese + English-friendly -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --pink:#ffb6c1;
+      --hotpink:#ff69b4;
+      --rose:#fff0f6;
+      --ink:#56324d;
+      --muted:#9b6b8b;
+      --bg:#fffafc;
+      --white:#ffffff;
+      --shadow:0 8px 24px rgba(255,182,193,.35);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;background:#ffeef5 url('images/background-tile.gif');
+      font-family:"Noto Sans JP","Yu Gothic",Arial,sans-serif;color:var(--ink);
+      display:flex;flex-direction:column;min-height:100vh;
+    }
+
+    /* Header with language toggle moved to top-right */
+    header{
+      background:var(--pink);color:#fff;padding:10px 12px;border-bottom:3px solid var(--hotpink);
+      position:sticky;top:0;z-index:10;
+      display:flex;align-items:center;justify-content:space-between
+    }
+    .brand{font-weight:bold;font-size:20px;letter-spacing:.2px}
+    .brand .en{font-family:"Comic Neue", cursive; margin-left:6px}
+    .lang-toggle{display:flex;gap:8px; align-items:center}
+    .lang-btn{
+      background:#fff; border:1px solid #ffd3de; color:#cc387b; font-size:12px;
+      padding:6px 10px; border-radius:14px; cursor:pointer
+    }
+    .lang-btn.active{background:#ffedf3; border-color:#ff96bd}
+
+    /* Layout: mobile-first */
+    main.app{max-width:1024px;margin:10px auto;padding:0 12px;display:grid;gap:12px;flex:1}
+    @media(min-width:900px){main.app{grid-template-columns:320px 1fr}}
+    @media(max-width:899px){main.app{grid-template-columns:1fr}}
+
+    /* Card base */
+    .card{
+      background:var(--rose);border:2px solid var(--pink);border-radius:18px;
+      box-shadow:var(--shadow);
+    }
+
+    /* Sidebar */
+    .sidebar{padding:14px;display:flex;flex-direction:column;gap:12px}
+    .title{font-weight:bold;color:var(--hotpink);font-size:16px;display:flex;align-items:center;gap:6px}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .col{display:flex;flex-direction:column;gap:8px;flex:1}
+    .avatar-lg{
+      width:76px;height:76px;border-radius:50%;object-fit:cover;background:#fff;
+      border:3px solid var(--pink);position:relative;overflow:hidden
+    }
+    .input,.select{
+      width:100%;padding:10px;border:2px solid var(--pink);border-radius:14px;
+      background:#fff;font-size:14px;color:var(--ink)
+    }
+    .hint{font-size:12px;color:var(--muted)}
+    .btn{
+      padding:10px 12px;border:none;border-radius:16px;font-weight:bold;color:#fff;
+      background:linear-gradient(90deg,var(--hotpink),#ff85c1);cursor:pointer;
+      box-shadow:0 6px 16px rgba(255,105,180,.35);transition:transform .12s ease, filter .12s ease
+    }
+    .btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
+    .btn.secondary{
+      background:linear-gradient(90deg,#ffa6c7,#ffc1d6);color:#56324d
+    }
+    .btn.ghost{
+      background:#fff;color:#cc387b;border:1px solid #ffd3de
+    }
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .divider{height:1px;background:#ffd3de;margin:2px 0}
+
+    /* Chat */
+    .chat{display:flex;flex-direction:column;height:70vh;overflow:hidden}
+    @media(min-width:900px){.chat{height:72vh}}
+    .room-head{
+      padding:10px 14px;border-bottom:2px solid #ffd3de;background:var(--bg);
+      display:flex;align-items:center;gap:10px
+    }
+    .room-name{font-weight:bold;color:var(--hotpink)}
+    .presence{margin-left:auto;font-size:12px;color:var(--muted)}
+
+    .messages{
+      flex:1;padding:14px;overflow-y:auto;scroll-behavior:smooth;background:var(--bg)
+    }
+    .group{margin:10px 0;display:flex;align-items:flex-end;gap:8px;max-width:85%; position:relative}
+    .group.me{margin-left:auto;flex-direction:row-reverse}
+    .avatar{
+      width:40px;height:40px;border-radius:50%;border:2px solid var(--pink);
+      object-fit:cover;background:#fff;flex:0 0 auto
+    }
+    .bubble-wrap{display:flex;flex-direction:column;gap:4px;max-width:100%}
+    .nickname{font-size:12px;color:var(--muted);margin:0 6px}
+    .bubble{
+      background:#fff;color:var(--ink);border:1px solid #ffd3de;border-radius:18px;
+      padding:10px 12px;word-wrap:break-word;line-height:1.5;max-width:100%;position:relative
+    }
+    .group.me .bubble{background:var(--pink);color:#fff;border:none}
+    .bubble img{max-width:280px;border-radius:12px;display:block}
+    @media(max-width:480px){.bubble img{max-width:70vw}}
+    .meta{font-size:11px;color:var(--muted);margin-top:2px;text-align:right}
+
+    /* Edit/Delete controls: hidden until hover on own message */
+    .controls{
+      position:absolute; top:-8px; right:-8px; display:flex; gap:6px; opacity:0;
+      transition:opacity .12s ease; pointer-events:none;
+    }
+    .group.me:hover .controls{opacity:1; pointer-events:auto}
+    .control-btn{
+      background:#fff; border:1px solid #ffbed3; color:#cc387b; font-size:11px;
+      padding:4px 8px; border-radius:12px; cursor:pointer; box-shadow:0 2px 6px rgba(255,105,180,.25)
+    }
+    .control-btn:hover{filter:brightness(1.05)}
+
+    .composer{
+      display:flex;gap:8px;padding:10px;border-top:2px solid #ffd3de;background:var(--bg);
+      align-items:center
+    }
+    .composer .input{flex:1}
+    .composer .btn{min-width:92px}
+
+    .typing{
+      padding:6px 14px;font-size:12px;color:var(--muted);background:var(--bg);
+      border-top:1px dashed #ffd3de;display:none
+    }
+
+    /* GIF results */
+    .gif-results{
+      display:flex;gap:8px;padding:8px;overflow-x:auto;background:var(--bg);
+      border-top:1px solid #ffd3de
+    }
+    .gif-thumb{
+      height:88px;border-radius:12px;cursor:pointer;border:2px solid transparent;
+      box-shadow:0 2px 8px rgba(0,0,0,.08);flex:0 0 auto;transition:transform .12s ease, border-color .12s ease
+    }
+    .gif-thumb:hover{border-color:var(--hotpink); transform:translateY(-1px)}
+
+    /* Kawaii decorations */
+    .decor{position:fixed;pointer-events:none;inset:0;z-index:0}
+    .heart{
+      position:absolute;width:18px;height:18px;background:url('images/glitterhearts.gif') center/cover no-repeat;
+      opacity:.6;animation:float 6s ease-in-out infinite
+    }
+    @keyframes float{0%{transform:translateY(0)}50%{transform:translateY(-8px)}100%{transform:translateY(0)}}
+    .shimmer{
+      background: linear-gradient(90deg, rgba(255,255,255,0.0), rgba(255,255,255,0.5), rgba(255,255,255,0.0));
+      background-size: 200% 100%;
+      animation: shimmer 2.6s linear infinite;
+      border-radius: 8px;
+    }
+    @keyframes shimmer{
+      0%{background-position:200% 0}
+      100%{background-position:-200% 0}
+    }
+
+    /* Footer */
+    footer{
+      max-width:1024px;margin:10px auto;padding:8px 12px;color:#87638a;font-size:12px;
+      display:flex;justify-content:space-between;align-items:center
+    }
+    .links{display:flex;gap:12px}
+    .links a{color:#cc387b;text-decoration:none;border-bottom:1px dotted #ff96bd}
+    .links a:hover{color:#ff69b4}
+    .mini{opacity:.7}
+
+    /* In-app modal */
+    .modal-backdrop{
+      position:fixed;inset:0;background:rgba(0,0,0,.25);display:none;align-items:center;justify-content:center;z-index:1000
+    }
+    .modal{
+      background:#fff; border:2px solid #ffd3de; border-radius:16px; width:90%; max-width:420px;
+      box-shadow:0 8px 24px rgba(0,0,0,.2); padding:16px
+    }
+    .modal h3{margin:0 0 8px; color:#cc387b; font-size:16px}
+    .modal .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+    .modal input, .modal button{font-size:14px}
+    .modal .input{width:100%}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">🌸 Sakura Chat <span class="en">— Kawaii Text</span></div>
+    <div class="lang-toggle">
+      <button id="langJa" class="lang-btn active">日本語</button>
+      <button id="langEn" class="lang-btn">English</button>
+    </div>
+  </header>
+
+  <main class="app">
+    <!-- Sidebar: profile + rooms + GIFs -->
+    <aside class="card sidebar" aria-label="設定">
+      <div class="title"><span id="lblProfile">プロフィール / Profile</span></div>
+      <div class="row">
+        <img id="avatarPreview" class="avatar-lg shimmer" src="images/profile1.jpg" alt="avatar">
+        <div class="col">
+          <input id="nicknameInput" class="input" type="text" placeholder="ニックネーム / Nickname (例: さくら)">
+          <div class="row">
+            <input id="avatarFile" class="input" type="file" accept="image/*" aria-label="アバター / Avatar">
+            <button id="saveProfileBtn" class="btn">保存 / Save</button>
+          </div>
+          <div class="hint" id="hintProfile">ギャラリー選択後「保存」で反映（Storage フリーティア） / Pick image then Save.</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="title"><span id="lblRooms">ルーム / Rooms</span></div>
+      <div class="col">
+        <div class="row">
+          <select id="roomSelect" class="select" aria-label="Room">
+            <option value="sakura">🌸 さくら / Sakura</option>
+            <option value="koi">💖 こい / Koi</option>
+            <option value="music">🎶 おんがく / Music</option>
+          </select>
+          <button id="joinRoomBtn" class="btn secondary">参加 / Join</button>
+        </div>
+        <div class="row">
+          <input id="newRoomInput" class="input" type="text" placeholder="新ルーム名 / New room (例: neko)">
+          <input id="newRoomPwd" class="input" type="password" placeholder="パスワード / Password">
+          <button id="createRoomBtn" class="btn">作成 / Create</button>
+        </div>
+        <div class="row">
+          <input id="joinPwd" class="input" type="password" placeholder="参加用パスワード / Room password">
+          <button id="joinWithPwdBtn" class="btn ghost">パスワードで参加 / Join with password</button>
+        </div>
+        <div class="hint" id="hintRooms">ルームはパスワードで共有できます / Share room password for private chat.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="title"><span id="lblGiphy">GIF 検索 / Giphy</span></div>
+      <div class="col">
+        <div class="row">
+          <input id="gifQuery" class="input" type="text" placeholder="例: さくら / cute / neko">
+          <button id="gifSearchBtn" class="btn">検索 / Search</button>
+        </div>
+        <div id="gifResults" class="gif-results" aria-live="polite"></div>
+        <div class="hint" id="hintGifs">GIFをタップで送信 / Tap a GIF to send.</div>
+      </div>
+    </aside>
+
+    <!-- Chat panel -->
+    <section class="card chat" aria-label="チャット / Chat">
+      <div class="room-head">
+        <div class="room-name" id="roomName">🌸 さくらルーム / Sakura Room</div>
+        <div class="presence" id="presence">0 人オンライン / online</div>
+      </div>
+
+      <div id="messages" class="messages"></div>
+      <div id="typing" class="typing">誰かが入力しています… / Someone is typing…</div>
+
+      <div class="composer">
+        <input id="messageInput" class="input" type="text" placeholder="メッセージを入力 / Type a message…">
+        <button id="sendBtn" class="btn">送信 / Send</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer links -->
+  <footer>
+    <div class="links">
+      <a href="privacy.html" target="_blank">Privacy Policy</a>
+      <a href="terms.html" target="_blank">Terms of Service</a>
+      <a href="game.html" target="_blank">Play a game with your friend</a>
+    </div>
+    <div class="mini">© Sakura Chat</div>
+  </footer>
+
+  <!-- Kawaii hearts decorations -->
+  <div class="decor" aria-hidden="true">
+    <div class="heart" style="left:8%; top:20%"></div>
+    <div class="heart" style="left:80%; top:30%; animation-delay:.6s"></div>
+    <div class="heart" style="left:40%; top:70%; animation-delay:1.2s"></div>
+    <div class="heart" style="left:65%; top:15%; animation-delay:.9s"></div>
+  </div>
+
+  <!-- Optional ambient music -->
+  <audio src="audio/background.mp3" autoplay loop hidden></audio>
+
+  <!-- In-app modal (no browser prompts) -->
+  <div id="modalBackdrop" class="modal-backdrop">
+    <div class="modal">
+      <h3 id="modalTitle">編集 / Edit</h3>
+      <input id="modalInput" class="input" type="text" placeholder="...">
+      <div class="actions">
+        <button id="modalCancel" class="btn secondary">キャンセル / Cancel</button>
+        <button id="modalOk" class="btn">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+  <script>
+    /* =========================
+       Firebase config & setup
+       ========================= */
+    const firebaseConfig = {
+      apiKey: "AIzaSyB-G-zug589RphsI7lf4q5QCZEHpc4hUNY",
+      authDomain: "cutetexting.firebaseapp.com",
+      projectId: "cutetexting",
+      storageBucket: "cutetexting.firebasestorage.app",
+      messagingSenderId: "517544912524",
+      appId: "1:517544912524:web:a943288432382701c63da9",
+      databaseURL: "https://cutetexting-default-rtdb.firebaseio.com"
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    const auth = firebase.auth();
+    const storage = firebase.storage();
+    const rtdb = firebase.database();
+
+    /* =========================
+       Giphy key
+       ========================= */
+    const GIPHY_KEY = "jawveyf7DAIvae0Bdzwp64ZyVIOtHWNn";
+
+    /* =========================
+       Elements
+       ========================= */
+    const avatarPreview = document.getElementById('avatarPreview');
+    const nicknameInput = document.getElementById('nicknameInput');
+    const avatarFile = document.getElementById('avatarFile');
+    const saveProfileBtn = document.getElementById('saveProfileBtn');
+
+    const roomSelect = document.getElementById('roomSelect');
+    const joinRoomBtn = document.getElementById('joinRoomBtn');
+    const newRoomInput = document.getElementById('newRoomInput');
+    const newRoomPwd = document.getElementById('newRoomPwd');
+    const createRoomBtn = document.getElementById('createRoomBtn');
+    const joinPwd = document.getElementById('joinPwd');
+    const joinWithPwdBtn = document.getElementById('joinWithPwdBtn');
+
+    const gifQuery = document.getElementById('gifQuery');
+    const gifSearchBtn = document.getElementById('gifSearchBtn');
+    const gifResults = document.getElementById('gifResults');
+
+    const roomNameEl = document.getElementById('roomName');
+    const presenceEl = document.getElementById('presence');
+    const messagesEl = document.getElementById('messages');
+    const typingEl = document.getElementById('typing');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    const langJaBtn = document.getElementById('langJa');
+    const langEnBtn = document.getElementById('langEn');
+
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalInput = document.getElementById('modalInput');
+    const modalCancel = document.getElementById('modalCancel');
+    const modalOk = document.getElementById('modalOk');
+
+    /* =========================
+       State
+       ========================= */
+    let currentUser = null;       // { uid, nickname, avatar }
+    let currentRoom = 'sakura';   // default room
+    let typingTimeout = null;
+    let messagesQueryRef = null;
+    let messagesListenerAttached = false;
+    let presenceRef = null;
+    let typingRef = null;
+    let lang = localStorage.getItem('lang') || 'ja';
+
+    // modal state
+    let modalMode = null; // 'edit' or 'delete'
+    let modalMsgId = null;
+
+    // Local cache
+    const savedProfile = JSON.parse(localStorage.getItem('kawaiiProfile') || '{}');
+    if (savedProfile.nickname) nicknameInput.value = savedProfile.nickname;
+    if (savedProfile.avatarPreview) avatarPreview.src = savedProfile.avatarPreview;
+
+    /* =========================
+       Language setup
+       ========================= */
+    setLanguage(lang);
+    langJaBtn.addEventListener('click', ()=> setLanguage('ja'));
+    langEnBtn.addEventListener('click', ()=> setLanguage('en'));
+
+    function setLanguage(code){
+      lang = code;
+      localStorage.setItem('lang', code);
+      langJaBtn.classList.toggle('active', code==='ja');
+      langEnBtn.classList.toggle('active', code==='en');
+      document.getElementById('lblProfile').textContent = code==='ja' ? 'プロフィール / Profile' : 'Profile / プロフィール';
+      document.getElementById('lblRooms').textContent   = code==='ja' ? 'ルーム / Rooms'       : 'Rooms / ルーム';
+      document.getElementById('lblGiphy').textContent   = code==='ja' ? 'GIF 検索 / Giphy'     : 'Giphy / GIF 検索';
+      document.getElementById('hintProfile').textContent= code==='ja' ? 'ギャラリー選択後「保存」で反映（Storage フリーティア） / Pick image then Save.' : 'Pick image from gallery and press Save (Storage free tier).';
+      document.getElementById('hintRooms').textContent  = code==='ja' ? 'ルームはパスワードで共有できます / Share room password for private chat.' : 'Share room password with friends for private chat.';
+      document.getElementById('hintGifs').textContent   = code==='ja' ? 'GIFをタップで送信 / Tap a GIF to send.' : 'Tap a GIF to send / GIFをタップで送信';
+      updateRoomLabel(currentRoom);
+    }
+
+    function updateRoomLabel(id){
+      const labelMap = {
+        sakura: lang==='ja' ? '🌸 さくらルーム / Sakura Room' : '🌸 Sakura Room / さくらルーム',
+        koi:    lang==='ja' ? '💖 こいルーム / Koi Room'     : '💖 Koi Room / こいルーム',
+        music:  lang==='ja' ? '🎶 おんがくルーム / Music Room': '🎶 Music Room / おんがくルーム'
+      };
+      roomNameEl.textContent = labelMap[id] || (lang==='ja' ? `🗨️ ${id} ルーム` : `🗨️ ${id} Room`);
+    }
+
+    /* =========================
+       Auth: anonymous sign-in
+       ========================= */
+    auth.signInAnonymously().then(async cred => {
+      currentUser = {
+        uid: cred.user.uid,
+        nickname: nicknameInput.value.trim() || (lang==='ja' ? 'ゲスト' : 'Guest'),
+        avatar: savedProfile.avatarUrl || 'images/profile1.jpg'
+      };
+      await ensureUserProfile(currentUser);
+      await joinRoom(currentRoom, null); // default rooms have no password
+    }).catch(err => {
+      console.error('Auth error', err);
+      alert(lang==='ja' ? '認証に失敗しました。Firebase設定を確認してください。' : 'Authentication failed. Check Firebase setup.');
+    });
+
+    /* =========================
+       Profile: avatar preview & upload
+       ========================= */
+    avatarFile.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        avatarPreview.src = ev.target.result;
+        localStorage.setItem('kawaiiProfile', JSON.stringify({
+          nickname: nicknameInput.value.trim() || (lang==='ja' ? 'ゲスト' : 'Guest'),
+          avatarPreview: ev.target.result,
+          avatarUrl: savedProfile.avatarUrl || currentUser?.avatar || 'images/profile1.jpg'
+        }));
+      };
+      reader.readAsDataURL(file);
+    });
+
+    saveProfileBtn.addEventListener('click', async () => {
+      if (!currentUser) return;
+      const nickname = (nicknameInput.value || '').trim() || (lang==='ja' ? 'ゲスト' : 'Guest');
+      currentUser.nickname = nickname;
+
+      let avatarURL = currentUser.avatar;
+      if (avatarFile.files[0]) {
+        const file = avatarFile.files[0];
+        const ref = storage.ref(`avatars/${currentUser.uid}`);
+        await ref.put(file);
+        avatarURL = await ref.getDownloadURL();
+        currentUser.avatar = avatarURL;
+      }
+      await ensureUserProfile(currentUser);
+
+      // Update presence nickname/avatar as well if in a room
+      if (currentRoom) {
+        await rtdb.ref(`rooms/${currentRoom}/presence/${currentUser.uid}`).update({
+          userId: currentUser.uid, nickname: currentUser.nickname, avatar: currentUser.avatar,
+          lastActive: firebase.database.ServerValue.TIMESTAMP
+        });
+      }
+
+      localStorage.setItem('kawaiiProfile', JSON.stringify({
+        nickname, avatarUrl: avatarURL, avatarPreview: avatarPreview.src
+      }));
+      toast(lang==='ja' ? 'プロフィールを保存しました。' : 'Profile saved.');
+    });
+
+    async function ensureUserProfile(user){
+      await rtdb.ref(`users/${user.uid}`).update({
+        nickname: user.nickname,
+        avatar: user.avatar,
+        updatedAt: firebase.database.ServerValue.TIMESTAMP
+      });
+    }
+
+    /* =========================
+       Rooms: create / join with password
+       ========================= */
+    createRoomBtn.addEventListener('click', async () => {
+      const r = (newRoomInput.value || '').trim();
+      const pwd = (newRoomPwd.value || '').trim();
+      if (!r || !pwd) {
+        toast(lang==='ja' ? 'ルーム名とパスワードを入力してください。' : 'Enter room name and password.');
+        return;
+      }
+      await rtdb.ref(`rooms/${r}/meta`).set({
+        createdAt: firebase.database.ServerValue.TIMESTAMP,
+        password: pwd
+      });
+      await joinRoom(r, pwd);
+      newRoomInput.value = '';
+      newRoomPwd.value = '';
+      toast(lang==='ja' ? 'ルームを作成しました。' : 'Room created.');
+    });
+
+    joinRoomBtn.addEventListener('click', async () => {
+      const r = roomSelect.value;
+      await joinRoom(r, null); // default rooms: no password
+    });
+
+    joinWithPwdBtn.addEventListener('click', async () => {
+      const r = (newRoomInput.value || roomSelect.value || '').trim();
+      const pwd = (joinPwd.value || '').trim();
+      if (!r || !pwd) {
+        toast(lang==='ja' ? 'ルーム名とパスワードを入力してください。' : 'Enter room name and password.');
+        return;
+      }
+      await joinRoom(r, pwd);
+      joinPwd.value = '';
+    });
+
+    async function joinRoom(roomId, providedPassword){
+      // Check password if room has meta
+      const metaSnap = await rtdb.ref(`rooms/${roomId}/meta`).get();
+      if (metaSnap.exists()) {
+        const meta = metaSnap.val();
+        const requiredPwd = meta.password || '';
+        if (requiredPwd && providedPassword !== requiredPwd) {
+          toast(lang==='ja' ? 'パスワードが正しくありません。' : 'Incorrect password.');
+          return;
+        }
+      }
+
+      // Detach previous listeners
+      detachMessageListener();
+      detachTypingListener();
+      detachPresenceListener();
+
+      currentRoom = roomId;
+      updateRoomLabel(roomId);
+
+      // Accurate presence using /.info/connected + onDisconnect
+      const connRef = rtdb.ref('.info/connected');
+      connRef.on('value', async snap => {
+        if (snap.val() === true && currentUser) {
+          const meRef = rtdb.ref(`rooms/${currentRoom}/presence/${currentUser.uid}`);
+          await meRef.set({
+            userId: currentUser.uid,
+            nickname: currentUser.nickname,
+            avatar: currentUser.avatar,
+            lastActive: firebase.database.ServerValue.TIMESTAMP
+          });
+          meRef.onDisconnect().remove();
+        }
+      });
+
+      // Presence count (distinct users)
+      const pRef = rtdb.ref(`rooms/${currentRoom}/presence`);
+      pRef.on('value', s => {
+        const count = s.numChildren();
+        presenceEl.textContent = lang==='ja' ? `${count} 人オンライン` : `${count} online`;
+      });
+      presenceRef = pRef;
+
+      // Messages stream
+      attachMessageListener();
+
+      // Typing
+      attachTypingListener();
+    }
+
+    /* =========================
+       Messaging: send / stream / edit / delete
+       ========================= */
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
+      else { setTyping(true); }
+    });
+
+    async function sendMessage(){
+      let text = messageInput.value.trim();
+      if (!text || !currentUser) return;
+      if (text.length > 500) text = text.slice(0, 500); // limit length
+      const msgRef = rtdb.ref(`rooms/${currentRoom}/messages`).push();
+      await msgRef.set({
+        text,
+        type: 'text',
+        userId: currentUser.uid,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+      });
+      messageInput.value = '';
+      setTyping(false);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    // child_added for append-only and smooth rendering
+    function attachMessageListener(){
+      messagesEl.innerHTML = '';
+      messagesQueryRef = rtdb.ref(`rooms/${currentRoom}/messages`).orderByChild('timestamp');
+      messagesQueryRef.on('child_added', async snap => {
+        const data = snap.val();
+        const msgId = snap.key;
+        const uid = data.userId;
+        const userSnap = await rtdb.ref(`users/${uid}`).get();
+        const u = userSnap.exists() ? userSnap.val() : { nickname:(lang==='ja'?'匿名':'Anon'), avatar:'images/profile2.jpg' };
+        const node = renderMessage({
+          msgId,
+          me: uid === (currentUser && currentUser.uid),
+          text: data.text,
+          type: data.type || 'text',
+          gif: data.gif || null,
+          nickname: u.nickname,
+          avatar: u.avatar,
+          time: data.timestamp ? new Date(data.timestamp) : null
+        });
+        messagesEl.appendChild(node);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      });
+      messagesListenerAttached = true;
+
+      // Listen for updates and removals to support edit/delete in real-time
+      const msgsRef = rtdb.ref(`rooms/${currentRoom}/messages`);
+      msgsRef.on('child_changed', snap => {
+        const data = snap.val();
+        const msgId = snap.key;
+        const bubble = document.querySelector(`.bubble[data-msg-id="${msgId}"]`);
+        if (!bubble) return;
+        bubble.innerHTML = ''; // reset
+        if (data.type === 'gif' && data.gif) {
+          const g = document.createElement('img');
+          g.src = data.gif; g.alt = 'GIF';
+          bubble.appendChild(g);
+        } else {
+          bubble.textContent = data.text || '';
+        }
+        // Re-append controls if it's mine
+        const isMine = data.userId === (currentUser && currentUser.uid);
+        if (isMine) bubble.appendChild(makeControls(msgId));
+      });
+
+      msgsRef.on('child_removed', snap => {
+        const msgId = snap.key;
+        const group = document.querySelector(`.group[data-msg-id="${msgId}"]`);
+        if (group && group.parentNode) group.parentNode.removeChild(group);
+      });
+    }
+    function detachMessageListener(){
+      if (messagesListenerAttached && messagesQueryRef) {
+        messagesQueryRef.off();
+      }
+      rtdb.ref(`rooms/${currentRoom}/messages`).off('child_changed');
+      rtdb.ref(`rooms/${currentRoom}/messages`).off('child_removed');
+      messagesListenerAttached = false;
+      messagesQueryRef = null;
+    }
+
+    function renderMessage({msgId, me, text, type, gif, nickname, avatar, time}){
+      const group = document.createElement('div');
+      group.className = 'group' + (me ? ' me' : '');
+      group.setAttribute('data-msg-id', msgId);
+
+      const img = document.createElement('img');
+      img.className = 'avatar';
+      img.src = avatar;
+      img.alt = nickname;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'bubble-wrap';
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'nickname';
+      nameEl.textContent = nickname;
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.setAttribute('data-msg-id', msgId);
+      if (type === 'gif' && gif) {
+        const g = document.createElement('img');
+        g.src = gif; g.alt = 'GIF';
+        bubble.appendChild(g);
+      } else {
+        bubble.textContent = text || '';
+      }
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.textContent = time ? formatTimeJP(time) : '';
+
+      // Controls only on hover & only for own messages, not covering text
+      if (me) bubble.appendChild(makeControls(msgId));
+
+      wrap.appendChild(nameEl);
+      wrap.appendChild(bubble);
+      wrap.appendChild(meta);
+
+      group.appendChild(img);
+      group.appendChild(wrap);
+      return group;
+    }
+
+    function makeControls(msgId){
+      const controls = document.createElement('div');
+      controls.className = 'controls';
+      const editBtn = document.createElement('button');
+      editBtn.className = 'control-btn';
+      editBtn.textContent = '編集 / Edit';
+      editBtn.addEventListener('click', () => openModal('edit', msgId));
+      const delBtn = document.createElement('button');
+      delBtn.className = 'control-btn';
+      delBtn.textContent = '削除 / Delete';
+      delBtn.addEventListener('click', () => openModal('delete', msgId));
+      controls.appendChild(editBtn);
+      controls.appendChild(delBtn);
+      return controls;
+    }
+
+    function formatTimeJP(date){
+      try{
+        const f = new Intl.DateTimeFormat('ja-JP', { hour:'2-digit', minute:'2-digit' });
+        return f.format(date);
+      }catch(e){
+        const h = String(date.getHours()).padStart(2,'0');
+        const m = String(date.getMinutes()).padStart(2,'0');
+        return `${h}:${m}`;
+      }
+    }
+
+    /* =========================
+       In-app modal (no browser prompts)
+       ========================= */
+    modalCancel.addEventListener('click', closeModal);
+    modalOk.addEventListener('click', async () => {
+      if (modalMode === 'edit') {
+        let newText = (modalInput.value || '').trim().slice(0, 500);
+        const ref = rtdb.ref(`rooms/${currentRoom}/messages/${modalMsgId}`);
+        const snap = await ref.get();
+        const data = snap.val();
+        if (!data) return closeModal();
+        if (data.userId !== (currentUser && currentUser.uid)) {
+          toast(lang==='ja' ? '自分のメッセージのみ編集できます。' : 'You can only edit your own messages.');
+          return closeModal();
+        }
+        await ref.update({ text: newText, type: 'text' });
+        toast(lang==='ja' ? 'メッセージを更新しました。' : 'Message updated.');
+      } else if (modalMode === 'delete') {
+        const ref = rtdb.ref(`rooms/${currentRoom}/messages/${modalMsgId}`);
+        const snap = await ref.get();
+        const data = snap.val();
+        if (!data) return closeModal();
+        if (data.userId !== (currentUser && currentUser.uid)) {
+          toast(lang==='ja' ? '自分のメッセージのみ削除できます。' : 'You can only delete your own messages.');
+          return closeModal();
+        }
+        await ref.remove();
+        toast(lang==='ja' ? 'メッセージを削除しました。' : 'Message deleted.');
+      }
+      closeModal();
+    });
+
+    function openModal(mode, msgId){
+      modalMode = mode;
+      modalMsgId = msgId;
+      modalTitle.textContent = mode==='edit' ? (lang==='ja'?'編集':'Edit') : (lang==='ja'?'削除':'Delete');
+      modalInput.style.display = mode==='edit' ? 'block' : 'none';
+      modalInput.value = '';
+      modalBackdrop.style.display = 'flex';
+    }
+    function closeModal(){
+      modalBackdrop.style.display = 'none';
+      modalMode = null;
+      modalMsgId = null;
+    }
+
+    /* =========================
+       Typing indicator
+       ========================= */
+    function attachTypingListener(){
+      typingRef = rtdb.ref(`rooms/${currentRoom}/typing`);
+      typingRef.on('value', snap => {
+        let someoneTyping = false;
+        let names = [];
+        snap.forEach(child => {
+          const t = child.val();
+          if (t.userId !== (currentUser && currentUser.uid) && t.typing) {
+            someoneTyping = true; names.push(t.nickname || (lang==='ja'?'誰か':'Someone'));
+          }
+        });
+        typingEl.style.display = someoneTyping ? 'block' : 'none';
+        typingEl.textContent = someoneTyping
+          ? (lang==='ja' ? `${names.join('・')} が入力しています…` : `${names.join(', ')} is typing…`)
+          : (lang==='ja' ? '誰かが入力しています…' : 'Someone is typing…');
+      });
+    }
+    function detachTypingListener(){
+      if (typingRef) typingRef.off();
+      typingRef = null;
+    }
+
+    async function setTyping(isTyping){
+      if (!currentUser || !currentRoom) return;
+      const ref = rtdb.ref(`rooms/${currentRoom}/typing/${currentUser.uid}`);
+      await ref.set({
+        userId: currentUser.uid,
+        nickname: currentUser.nickname,
+        typing: isTyping,
+        at: firebase.database.ServerValue.TIMESTAMP
+      });
+      if (isTyping) {
+        if (typingTimeout) clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => setTyping(false), 1800);
+      }
+    }
+
+    /* =========================
+       Presence detach
+       ========================= */
+    function detachPresenceListener(){
+      if (presenceRef && typeof presenceRef.off === 'function') presenceRef.off();
+      presenceRef = null;
+    }
+
+    /* =========================
+       Giphy search + send
+       ========================= */
+    gifSearchBtn.addEventListener('click', searchGifs);
+    gifQuery.addEventListener('keydown', e => { if (e.key === 'Enter') searchGifs(); });
+
+    async function searchGifs(){
+      const q = (gifQuery.value || '').trim();
+      gifResults.innerHTML = '';
+      if (!q) return;
+      try{
+        const url = `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_KEY}&q=${encodeURIComponent(q)}&limit=20&rating=pg`;
+        const res = await fetch(url);
+        const data = await res.json();
+        (data.data || []).forEach(item => {
+          const thumb = document.createElement('img');
+          thumb.className = 'gif-thumb';
+          const preview = item.images && (item.images.fixed_height_small || item.images.preview_gif || item.images.original);
+          const gifUrl = preview ? preview.url : (item.images.original.url);
+          thumb.src = gifUrl;
+          thumb.alt = item.title || 'GIF';
+          thumb.addEventListener('click', () => sendGif(gifUrl));
+          gifResults.appendChild(thumb);
+        });
+      }catch(e){
+        const err = document.createElement('div');
+        err.className = 'hint';
+        err.textContent = lang==='ja' ? 'GIFの取得に失敗しました。もう一度試してください。' : 'Failed to fetch GIFs. Please try again.';
+        gifResults.appendChild(err);
+      }
+    }
+
+    async function sendGif(gifUrl){
+      if (!gifUrl || !currentUser) return;
+      const msgRef = rtdb.ref(`rooms/${currentRoom}/messages`).push();
+      await msgRef.set({
+        text: '',
+        type: 'gif',
+        gif: gifUrl,
+        userId: currentUser.uid,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+      });
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    /* =========================
+       Small toast (in-app message)
+       ========================= */
+    function toast(text){
+      const t = document.createElement('div');
+      t.textContent = text;
+      t.style.position='fixed'; t.style.left='50%'; t.style.bottom='24px';
+      t.style.transform='translateX(-50%)'; t.style.background='#fff'; t.style.color='#cc387b';
+      t.style.border='1px solid #ffd3de'; t.style.borderRadius='16px'; t.style.padding='8px 12px';
+      t.style.boxShadow='0 6px 16px rgba(255,105,180,.35)'; t.style.zIndex='2000';
+      document.body.appendChild(t);
+      setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; }, 1600);
+      setTimeout(()=>{ t.remove(); }, 2000);
+    }
+  </script>
+</body>
+</html>
