@@ -1,626 +1,447 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>New Year Fireworks</title>
-<meta name="description" content="Interactive, polished New Year fireworks with countdown, kiss, heart bloom, confetti, music, shooting stars, glow trails, and combo effects." />
-<style>
-  :root{
-    --bg:#0a0f1c;
-    --ring:rgba(255,255,255,.10);
-    --glow:rgba(32,209,255,.18);
-  }
-  html,body{height:100%}
-  body{
-    margin:0;
-    background:
-      radial-gradient(1100px 760px at 80% -20%, rgba(32, 209, 255,.10), transparent 60%) no-repeat,
-      radial-gradient(800px 660px at 10% -10%, rgba(249, 204, 77,.08), transparent 55%) no-repeat,
-      var(--bg);
-    overflow:hidden;
-    touch-action:none;
-    -webkit-font-smoothing:antialiased;
-    -moz-osx-font-smoothing:grayscale;
-  }
-  canvas#stage{ position:fixed; inset:0; width:100%; height:100%; display:block; z-index:0; }
+  <meta charset="utf-8" />
+  <title>5amwithleanna A Great Goodbye</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="description" content="A tender farewell to 5amwithleanna." />
 
-  /* HUD: small top-right countdown */
-  .hud{
-    position:fixed; top:10px; right:10px; z-index:3;
-    background:rgba(255,255,255,.06); border:1px solid var(--ring);
-    padding:6px 10px; border-radius:12px;
-    box-shadow:0 10px 28px var(--glow);
-    backdrop-filter:saturate(120%) blur(2px);
-    color:#eaf2ff;
-    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-    font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:.4px;
-    user-select:none;
-  }
+  <!-- Font: soft, ethereal sans + elegant serif -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Fraunces:opsz,wght@9..144,300;9..144,600;9..144,800&display=swap" rel="stylesheet">
 
-  /* Big 10-second overlay countdown */
-  .overlay{
-    position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
-    z-index:4; pointer-events:none;
-    transition:opacity .25s ease;
-  }
-  .overlay.hidden{ display:none; }
-  .big{
-    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-    font-variant-numeric:tabular-nums; font-weight:900;
-    color:#ffffff; text-shadow:0 6px 22px rgba(0,0,0,.45);
-    font-size:min(20vw, 220px);
-    transform:scale(.85);
-    opacity:.96;
-    animation:pop .38s cubic-bezier(.2,.7,.2,1.2) forwards;
-  }
-  @keyframes pop{
-    0%{ transform:scale(.6); opacity:.25 }
-    100%{ transform:scale(1); opacity:.96 }
-  }
+  <style>
+    :root {
+      --bg-0: #0d0f12;
+      --bg-1: #11131a;
+      --bg-2: #0b1724;
+      --ac-1: #88c6ff;  /* morning blue */
+      --ac-2: #ffe7a8;  /* warm dawn */
+      --ac-3: #c3a9ff;  /* lilac haze */
+      --text: #e9eef7;
+      --muted: #b7c2d6;
+      --ring: rgba(255,255,255,.12);
+      --shadow: rgba(0,0,0,.45);
+      --glass: rgba(255,255,255,.06);
+      --gold: #f7d38f;
+      --maxw: 980px;
+      --pad: clamp(16px, 4vw, 32px);
+      --radius: 16px;
+      --blur: 24px;
+      --line: 1.35;
+      --anim-speed: 1;
+    }
 
-  /* Controls (icons only) */
-  .controls{
-    position:fixed; bottom:12px; left:12px; z-index:3; display:flex; gap:8px;
-  }
-  .btn{
-    width:40px; height:40px; border-radius:12px; border:1px solid var(--ring);
-    background:linear-gradient(180deg, #10192e, #0b1426);
-    box-shadow:0 8px 26px var(--glow); display:grid; place-items:center;
-    cursor:pointer; transition:transform .12s ease, box-shadow .18s ease;
-    color:#eaf2ff; font-size:20px; user-select:none;
-  }
-  .btn:hover{ transform:translateY(-1px); box-shadow:0 10px 34px rgba(32,209,255,.20) }
-  .btn:active{ transform:translateY(0) }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg-0: #f6f7fb;
+        --bg-1: #ffffff;
+        --bg-2: #e8f2ff;
+        --text: #14161b;
+        --muted: #4b5567;
+        --ring: rgba(0,0,0,.08);
+        --glass: rgba(0,0,0,.06);
+        --shadow: rgba(0,0,0,.12);
+      }
+    }
 
-  /* Audio arm (user must enable) */
-  .audio-arm{
-    position:fixed; bottom:12px; right:12px; z-index:3;
-    display:flex; gap:8px; align-items:center;
-    background:rgba(255,255,255,.06); border:1px solid var(--ring);
-    padding:8px 12px; border-radius:12px; box-shadow:0 8px 26px var(--glow);
-    color:#eaf2ff; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-  }
-  .audio-arm button{
-    all:unset; cursor:pointer; padding:6px 10px; border-radius:10px;
-    background:linear-gradient(180deg,#0e1628,#0b1426); border:1px solid var(--ring);
-    box-shadow:0 8px 26px var(--glow); font-weight:700;
-  }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font: 400 16px/var(--line) Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+      background:
+        radial-gradient(1200px 600px at 10% 10%, var(--bg-2) 0%, var(--bg-1) 38%, var(--bg-0) 100%),
+        radial-gradient(900px 500px at 90% 80%, color-mix(in oklab, var(--ac-1) 18%, transparent) 0%, transparent 55%),
+        linear-gradient(180deg, color-mix(in oklab, var(--ac-3) 8%, transparent), transparent);
+    }
 
-  /* Pulse cue before kiss collision */
-  .pulse{
-    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-    width:0; height:0; border-radius:50%; z-index:2; pointer-events:none;
-    box-shadow:0 0 0 0 rgba(255,255,255,.0);
-  }
-  .pulse.show{ animation:pulse 1.8s ease-out forwards; }
-  @keyframes pulse{
-    0%{ box-shadow:0 0 0 0 rgba(255,255,255,.0) }
-    40%{ box-shadow:0 0 0 22px rgba(255,255,255,.10) }
-    100%{ box-shadow:0 0 0 0 rgba(255,255,255,.0) }
-  }
-</style>
+    .frame {
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: var(--pad);
+      position: relative;
+      isolation: isolate;
+    }
+
+    /* Subtle moving mist for atmosphere */
+    .mist {
+      position: absolute;
+      inset: -20vmax;
+      background:
+        radial-gradient(40vmax 20vmax at 20% 30%, color-mix(in oklab, var(--ac-1) 6%, transparent) 0%, transparent 70%),
+        radial-gradient(35vmax 20vmax at 80% 70%, color-mix(in oklab, var(--ac-3) 5%, transparent) 0%, transparent 75%);
+      filter: blur(36px);
+      opacity: .7;
+      pointer-events: none;
+      animation: drift calc(120s * var(--anim-speed)) linear infinite;
+      z-index: -1;
+    }
+
+    @keyframes drift {
+      0%   { transform: translate3d(0, 0, 0) scale(1); }
+      50%  { transform: translate3d(2%, -1.5%, 0) scale(1.03); }
+      100% { transform: translate3d(0, 0, 0) scale(1); }
+    }
+
+    /* Stage: 5AM intro then farewell */
+    .stage {
+      width: min(100%, var(--maxw));
+      display: grid;
+      gap: clamp(16px, 3vw, 28px);
+      text-align: center;
+    }
+
+    /* 5AM headline animation */
+    .clock {
+      font-family: Fraunces, serif;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      color: var(--text);
+      display: inline-grid;
+      place-items: center;
+      justify-self: center;
+      position: relative;
+      padding: clamp(8px, 1.4vw, 16px) clamp(10px, 2vw, 20px);
+      border-radius: calc(var(--radius) * 1.25);
+      background: color-mix(in oklab, var(--glass) 75%, transparent);
+      backdrop-filter: blur(var(--blur));
+      box-shadow:
+        0 30px 80px var(--shadow),
+        inset 0 0 0 1px var(--ring);
+    }
+
+    .clock .layer {
+      font-size: clamp(42px, 8vw, 120px);
+      position: relative;
+      display: inline-block;
+      padding-inline: .06em;
+      white-space: nowrap;
+    }
+
+    .clock .shine,
+    .clock .trace {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0%, color-mix(in oklab, var(--ac-1) 28%, transparent) 40%, color-mix(in oklab, var(--ac-2) 42%, transparent) 60%, transparent 100%);
+      mix-blend-mode: screen;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .clock .trace { background: radial-gradient(120px 60px at 50% 50%, color-mix(in oklab, var(--ac-3) 22%, transparent), transparent 70%); }
+
+    /* Animated digits: 5 : 0 0 A M (split letters for wave) */
+    .digits {
+      display: inline-flex;
+      gap: .06em;
+      align-items: baseline;
+    }
+
+    .digit,
+    .letter {
+      display: inline-block;
+      transform-origin: 50% 80%;
+      will-change: transform, opacity, filter;
+    }
+
+    .digit {
+      animation:
+        popIn calc(800ms * var(--anim-speed)) ease-out both,
+        breathe calc(5.5s * var(--anim-speed)) ease-in-out infinite;
+      filter: drop-shadow(0 8px 18px color-mix(in oklab, var(--ac-1) 30%, transparent));
+    }
+    .digit:nth-child(1) { animation-delay: 0ms; }
+    .digit:nth-child(2) { animation-delay: 150ms; }
+    .digit:nth-child(3) { animation-delay: 300ms; }
+
+    .colon {
+      opacity: 0;
+      animation: fadeIn calc(700ms * var(--anim-speed)) ease-out 220ms both;
+      transform: translateY(-0.08em);
+      color: color-mix(in oklab, var(--ac-1) 65%, var(--text));
+      text-shadow: 0 12px 24px color-mix(in oklab, var(--ac-1) 20%, transparent);
+    }
+
+    .letters {
+      margin-left: .16em;
+      display: inline-flex;
+      gap: .04em;
+    }
+    .letter {
+      animation:
+        popIn calc(680ms * var(--anim-speed)) ease-out both,
+        wave calc(5.2s * var(--anim-speed)) ease-in-out infinite;
+      opacity: 0;
+    }
+    .letters .letter:nth-child(1) { animation-delay: 360ms; }
+    .letters .letter:nth-child(2) { animation-delay: 440ms; }
+    .letters .letter:nth-child(3) { animation-delay: 520ms; }
+    .letters .letter:nth-child(4) { animation-delay: 600ms; }
+    .letters .letter:nth-child(5) { animation-delay: 680ms; }
+
+    @keyframes popIn {
+      0% { opacity: 0; transform: translate3d(0, .8em, 0) scale(.88) rotate(-2deg); filter: blur(4px) saturate(.8); }
+      60% { opacity: 1; transform: translate3d(0, -.08em, 0) scale(1.02); }
+      100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+    }
+    @keyframes breathe {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-0.02em) scale(1.012); }
+    }
+    @keyframes wave {
+      0%, 100% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      50% { transform: translateY(-0.06em) rotate(-1deg); opacity: .96; }
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    /* Farewell card */
+    .card {
+      margin: 0 auto;
+      width: min(100%, 780px);
+      border-radius: calc(var(--radius) * 1.25);
+      background: linear-gradient(180deg, color-mix(in oklab, var(--glass) 90%, transparent), color-mix(in oklab, var(--glass) 70%, transparent));
+      backdrop-filter: blur(var(--blur));
+      box-shadow:
+        0 20px 70px var(--shadow),
+        inset 0 0 0 1px var(--ring);
+      padding: clamp(20px, 5vw, 40px);
+      display: grid;
+      gap: clamp(12px, 2.2vw, 20px);
+      opacity: 0;
+      transform: translate3d(0, 1.25em, 0) scale(.98);
+      transition: opacity 720ms ease, transform 720ms ease;
+    }
+
+    .card.visible {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      justify-self: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: color-mix(in oklab, var(--glass) 80%, transparent);
+      box-shadow: inset 0 0 0 1px var(--ring);
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: .02em;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: color-mix(in oklab, var(--ac-1) 55%, var(--muted));
+      box-shadow: 0 0 0 4px color-mix(in oklab, var(--ac-1) 18%, transparent);
+      animation: pulse 3s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: .9; }
+      50% { transform: scale(1.15); opacity: .65; }
+    }
+
+    .title {
+      font-family: Fraunces, serif;
+      font-weight: 800;
+      font-size: clamp(24px, 4.2vw, 44px);
+      letter-spacing: -0.01em;
+      line-height: 1.08;
+      text-wrap: balance;
+    }
+    .title em {
+      color: var(--gold);
+      font-style: normal;
+      text-shadow: 0 6px 18px color-mix(in oklab, var(--gold) 22%, transparent);
+    }
+
+    .desc {
+      font-size: clamp(14px, 2.1vw, 18px);
+      color: var(--muted);
+      text-wrap: pretty;
+    }
+
+    .foot {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      justify-items: center;
+    }
+
+    .button {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+      background:
+        radial-gradient(60% 140% at 50% -30%, color-mix(in oklab, var(--ac-2) 35%, #0000), #0000),
+        linear-gradient(90deg, color-mix(in oklab, var(--ac-1) 25%, #0000), color-mix(in oklab, var(--ac-3) 20%, #0000));
+      box-shadow:
+        0 10px 26px color-mix(in oklab, var(--ac-1) 22%, transparent),
+        inset 0 0 0 1px var(--ring);
+      transition: transform 160ms ease, box-shadow 160ms ease;
+      cursor: pointer;
+    }
+    .button:focus-visible {
+      outline: 0;
+      box-shadow:
+        0 0 0 3px color-mix(in oklab, var(--ac-1) 48%, transparent),
+        inset 0 0 0 1px var(--ring);
+    }
+    .button:hover { transform: translateY(-1px); }
+
+    .tiny {
+      font-size: 12px;
+      color: var(--muted);
+      opacity: .85;
+    }
+
+    /* Reduced motion support */
+    @media (prefers-reduced-motion: reduce) {
+      .mist, .digit, .letter, .dot {
+        animation: none !important;
+      }
+      .card {
+        transition: none;
+      }
+    }
+
+    /* Responsiveness tweaks */
+    @media (max-width: 480px) {
+      .clock .layer { font-size: clamp(36px, 12vw, 64px); }
+      .card { padding: 18px; }
+    }
+  </style>
 </head>
 <body>
-  <canvas id="stage"></canvas>
+  <main class="frame" aria-label="A farewell to 5amwithleanna">
+    <div class="mist" aria-hidden="true"></div>
 
-  <div class="hud" id="hud">--:--:--</div>
+    <!-- Stage: animated 5AM headline -->
+    <section class="stage" aria-live="polite">
+      <div class="clock" role="img" aria-label="5 AM">
+        <div class="layer">
+          <span class="digits">
+            <span class="digit">5</span>
+            <span class="colon">:</span>
+            <span class="digit">0</span>
+            <span class="digit">0</span>
+          </span>
+          <span class="letters">
+            <span class="letter">A</span>
+            <span class="letter">M</span>
+          </span>
+          <span class="shine"></span>
+          <span class="trace"></span>
+        </div>
+      </div>
 
-  <div class="controls" aria-hidden="false">
-    <div class="btn" id="gentle" title="Gentle">🌙</div>
-    <div class="btn" id="wild" title="Wild">🎇</div>
-    <div class="btn" id="burst" title="Burst">✨</div>
-    <div class="btn" id="fullscreen" title="Fullscreen">⛶</div>
-  </div>
+      <!-- Farewell card appears after intro -->
+      <article class="card" id="farewell" aria-label="Farewell message">
+        <div class="badge"><span class="dot" aria-hidden="true"></span> Farewell</div>
 
-  <div class="audio-arm" id="audioArm">
-    <span>Enable audio?</span>
-    <button id="enableAudio">Enable</button>
-  </div>
+        <h1 class="title">
+          Hello, friend. <em>5amwithleanna</em> is no longer a website.
+        </h1>
 
-  <div class="overlay hidden" id="overlay"><div class="big" id="big">10</div></div>
-  <div class="pulse" id="pulse"></div>
+        <p class="desc">
+          This space woke with us, held our quiet, and taught us to love early light. It ends here with gratitude,
+          softness, and a smile you can keep. The mornings were real. The goodbye is, too.
+        </p>
 
-  <!-- Local audio (same folder) -->
-  <audio id="song" src="song.mp3" preload="auto"></audio>
+        <div class="foot">
+          <button class="button" id="keep">Keep a small piece</button>
+          <div class="tiny" id="kept" hidden>Saved a tiny memory: “5am, and we were here.”</div>
+        </div>
+      </article>
+    </section>
+  </main>
 
-<script>
-(() => {
-  // Canvas
-  const canvas = document.getElementById('stage');
-  const ctx = canvas.getContext('2d', { alpha: true });
-  let W=0,H=0,dpr = Math.min(window.devicePixelRatio || 1, 2);
-  function resize(){
-    W = Math.floor(innerWidth);
-    H = Math.floor(innerHeight);
-    canvas.width = Math.floor(W * dpr);
-    canvas.height = Math.floor(H * dpr);
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-  }
-  resize(); addEventListener('resize', resize);
+  <script>
+    (function () {
+      const root = document.documentElement;
+      const shine = document.querySelector('.clock .shine');
+      const trace = document.querySelector('.clock .trace');
+      const farewell = document.getElementById('farewell');
+      const keepBtn = document.getElementById('keep');
+      const keptMsg = document.getElementById('kept');
 
-  // Modes and theme cycling
-  let gentleMode = true;
-  const PALETTES = [
-    ['#f9cc4d','#ffd86f','#ffe7a9'], // gold
-    ['#6b8af7','#9ab2ff','#c9d5ff'], // twilight blue
-    ['#ff7597','#ff9db1','#ffd1da'], // rose
-    ['#20d1ff','#6ee7ff','#bdf5ff'], // aqua
-    ['#a3e635','#d9f99d','#ecfccb']  // lime
-  ];
-  let themeIndex = 0;
-  setInterval(()=>{ themeIndex = (themeIndex+1) % PALETTES.length; }, 60_000);
+      // Intro timing: 5AM anim first, then reveal farewell
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const introDelay = prefersReduced ? 600 : 2200;
 
-  // Audio
-  const song = document.getElementById('song');
-  const audioArm = document.getElementById('audioArm');
-  const enableBtn = document.getElementById('enableAudio');
-  let audioEnabled = false;
-  let audioCtx, popBuffer;
-
-  async function initAudio(){
-    try{
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      // generate a tiny pop buffer (sine burst)
-      const duration = 0.05;
-      const sr = audioCtx.sampleRate;
-      const buffer = audioCtx.createBuffer(1, sr*duration, sr);
-      const data = buffer.getChannelData(0);
-      for (let i=0;i<data.length;i++){
-        const t = i / sr;
-        // quick envelope pop
-        const env = Math.exp(-25*t);
-        data[i] = Math.sin(2*Math.PI*440*t) * env;
+      // Light sweep over the clock for a dawn-like shimmer
+      function sweep(el, duration = 1600) {
+        if (!el) return;
+        el.style.opacity = '1';
+        el.animate(
+          [
+            { transform: 'translateX(-120%)', opacity: 0 },
+            { transform: 'translateX(0%)',    opacity: 1, offset: 0.5 },
+            { transform: 'translateX(120%)',  opacity: 0 }
+          ],
+          { duration, easing: 'ease-in-out' }
+        ).onfinish = () => { el.style.opacity = '0'; };
       }
-      popBuffer = buffer;
-      // prime music
-      await song.play(); song.pause(); song.currentTime = 0;
-      audioEnabled = true;
-      audioArm.style.display = 'none';
-    }catch(e){ /* keep visible if denied */ }
-  }
-  enableBtn.addEventListener('click', initAudio);
 
-  function playPop(){
-    if(!audioEnabled || !audioCtx || !popBuffer) return;
-    const src = audioCtx.createBufferSource();
-    src.buffer = popBuffer;
-    src.connect(audioCtx.destination);
-    src.start();
-  }
-
-  // Entities
-  const rockets = [];
-  const particles = [];
-  const comets = [];
-  const confetti = [];
-  const stars = [];
-
-  // Utilities
-  const R = (min,max)=>Math.random()*(max-min)+min;
-  const pick = arr => arr[(Math.random()*arr.length)|0];
-  const palette = ()=> PALETTES[themeIndex];
-
-  // Spawners
-  function spawnRocket(opts={}){
-    const x = opts.x ?? R(0, W);
-    const y = H + 12;
-    const targetY = opts.targetY ?? R(H*0.25,H*0.48);
-    const vx = opts.vx ?? R(-0.9,0.9);
-    const vy = opts.vy ?? -R(6.1,7.6);
-    rockets.push({ x,y,vx,vy,targetY, palette: opts.palette ?? palette(), life:0, type: opts.type || 'standard' });
-  }
-
-  function explode(rocket, pattern='burst'){
-    const hue = rocket.palette;
-    const count = pattern==='ring' ? Math.round(R(32, 46))
-                : pattern==='palm' ? Math.round(R(26, 36))
-                : pattern==='mega' ? Math.round(R(120, 180))
-                : Math.round(R(24, 34));
-    for(let i=0;i<count;i++){
-      let angle = (i / count) * Math.PI*2 + R(-0.02,0.02);
-      let speed = pattern==='ring' ? R(2.2, 3.6)
-                : pattern==='palm' ? R(2.8, 4.2)
-                : pattern==='mega' ? R(3.4, 5.2)
-                : R(2.0, 3.4);
-      const jitter = R(-0.04,0.04);
-      particles.push({
-        x: rocket.x, y: rocket.y,
-        vx: Math.cos(angle)*speed + jitter,
-        vy: Math.sin(angle)*speed + jitter,
-        alpha: 1,
-        size: pattern==='mega' ? R(1.4, 2.4) : R(1.2, 2.2),
-        fade: pattern==='mega' ? R(0.010, 0.016) : R(0.012, 0.020),
-        color: pick(hue)
-      });
-    }
-    // sparkle comets
-    if(Math.random()<0.6){
-      for(let j=0;j<6;j++){
-        comets.push({
-          x: rocket.x, y: rocket.y,
-          vx: R(-1.2,1.2), vy: R(-1.2,1.2),
-          life: R(22,34), color: pick(hue)
-        });
+      // Slight mouse parallax on the headline
+      function parallax(e) {
+        const clock = document.querySelector('.clock');
+        if (!clock) return;
+        const rect = clock.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width - 0.5;
+        const y = (e.clientY - rect.top) / rect.height - 0.5;
+        clock.style.transform = `translate3d(${x * 6}px, ${y * 4}px, 0)`;
       }
-    }
-    playPop();
-  }
 
-  function spawnConfettiBurst(){
-    const n = Math.round(R(220, 320));
-    for(let i=0;i<n;i++){
-      confetti.push({
-        x: R(0, W), y: -10,
-        vx: R(-0.8,0.8), vy: R(2.2,4.2),
-        a: R(0.6,1), size: R(2,4),
-        color: pick(['#f9cc4d','#6b8af7','#ff7597','#20d1ff','#a3e635'])
+      // Run intro
+      setTimeout(() => {
+        farewell.classList.add('visible');
+        sweep(shine, prefersReduced ? 800 : 1600);
+        setTimeout(() => sweep(trace, prefersReduced ? 700 : 1400), 260);
+      }, introDelay);
+
+      // Memory keeper (local, no network)
+      keepBtn?.addEventListener('click', () => {
+        try {
+          localStorage.setItem('5amwithleanna:kept', '5am, and we were here.');
+        } catch (_) {}
+        keptMsg.hidden = false;
+        keepBtn.textContent = 'Kept';
+        keepBtn.disabled = true;
       });
-    }
-  }
 
-  function spawnStar(){
-    stars.push({
-      x: R(-200, W+200),
-      y: R(10, H*0.5),
-      vx: R(-3.5, -1.2),
-      vy: R(-0.2, 0.2),
-      life: R(80, 160)
-    });
-  }
-
-  // Render loop
-  function step(){
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.clearRect(0,0,W,H);
-
-    // rockets
-    for(let i=rockets.length-1;i>=0;i--){
-      const r = rockets[i];
-      r.x += r.vx; r.y += r.vy; r.vy += 0.02;
-      r.life += 1;
-
-      // dot
-      ctx.globalAlpha = 0.9;
-      ctx.fillStyle = r.palette[0];
-      ctx.beginPath(); ctx.arc(r.x, r.y, 2.6, 0, Math.PI*2); ctx.fill();
-
-      // trail
-      ctx.globalAlpha = 0.4;
-      ctx.strokeStyle = r.palette[1];
-      ctx.lineWidth = 1.2;
-      ctx.beginPath(); ctx.moveTo(r.x, r.y+10); ctx.lineTo(r.x, r.y); ctx.stroke();
-
-      const shouldExplode = (r.y <= r.targetY) || (r.life > 220);
-      if(shouldExplode){
-        rockets.splice(i,1);
-        const pat = r.type==='kissL' || r.type==='kissR' ? 'ring'
-          : Math.random()<0.33 ? 'ring' : (Math.random()<0.5 ? 'palm':'burst');
-        explode(r, pat);
-      }
-    }
-
-    // particles
-    ctx.globalCompositeOperation = 'lighter';
-    const drag = 0.994;
-    for(let i=particles.length-1;i>=0;i--){
-      const p = particles[i];
-      p.x += p.vx; p.y += p.vy;
-      p.vx *= drag; p.vy = p.vy*drag + 0.012;
-      p.alpha -= p.fade;
-      if(p.alpha <= 0 || p.y>H+8){ particles.splice(i,1); continue; }
-
-      ctx.globalAlpha = Math.max(0, p.alpha);
-      ctx.fillStyle = p.color;
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
-    }
-
-    // comets
-    ctx.globalCompositeOperation = 'lighter';
-    for(let i=comets.length-1;i>=0;i--){
-      const c = comets[i];
-      c.x += c.vx; c.y += c.vy; c.vy += 0.01; c.life -= 1;
-      if(c.life <= 0){ comets.splice(i,1); continue; }
-      ctx.globalAlpha = 0.6; ctx.fillStyle = c.color;
-      ctx.fillRect(c.x, c.y, 1.5, 1.5);
-    }
-
-    // confetti
-    ctx.globalCompositeOperation = 'source-over';
-    for(let i=confetti.length-1;i>=0;i--){
-      const f = confetti[i];
-      f.x += f.vx; f.y += f.vy; f.vy += 0.01;
-      f.a -= 0.002;
-      if(f.y>H+10 || f.a<=0){ confetti.splice(i,1); continue; }
-      ctx.globalAlpha = Math.max(0, f.a);
-      ctx.fillStyle = f.color;
-      ctx.fillRect(f.x, f.y, f.size, f.size);
-    }
-
-    // shooting stars
-    for(let i=stars.length-1;i>=0;i--){
-      const s = stars[i];
-      s.x += s.vx; s.y += s.vy; s.life -= 1;
-      ctx.globalAlpha = 0.9; ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x+12, s.y-3); ctx.stroke();
-      if(s.life<=0 || s.x<-220){ stars.splice(i,1); }
-    }
-
-    // ambient rockets across width
-    const cap = gentleMode ? Math.max(3, Math.floor(W/680)) : Math.max(6, Math.floor(W/520));
-    if(rockets.length < cap && Math.random() < (gentleMode ? 0.06 : 0.12)) {
-      spawnRocket({ x: R(0, W), targetY: R(H*0.22,H*0.5) });
-    }
-    if(Math.random()<0.012) spawnStar();
-
-    requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
-
-  // Interactions: clicks/taps + dragging combo
-  let dragging = false;
-  let lastTapTimes = [];
-
-  function comboCheck(){
-    const now = performance.now();
-    // keep last second taps
-    lastTapTimes = lastTapTimes.filter(t => now - t < 800);
-    if(lastTapTimes.length >= 4){
-      // Mega bloom at center
-      explode({ x: W/2, y: H*0.38, palette: ['#ff7597','#ff9db1','#ffd1da'] }, 'mega');
-      explode({ x: W/2, y: H*0.42, palette: ['#20d1ff','#6ee7ff','#bdf5ff'] }, 'mega');
-      lastTapTimes = []; // reset
-      // slight music swell if enabled
-      if(audioEnabled){
-        song.volume = 1.0;
-        setTimeout(()=>{ song.volume = 0.8; }, 800);
-      }
-    }
-  }
-
-  function triggerAt(x, y, soft=false){
-    const pal = palette();
-    for(let i=0;i<(soft?10:18);i++){
-      particles.push({
-        x, y, vx: R(-2.0,2.0), vy: R(-2.0,2.0),
-        alpha: 1, size: R(1.2, 2.0), fade: R(0.018,0.028), color: pick(pal)
-      });
-    }
-    spawnRocket({ x, targetY: y - R(80, 160), palette: pal });
-    playPop();
-  }
-
-  // Mouse
-  canvas.addEventListener('mousedown', e => {
-    dragging = true;
-    const x = e.clientX, y = e.clientY;
-    triggerAt(x, y);
-    lastTapTimes.push(performance.now());
-    comboCheck();
-  });
-  addEventListener('mouseup', () => { dragging = false; });
-  canvas.addEventListener('mousemove', e => {
-    if(dragging){
-      // comet trail when dragging
-      const pal = palette();
-      comets.push({
-        x: e.clientX, y: e.clientY,
-        vx: R(-0.6,0.6), vy: R(-0.6,0.6),
-        life: R(18,26), color: pick(pal)
-      });
-      if(Math.random()<0.18) triggerAt(e.clientX, e.clientY, true);
-    }
-  });
-  canvas.addEventListener('click', e => {
-    const x = e.clientX, y = e.clientY;
-    triggerAt(x, y);
-    lastTapTimes.push(performance.now());
-    comboCheck();
-  });
-
-  // Touch
-  canvas.addEventListener('touchstart', e => {
-    dragging = true;
-    const t = e.touches[0];
-    triggerAt(t.clientX, t.clientY);
-    lastTapTimes.push(performance.now());
-    comboCheck();
-  }, {passive:true});
-  canvas.addEventListener('touchmove', e => {
-    const t = e.touches[0];
-    if(dragging){
-      const pal = palette();
-      comets.push({
-        x: t.clientX, y: t.clientY,
-        vx: R(-0.6,0.6), vy: R(-0.6,0.6),
-        life: R(18,26), color: pick(pal)
-      });
-      if(Math.random()<0.20) triggerAt(t.clientX, t.clientY, true);
-    }
-  }, {passive:true});
-  addEventListener('touchend', ()=> dragging=false);
-
-  // Controls
-  document.getElementById('gentle').addEventListener('click', ()=> gentleMode = true);
-  document.getElementById('wild').addEventListener('click', ()=> gentleMode = false);
-  document.getElementById('burst').addEventListener('click', ()=>{
-    for(let i=0;i<3;i++) spawnRocket({ x: R(W*0.2,W*0.8), targetY: R(H*0.25,H*0.45) });
-  });
-
-  // Fullscreen
-  document.getElementById('fullscreen').addEventListener('click', ()=>{
-    const el = document.documentElement;
-    if(!document.fullscreenElement){ el.requestFullscreen?.(); }
-    else { document.exitFullscreen?.(); }
-  });
-
-  // Countdown to Miami midnight ET: Jan 1, 2026 00:00 ET = 05:00:00 UTC
-  const hud = document.getElementById('hud');
-  const overlay = document.getElementById('overlay');
-  const big = document.getElementById('big');
-  const pulse = document.getElementById('pulse');
-  const targetUTC = Date.UTC(2026, 0, 1, 5, 0, 0);
-  let finalCountdownStarted = false;
-  let finalInterval = null;
-
-  function fmt(n){ return String(n).padStart(2,'0'); }
-  function updateCountdown(){
-    const now = Date.now();
-    const diff = targetUTC - now;
-    if(diff <= 0){
-      hud.textContent = "00:00:00";
-      if(finalInterval){ clearInterval(finalInterval); }
-      overlay.classList.add('hidden');
-      startFinalShow(); // kiss + heart + confetti + bursts
-      return;
-    }
-    const h = Math.floor(diff / 3600000);
-    const m = Math.floor((diff % 3600000) / 60000);
-    const s = Math.floor((diff % 60000) / 1000);
-    hud.textContent = `${fmt(h)}:${fmt(m)}:${fmt(s)}`;
-
-    const totalSeconds = Math.floor(diff / 1000);
-    if(totalSeconds <= 10 && !finalCountdownStarted){
-      finalCountdownStarted = true;
-      startFinalTen();
-    }
-  }
-  updateCountdown();
-  const countdownTimer = setInterval(updateCountdown, 1000);
-
-  function startFinalTen(){
-    overlay.classList.remove('hidden');
-    // music for final 10s
-    if(audioEnabled){
-      song.currentTime = 0;
-      song.volume = 0.85;
-      song.play().catch(()=>{});
-    }
-
-    let remaining = 10;
-    function tick(){
-      big.textContent = remaining;
-      big.style.animation = 'none'; void big.offsetWidth; big.style.animation = '';
-      if(remaining <= 0){
-        overlay.classList.add('hidden');
-        return;
-      }
-      remaining--;
-    }
-    tick();
-    finalInterval = setInterval(tick, 1000);
-  }
-
-  // Finale: fireworks kiss, heart bloom, confetti, celebratory sequence
-  function startFinalShow(){
-    clearInterval(countdownTimer);
-    pulse.classList.add('show');
-    gentleMode = true;
-
-    const centerX = W/2, centerY = H*0.38;
-    const rose = ['#ff7597','#ff9db1','#ffd1da'];
-    const aqua = ['#20d1ff','#6ee7ff','#bdf5ff'];
-
-    // kiss rockets
-    const left = { x: -40, y: H+10, vx: R(2.2,2.8), vy: -R(6.6,7.4), palette: rose };
-    const right= { x: W+40, y: H+10, vx: -R(2.2,2.8), vy: -R(6.6,7.4), palette: aqua };
-    rockets.push({ ...left, targetY: centerY, type:'kissL' });
-    rockets.push({ ...right, targetY: centerY, type:'kissR' });
-
-    const steer = setInterval(()=>{
-      for(const r of rockets){
-        if(r.type==='kissL' || r.type==='kissR'){
-          const ax = (centerX - r.x) * 0.0009;
-          r.vx += ax;
+      // Restore kept state
+      try {
+        const kept = localStorage.getItem('5amwithleanna:kept');
+        if (kept) {
+          keptMsg.hidden = false;
+          keepBtn.textContent = 'Kept';
+          keepBtn.disabled = true;
         }
+      } catch (_) {}
+
+      // Parallax only if not reduced motion
+      if (!prefersReduced) {
+        window.addEventListener('mousemove', parallax, { passive: true });
       }
-      const L = rockets.find(r=>r.type==='kissL');
-      const Rr= rockets.find(r=>r.type==='kissR');
-      if(L && Rr){
-        const dist = Math.hypot(L.x - Rr.x, L.y - Rr.y);
-        if(dist < 22){
-          const idxL = rockets.indexOf(L); if(idxL>-1) rockets.splice(idxL,1);
-          const idxR = rockets.indexOf(Rr); if(idxR>-1) rockets.splice(idxR,1);
-          kissBloom(centerX, centerY);
-          heartBloom(centerX, centerY + 42);
-          spawnConfettiBurst();
 
-          clearInterval(steer);
-
-          // celebratory bursts
-          gentleMode = false;
-          let bursts = 14;
-          const seq = setInterval(()=>{
-            spawnRocket({ x: R(W*0.2,W*0.8), targetY: R(H*0.28,H*0.42), palette: pick(PALETTES) });
-            if(Math.random()<0.4) spawnRocket({ x: R(0,W), targetY: R(H*0.25,H*0.45), palette: pick(PALETTES) });
-            bursts--;
-            if(bursts<=0){ clearInterval(seq); gentleMode = true; }
-          }, 520);
-
-          // music swell
-          if(audioEnabled){
-            song.volume = 1.0;
-            setTimeout(()=>{ song.volume = 0.8; }, 2000);
-          }
-        }
-      } else {
-        clearInterval(steer);
-      }
-    }, 28);
-  }
-
-  function kissBloom(cx, cy){
-    const rose = ['#ff7597','#ff9db1','#ffd1da'];
-    const aqua = ['#20d1ff','#6ee7ff','#bdf5ff'];
-    const bloom = (palette, radius, count)=>{
-      for(let i=0;i<count;i++){
-        const t = (i / count) * Math.PI*2;
-        const x = cx + Math.cos(t) * radius + R(-2,2);
-        const y = cy + Math.sin(t) * radius + R(-2,2);
-        particles.push({
-          x, y,
-          vx: Math.cos(t) * R(1.0, 2.2),
-          vy: Math.sin(t) * R(1.0, 2.2),
-          alpha: 1, size: R(1.2,2.0), fade: R(0.014,0.022),
-          color: pick(palette)
-        });
-      }
-    };
-    bloom(rose, 50, 76);
-    bloom(aqua, 40, 64);
-    playPop();
-  }
-
-  function heartBloom(cx, cy){
-    const pal = ['#ff7597','#ff9db1','#ffd1da','#ffd1da','#ffc0cb'];
-    const N = 140;
-    for(let i=0;i<N;i++){
-      const t = (i / N) * Math.PI*2;
-      // compact heart-ish curve
-      const r = 18*(1 - Math.sin(t)) + 26;
-      const x = cx + Math.cos(t) * r;
-      const y = cy + Math.sin(t) * r;
-      particles.push({
-        x, y, vx: R(-1.2,1.2), vy: R(-1.1,1.1),
-        alpha: 1, size: R(1.2,1.9), fade: R(0.015,0.022),
-        color: pick(pal)
-      });
-    }
-    playPop();
-  }
-
-  // Ambient everywhere
-  setInterval(()=>{
-    for(let i=0;i<Math.max(2, Math.floor(W/900)); i++){
-      spawnRocket({ x: R(0,W), targetY: R(H*0.22,H*0.5) });
-    }
-  }, 1200);
-
-  // Countdown loop
-  setInterval(updateCountdown, 1000);
-})();
-</script>
+      // Mobile focus accessibility tweak
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') document.body.classList.add('tabbing');
+      }, { once: true });
+    })();
+  </script>
 </body>
 </html>
-
