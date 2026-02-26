@@ -1,224 +1,126 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Coop Offline</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <title>yes</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Trebuchet MS", sans-serif;
+      background: url("background.jpg") no-repeat center center fixed;
+      background-size: cover;
+    }
 
-<style>
-  body {
-    margin: 0;
-    padding: 0;
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
+    /* Sticker container */
+    .card-container {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      padding: 3rem;
+      flex-wrap: wrap;
+    }
 
-    background: url("background.gif") center center / cover no-repeat fixed;
+    .sticker {
+      background: rgba(255,255,255,0.8);
+      border-radius: 20px;
+      padding: 1rem;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      display: inline-block;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: 4px solid white; /* white outline like a sticker */
+    }
 
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    color: #fff;
-    position: relative;
-  }
+    .sticker:hover {
+      transform: rotate(-3deg) scale(1.05);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+    }
 
-  body::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.45);
-    backdrop-filter: blur(2px);
-    z-index: -1;
-  }
+    .sticker img {
+      width: 200px;
+      height: auto;
+      display: block;
+      border-radius: 12px;
+    }
 
-  .card {
-    max-width: 600px;
-    padding: 28px 34px;
-    border-radius: 22px;
+    .sticker-title {
+      text-align: center;
+      margin-top: 0.5rem;
+      font-weight: bold;
+      color: #003366;
+      text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+    }
 
-    background: rgba(0,0,0,0.55);
-    border: 1px solid rgba(255,255,255,0.15);
-    backdrop-filter: blur(8px);
+    /* Modal backdrop */
+    .modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      animation: fadeIn 0.8s ease forwards;
+    }
 
-    box-shadow: 0 18px 40px rgba(0,0,0,0.5);
-  }
+    /* Modal box */
+    .modal-content {
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(12px);
+      border-radius: 20px;
+      padding: 2rem;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      animation: popUp 0.6s ease forwards;
+    }
 
-  /* Tiny animated chicken icon */
-  .chicken {
-    width: 48px;
-    height: 48px;
-    margin: 0 auto 14px;
-    position: relative;
-    animation: bob 2s ease-in-out infinite;
-  }
+    .modal-content h2 {
+      margin-top: 0;
+      font-size: 1.5rem;
+      color: #003366;
+      text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+    }
 
-  .chicken-body {
-    width: 34px;
-    height: 34px;
-    background: #ffdf7f;
-    border-radius: 50%;
-    position: absolute;
-    bottom: 0;
-    left: 7px;
-  }
+    .modal-content p {
+      font-size: 1.2rem;
+      color: #111;
+      line-height: 1.4;
+    }
 
-  .chicken-head {
-    width: 22px;
-    height: 22px;
-    background: #ffdf7f;
-    border-radius: 50%;
-    position: absolute;
-    top: -4px;
-    right: 0;
-  }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
 
-  .chicken-eye {
-    width: 5px;
-    height: 5px;
-    background: #3a1f0f;
-    border-radius: 50%;
-    position: absolute;
-    top: 8px;
-    left: 6px;
-  }
-
-  .chicken-beak {
-    width: 8px;
-    height: 6px;
-    background: #ff9b42;
-    border-radius: 0 6px 6px 0;
-    position: absolute;
-    top: 10px;
-    right: -4px;
-  }
-
-  .chicken-comb {
-    width: 10px;
-    height: 10px;
-    background: #ff4b6a;
-    border-radius: 50%;
-    position: absolute;
-    top: -6px;
-    left: 4px;
-  }
-
-  @keyframes bob {
-    0%,100% { transform: translateY(0); }
-    50% { transform: translateY(-6px); }
-  }
-
-  /* Loading animation */
-  .loader {
-    margin: 18px auto;
-    width: 42px;
-    height: 42px;
-    border: 4px solid rgba(255,255,255,0.3);
-    border-top-color: #ffb347;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  .title {
-    font-size: 32px;
-    font-weight: 700;
-    margin-bottom: 10px;
-    letter-spacing: 0.5px;
-  }
-
-  .subtitle {
-    font-size: 16px;
-    color: #ffdca8;
-    margin-bottom: 16px;
-  }
-
-  .details {
-    font-size: 14px;
-    color: #e8e8e8;
-    line-height: 1.6;
-  }
-
-  .highlight {
-    color: #ffb347;
-    font-weight: 600;
-  }
-
-  .countdown {
-    margin-top: 18px;
-    font-size: 18px;
-    font-weight: 600;
-    color: #ffb347;
-  }
-
-  @media (max-width: 480px) {
-    .title { font-size: 26px; }
-    .subtitle { font-size: 15px; }
-    .details { font-size: 13px; }
-    .card { padding: 22px; }
-  }
-</style>
+    @keyframes popUp {
+      from { transform: scale(0.8); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+  </style>
 </head>
-
 <body>
-
-<div class="card">
-  <!-- Tiny animated chicken -->
-  <div class="chicken">
-    <div class="chicken-body"></div>
-    <div class="chicken-head">
-      <div class="chicken-eye"></div>
-      <div class="chicken-beak"></div>
-      <div class="chicken-comb"></div>
+  <!-- Sticker GIFs -->
+  <div class="card-container">
+    <div class="sticker">
+      <img src="image1.gif" alt="GIF 1">
+      <div class="sticker-title">Sticker 1</div>
+    </div>
+    <div class="sticker">
+      <img src="image2.gif" alt="GIF 2">
+      <div class="sticker-title">Sticker 2</div>
+    </div>
+    <div class="sticker">
+      <img src="image3.gif" alt="GIF 3">
+      <div class="sticker-title">Sticker 3</div>
     </div>
   </div>
 
-  <div class="title">🐔 The Coop Is Closed</div>
-  <div class="subtitle">Our website has temporarily wandered off the farm.</div>
-
-  <!-- Loading spinner -->
-  <div class="loader"></div>
-
-  <div class="details">
-    The chickens are currently reorganizing the <span class="highlight">corn reserves</span>,  
-    settling a heated debate about who <span class="highlight">crossed the road</span> first,  
-    and performing highly classified <span class="highlight">poultry maintenance</span>.
-    <br><br>
-    Please flap back later — the flock will reopen the coop once their  
-    very serious technical <span class="highlight">peck‑nical</span> work is complete.
-    <br><br>
-    <strong>– Chicken Operations Department 🪶</strong>
+  <!-- Modal -->
+  <div class="modal">
+    <div class="modal-content">
+      <h2>About Me</h2>
+      <p>blehh blah im a zombieeuh yuh RAHHH!!!!!!!!!</p>
+    </div>
   </div>
-
-  <!-- Countdown -->
-  <div class="countdown" id="countdown">Loading countdown…</div>
-</div>
-
-<script>
-  function updateCountdown() {
-    const target = new Date("January 1, 2027 00:00:00").getTime();
-    const now = Date.now();
-    const diff = target - now;
-
-    if (diff <= 0) {
-      document.getElementById("countdown").textContent = "2027 has arrived — the coop should reopen soon!";
-      return;
-    }
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-    const minutes = Math.floor((diff / (1000 * 60)) % 60);
-    const seconds = Math.floor((diff / 1000) % 60);
-
-    document.getElementById("countdown").textContent =
-      `Reopening in ${days}d ${hours}h ${minutes}m ${seconds}s`;
-  }
-
-  updateCountdown();
-  setInterval(updateCountdown, 1000);
-</script>
-
 </body>
 </html>
