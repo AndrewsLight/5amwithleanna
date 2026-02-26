@@ -9,6 +9,9 @@
       font-family: "Trebuchet MS", sans-serif;
       background: url("background.jpg") no-repeat center center fixed;
       background-size: cover;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
     }
 
     /* Sticker container */
@@ -16,7 +19,7 @@
       display: flex;
       gap: 2rem;
       justify-content: center;
-      padding: 3rem;
+      padding: 2rem;
       flex-wrap: wrap;
     }
 
@@ -27,7 +30,9 @@
       box-shadow: 0 8px 20px rgba(0,0,0,0.3);
       display: inline-block;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
-      border: 4px solid white; /* white outline like a sticker */
+      border: 4px solid white;
+      flex: 1 1 250px;
+      max-width: 300px;
     }
 
     .sticker:hover {
@@ -36,7 +41,7 @@
     }
 
     .sticker img {
-      width: 200px;
+      width: 100%;
       height: auto;
       display: block;
       border-radius: 12px;
@@ -50,51 +55,101 @@
       text-shadow: 0 1px 2px rgba(255,255,255,0.8);
     }
 
-    /* Modal backdrop */
-    .modal {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
+    /* Chat box */
+    .chat-container {
+      flex: 1;
       display: flex;
-      justify-content: center;
-      align-items: center;
-      animation: fadeIn 0.8s ease forwards;
+      flex-direction: column;
+      max-width: 600px;
+      margin: 2rem auto;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      overflow: hidden;
     }
 
-    /* Modal box */
-    .modal-content {
-      background: rgba(255,255,255,0.7);
-      backdrop-filter: blur(12px);
-      border-radius: 20px;
-      padding: 2rem;
-      max-width: 400px;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-      animation: popUp 0.6s ease forwards;
+    .chat-messages {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
     }
 
-    .modal-content h2 {
-      margin-top: 0;
-      font-size: 1.5rem;
-      color: #003366;
-      text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+    .chat-message {
+      margin: 0.5rem 0;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      max-width: 80%;
+      word-wrap: break-word;
     }
 
-    .modal-content p {
-      font-size: 1.2rem;
-      color: #111;
-      line-height: 1.4;
+    .chat-message.user {
+      background: #4af;
+      color: white;
+      align-self: flex-end;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+    .chat-message.other {
+      background: #fa4;
+      color: white;
+      align-self: flex-start;
     }
 
-    @keyframes popUp {
-      from { transform: scale(0.8); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
+    .chat-input {
+      display: flex;
+      border-top: 1px solid #ccc;
+    }
+
+    .chat-input input {
+      flex: 1;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 0;
+      font-size: 1rem;
+    }
+
+    .chat-input button {
+      padding: 0.8rem 1.2rem;
+      border: none;
+      background: #003366;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .chat-input button:hover {
+      background: #0055aa;
+    }
+
+    /* Auth button */
+    #login-btn {
+      margin: 1rem auto;
+      padding: 0.8rem 1.2rem;
+      border: none;
+      background: #fa4;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 8px;
+      display: block;
+    }
+
+    #login-btn:hover {
+      background: #ff6600;
+    }
+
+    /* Responsive tweaks */
+    @media (max-width: 768px) {
+      .card-container {
+        flex-direction: column;
+        align-items: center;
+      }
+      .sticker {
+        max-width: 90%;
+      }
+      .chat-container {
+        max-width: 95%;
+      }
     }
   </style>
 </head>
@@ -115,12 +170,81 @@
     </div>
   </div>
 
-  <!-- Modal -->
-  <div class="modal">
-    <div class="modal-content">
-      <h2>About Me</h2>
-      <p>blehh blah im a zombieeuh yuh RAHHH!!!!!!!!!</p>
+  <!-- Login Button -->
+  <button id="login-btn">Login with Google</button>
+
+  <!-- Chat Box -->
+  <div class="chat-container" id="chat-container" style="display:none;">
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="chat-input">
+      <input id="chat-input" placeholder="Type a message...">
+      <button id="send-btn">Send</button>
     </div>
   </div>
+
+  <!-- Firebase + Chat Logic -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script>
+    // Your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyAtFL1HSIRy0I4Fh-sqPBENEhJhUmoaTGI",
+      authDomain: "amwithleanna.firebaseapp.com",
+      databaseURL: "https://amwithleanna-default-rtdb.firebaseio.com",
+      projectId: "amwithleanna",
+      storageBucket: "amwithleanna.firebasestorage.app",
+      messagingSenderId: "334460134718",
+      appId: "1:334460134718:web:f552c5077f6d0675e8386f",
+      measurementId: "G-4MQ6M7WN1W"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const auth = firebase.auth();
+
+    const chatMessages = document.getElementById("chat-messages");
+    const chatInput = document.getElementById("chat-input");
+    const sendBtn = document.getElementById("send-btn");
+    const loginBtn = document.getElementById("login-btn");
+    const chatContainer = document.getElementById("chat-container");
+
+    let currentUser = null;
+
+    // Login with Google
+    loginBtn.onclick = () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).then(result => {
+        currentUser = result.user;
+        loginBtn.style.display = "none";
+        chatContainer.style.display = "flex";
+      }).catch(error => {
+        alert("Login failed: " + error.message);
+      });
+    };
+
+    // Listen for new messages
+    db.ref("messages").on("child_added", snapshot => {
+      const msg = snapshot.val();
+      const div = document.createElement("div");
+      div.className = "chat-message " + (currentUser && msg.userId === currentUser.uid ? "user" : "other");
+      div.textContent = msg.userName + ": " + msg.text;
+      chatMessages.appendChild(div);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+
+    // Send message
+    sendBtn.onclick = () => {
+      const text = chatInput.value.trim();
+      if (text && currentUser) {
+        db.ref("messages").push({
+          userId: currentUser.uid,
+          userName: currentUser.displayName || "Anonymous",
+          text
+        });
+        chatInput.value = "";
+      }
+    };
+  </script>
 </body>
 </html>
