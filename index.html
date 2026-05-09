@@ -1,101 +1,432 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Layer 01</title>
-  <style>
-    /* Reset */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Checklist — Premium</title>
+<style>
+:root{
+  --bg:#FAFAFA; --surface:#FFFFFF; --surface-2:#F5F5F7; --border:#E5E5EA;
+  --text:#1C1C1E; --muted:#6E6E73; --accent:#FFCC00; --accent-ink:#2B2500;
+  --radius-lg:14px; --radius:10px; --pad:16px; --gap:12px;
+  --shadow:0 6px 20px rgba(0,0,0,0.08);
+  --t-fast:120ms; --t:220ms; --t-slow:320ms;
+  --ease:cubic-bezier(.2,.7,.2,1);
+}
 
-    html, body {
-      height: 100%;
-      width: 100%;
-      overflow: hidden;
-      font-family: 'Courier New', monospace;
-      background: black;
-      color: #e0e0e0;
-    }
+/* Base */
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  line-height:1.55; display:flex; justify-content:center; align-items:flex-start; min-height:100vh; padding:var(--pad)
+}
+.app{
+  width:100%; max-width:900px;
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);
+  box-shadow:var(--shadow); padding:var(--pad); display:grid; gap:var(--gap);
+}
 
-    /* Grid background */
-    .background-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1fr 1fr;
-      height: 100vh;
-      width: 100vw;
-    }
+/* Header & controls */
+.header{display:flex;flex-wrap:wrap;gap:var(--gap);align-items:center;justify-content:space-between}
+.title{font-size:22px;font-weight:700;letter-spacing:.2px}
+.controls{display:flex;flex-wrap:wrap;gap:var(--gap);align-items:center}
+.select, .btn{
+  height:40px; padding:0 12px; border-radius:var(--radius); border:1px solid var(--border);
+  background:var(--surface-2); color:var(--text); cursor:pointer;
+  transition:transform var(--t) var(--ease), box-shadow var(--t);
+}
+.btn.primary{background:var(--accent); color:var(--accent-ink); border-color:transparent}
+.btn:hover{transform:translateY(-1px); box-shadow:0 10px 24px rgba(0,0,0,0.10)}
+.btn.danger{background:#FF3B30; color:#fff; border-color:transparent}
 
-    .cell {
-      position: relative;
-      overflow: hidden;
-    }
+/* Progress + list */
+.progress{height:8px; border-radius:999px; background:var(--surface-2); overflow:hidden}
+.progress > div{height:100%; background:var(--accent); width:0; transition:width var(--t-slow) var(--ease)}
+.list{display:grid; gap:8px}
 
-    .cell img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      filter: brightness(0.7) contrast(1.2) saturate(0.8);
-    }
+/* Row */
+.row{
+  display:grid; grid-template-columns:26px 1fr auto; gap:10px; align-items:center;
+  padding:10px; border-radius:12px; background:var(--surface-2);
+  transition:background var(--t), transform var(--t), opacity var(--t);
+  will-change: transform, opacity;
+}
+.row:hover{background:#EFEFF3}
+.row.dragging{opacity:.55}
+.row.placeholder{outline:2px dashed var(--border); background:transparent}
 
-    /* Overlay text */
-    .overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      height: 100%;
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,0.35);
-      z-index: 10;
-      animation: flicker 6s infinite;
-    }
+/* Checkbox + text */
+.check{width:18px;height:18px}
+.txtWrap{display:grid; gap:4px}
+.txt{
+  border:none; background:transparent; font-size:16px; padding:4px; border-radius:8px;
+  transition:background var(--t), color var(--t);
+}
+.txt:focus{outline:1px solid var(--accent); background:#fff}
+.meta{font-size:12px; color:var(--muted)}
+.row.done .txt{color:var(--muted)}
+.row.done .strike{position:relative}
+.row.done .strike::after{
+  content:""; position:absolute; left:0; right:100%; top:50%;
+  height:2px; background:var(--muted);
+  animation:strike var(--t) var(--ease) forwards;
+}
+@keyframes strike{to{right:0}}
 
-    .overlay h1 {
-      font-size: 2.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.2em;
-      color: #c0ffea;
-      text-shadow: 0 0 8px #00ffcc, 0 0 20px #00ffcc;
-      animation: glitch 2s infinite;
-    }
+/* Actions */
+.actions{display:flex; gap:8px; align-items:center}
+.handle{
+  width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+  background:var(--surface); border:1px solid var(--border); color:var(--muted);
+  cursor:grab; transition:background var(--t), transform var(--t);
+}
+.handle:active{cursor:grabbing; transform:scale(.97)}
+.remove{
+  border:1px solid var(--border); background:var(--surface); color:#B0B0B5;
+  height:28px; padding:0 10px; border-radius:8px; cursor:pointer; transition:background var(--t), color var(--t)
+}
+.remove:hover{background:#fff; color:#333}
 
-    /* Flicker effect */
-    @keyframes flicker {
-      0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
-        opacity: 1;
-      }
-      20%, 24%, 55% {
-        opacity: 0.7;
-      }
-    }
+/* Row animations */
+@keyframes fadeIn{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+.fade-in{animation:fadeIn var(--t) var(--ease) both}
+@keyframes fadeOut{to{opacity:0; transform:translateY(6px)}}
+.fade-out{animation:fadeOut var(--t) var(--ease) both}
 
-    /* Glitch effect */
-    @keyframes glitch {
-      0% { transform: translate(0,0); }
-      20% { transform: translate(-2px, 2px); }
-      40% { transform: translate(2px, -2px); }
-      60% { transform: translate(-1px, 1px); }
-      80% { transform: translate(1px, -1px); }
-      100% { transform: translate(0,0); }
-    }
-  </style>
+/* Dialogs */
+.dialog{
+  position:fixed; inset:0; z-index:100; background:rgba(0,0,0,0.35);
+  display:none; align-items:center; justify-content:center;
+}
+.dialog.active{display:flex; animation:fadeIn var(--t) var(--ease)}
+.panel{
+  width:min(460px, 92vw);
+  background:var(--surface); border:1px solid var(--border); border-radius:12px; box-shadow:0 12px 30px rgba(0,0,0,0.25);
+  padding:20px; display:grid; gap:14px;
+}
+.panel h3{margin:0 0 6px 0}
+.input{
+  height:40px; padding:0 12px; border-radius:10px; border:1px solid var(--border);
+  background:var(--surface-2); color:var(--text);
+}
+.dialog-actions{display:flex; gap:10px; justify-content:flex-end}
+
+/* Accessibility helper */
+.visually-hidden{
+  position:absolute !important; height:1px; width:1px; overflow:hidden; clip:rect(1px,1px,1px,1px);
+}
+
+/* Responsive */
+@media (max-width:640px){
+  .header{gap:8px}
+  .controls{width:100%; justify-content:space-between}
+}
+</style>
 </head>
 <body>
-  <div class="background-grid">
-    <div class="cell"><img src="background1.gif" alt="bg1"></div>
-    <div class="cell"><img src="background2.gif" alt="bg2"></div>
-    <div class="cell"><img src="background3.gif" alt="bg3"></div>
-    <div class="cell"><img src="background4.gif" alt="bg4"></div>
-    <div class="overlay">
-      <h1>CONNECTING TO THE WIRED</h1>
+<div class="app" role="application" aria-label="Checklist App">
+  <div class="header">
+    <div class="title">Checklist</div>
+    <div class="controls">
+      <select class="select" id="listPicker" aria-label="Select list"></select>
+      <button class="btn" id="newListBtn">New list</button>
+      <button class="btn danger" id="deleteListBtn">Delete list</button>
+      <button class="btn primary" id="addItemBtn">Add item</button>
     </div>
   </div>
+
+  <div class="progress" aria-label="Completion progress">
+    <div id="progressBar"></div>
+  </div>
+
+  <div class="list" id="list" role="list" aria-label="Items"></div>
+</div>
+
+<!-- New List Modal -->
+<div class="dialog" id="newListDialog" role="dialog" aria-modal="true" aria-labelledby="newListTitle">
+  <div class="panel">
+    <h3 id="newListTitle">Create new list</h3>
+    <label>
+      <span class="visually-hidden">List name</span>
+      <input class="input" id="newListName" placeholder="List name" />
+    </label>
+    <div class="dialog-actions">
+      <button class="btn" id="cancelNewList">Cancel</button>
+      <button class="btn primary" id="confirmNewList">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete List Modal -->
+<div class="dialog" id="deleteListDialog" role="dialog" aria-modal="true" aria-labelledby="deleteListTitle">
+  <div class="panel">
+    <h3 id="deleteListTitle">Delete list</h3>
+    <p id="deleteListText">Are you sure you want to delete this list?</p>
+    <div class="dialog-actions">
+      <button class="btn" id="cancelDeleteList">Cancel</button>
+      <button class="btn danger" id="confirmDeleteList">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Storage */
+const storeKey = 'premium-checklists-v2';
+let data = JSON.parse(localStorage.getItem(storeKey) || '{}');
+let current = Object.keys(data)[0] || 'Default';
+if (!data[current]) data[current] = [];
+
+/* Elements */
+const listEl = document.getElementById('list');
+const listPicker = document.getElementById('listPicker');
+const newListBtn = document.getElementById('newListBtn');
+const deleteListBtn = document.getElementById('deleteListBtn');
+const addItemBtn = document.getElementById('addItemBtn');
+const progressBar = document.getElementById('progressBar');
+
+const newListDialog = document.getElementById('newListDialog');
+const newListName = document.getElementById('newListName');
+const cancelNewList = document.getElementById('cancelNewList');
+const confirmNewList = document.getElementById('confirmNewList');
+
+const deleteListDialog = document.getElementById('deleteListDialog');
+const deleteListText = document.getElementById('deleteListText');
+const cancelDeleteList = document.getElementById('cancelDeleteList');
+const confirmDeleteList = document.getElementById('confirmDeleteList');
+
+/* Utils */
+const save = () => localStorage.setItem(storeKey, JSON.stringify(data));
+const fmt = (iso) => new Date(iso).toLocaleString();
+
+/* Dialog helpers */
+function openDialog(el) {
+  el.classList.add('active');
+  // Focus first input/button
+  const input = el.querySelector('input, button');
+  if (input) input.focus();
+  // Trap Escape key
+  const escHandler = (e) => { if (e.key === 'Escape') closeDialog(el); };
+  el._escHandler = escHandler;
+  window.addEventListener('keydown', escHandler);
+}
+function closeDialog(el) {
+  el.classList.remove('active');
+  if (el._escHandler) { window.removeEventListener('keydown', el._escHandler); el._escHandler = null; }
+}
+
+/* Lists selector */
+function renderLists() {
+  listPicker.innerHTML = '';
+  Object.keys(data).forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name; opt.textContent = name;
+    if (name === current) opt.selected = true;
+    listPicker.appendChild(opt);
+  });
+}
+
+/* FLIP measure/animate */
+function measurePositions(container) {
+  const map = new Map();
+  container.querySelectorAll('.row').forEach(el => {
+    map.set(el.dataset.id, el.getBoundingClientRect());
+  });
+  return map;
+}
+function animateFlip(container, prev) {
+  container.querySelectorAll('.row').forEach(el => {
+    const id = el.dataset.id;
+    const old = prev.get(id);
+    if (!old) return;
+    const newRect = el.getBoundingClientRect();
+    const dx = old.left - newRect.left;
+    const dy = old.top - newRect.top;
+    if (dx || dy) {
+      el.style.transform = `translate(${dx}px, ${dy}px)`;
+      el.style.transition = 'transform 0s';
+      requestAnimationFrame(() => {
+        el.style.transform = '';
+        el.style.transition = 'transform var(--t) var(--ease)';
+      });
+    }
+  });
+}
+
+/* Render */
+function render() {
+  const items = data[current];
+  listEl.innerHTML = '';
+
+  let done = 0;
+  items.forEach((it, idx) => {
+    const row = document.createElement('div');
+    row.className = 'row fade-in' + (it.done ? ' done' : '');
+    row.setAttribute('role', 'listitem');
+    row.dataset.id = it.id;
+
+    row.innerHTML = `
+      <input class="check" type="checkbox" ${it.done ? 'checked' : ''} aria-label="Completed">
+      <div class="txtWrap">
+        <input class="txt strike" value="${it.text}" placeholder="Item" aria-label="Item text">
+        <div class="meta">Added: ${fmt(it.createdAt)}</div>
+      </div>
+      <div class="actions">
+        <button class="handle" title="Drag to reorder" aria-label="Reorder">≡</button>
+        <button class="remove" title="Remove" aria-label="Remove">Remove</button>
+      </div>
+    `;
+
+    const cb = row.querySelector('.check');
+    const txt = row.querySelector('.txt');
+    const rm = row.querySelector('.remove');
+    const handle = row.querySelector('.handle');
+
+    cb.onchange = () => { it.done = cb.checked; save(); updateProgress(); };
+
+    txt.oninput = () => { it.text = txt.value; save(); };
+
+    rm.onclick = () => {
+      row.classList.add('fade-out');
+      setTimeout(() => {
+        data[current].splice(idx, 1);
+        save(); render(); updateProgress();
+      }, 220);
+    };
+
+    // Dragging via handle (pointer-based)
+    let dragging = false, startY = 0, startIdx = idx;
+    handle.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      dragging = true; startY = e.clientY; startIdx = idx;
+      row.classList.add('dragging');
+      handle.setPointerCapture(e.pointerId);
+    });
+    handle.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const dy = e.clientY - startY;
+      row.style.transform = `translateY(${dy}px)`;
+      // placeholder highlight nearest
+      const siblings = Array.from(listEl.querySelectorAll('.row')).filter(el => el !== row);
+      let closest = null, minDist = Infinity;
+      const myCenter = row.getBoundingClientRect().top + row.getBoundingClientRect().height/2;
+      siblings.forEach(el => {
+        const r = el.getBoundingClientRect();
+        const center = r.top + r.height / 2;
+        const dist = Math.abs(myCenter - center);
+        if (dist < minDist) { minDist = dist; closest = el; }
+        el.classList.remove('placeholder');
+      });
+      if (closest) closest.classList.add('placeholder');
+    });
+    handle.addEventListener('pointerup', () => {
+      if (!dragging) return;
+      dragging = false;
+      row.classList.remove('dragging');
+      row.style.transform = '';
+      listEl.querySelectorAll('.placeholder').forEach(el => el.classList.remove('placeholder'));
+      // compute drop index by current vertical center
+      const rows = Array.from(listEl.querySelectorAll('.row'));
+      const centers = rows.map(el => el.getBoundingClientRect().top + el.getBoundingClientRect().height/2);
+      const myCenter = row.getBoundingClientRect().top + row.getBoundingClientRect().height/2;
+      let dropIdx = 0;
+      for (let i=0;i<centers.length;i++){ if (myCenter > centers[i]) dropIdx = i; }
+      if (dropIdx !== startIdx) {
+        const prev = measurePositions(listEl);
+        const [moved] = data[current].splice(startIdx, 1);
+        data[current].splice(dropIdx, 0, moved);
+        save();
+        render();
+        animateFlip(listEl, prev);
+      }
+    });
+
+    listEl.appendChild(row);
+    if (it.done) done++;
+  });
+
+  updateProgress(done, items.length);
+}
+
+function updateProgress(doneCount, totalCount) {
+  const items = data[current];
+  const done = doneCount ?? items.filter(i => i.done).length;
+  const total = totalCount ?? items.length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  progressBar.style.width = pct + '%';
+}
+
+/* Actions */
+addItemBtn.onclick = () => {
+  const id = Math.random().toString(36).slice(2);
+  data[current].push({ id, text: '', done: false, createdAt: new Date().toISOString() });
+  save(); render(); updateProgress();
+};
+
+newListBtn.onclick = () => {
+  newListName.value = '';
+  openDialog(newListDialog);
+};
+
+confirmNewList.onclick = () => {
+  const name = newListName.value.trim();
+  if (!name) { newListName.focus(); return; }
+  if (!data[name]) data[name] = [];
+  current = name;
+  save(); renderLists(); render(); updateProgress();
+  closeDialog(newListDialog);
+};
+
+cancelNewList.onclick = () => closeDialog(newListDialog);
+
+deleteListBtn.onclick = () => {
+  deleteListText.textContent = `Delete list “${current}”? This cannot be undone.`;
+  openDialog(deleteListDialog);
+};
+
+confirmDeleteList.onclick = () => {
+  delete data[current];
+  const names = Object.keys(data);
+  current = names[0] || 'Default';
+  if (!data[current]) data[current] = [];
+  save(); renderLists(); render(); updateProgress();
+  closeDialog(deleteListDialog);
+};
+
+cancelDeleteList.onclick = () => closeDialog(deleteListDialog);
+
+/* Keyboard: Enter to confirm in modals */
+window.addEventListener('keydown', (e) => {
+  if (newListDialog.classList.contains('active') && e.key === 'Enter') {
+    e.preventDefault(); confirmNewList.click();
+  }
+  if (deleteListDialog.classList.contains('active') && e.key === 'Enter') {
+    e.preventDefault(); confirmDeleteList.click();
+  }
+});
+
+/* Close dialog on backdrop click */
+[newListDialog, deleteListDialog].forEach(dlg => {
+  dlg.addEventListener('click', (e) => {
+    if (e.target === dlg) closeDialog(dlg);
+  });
+});
+
+/* List switching */
+listPicker.onchange = () => { current = listPicker.value; render(); updateProgress(); };
+
+/* Init */
+function init(){
+  // Seed default IDs if missing
+  Object.keys(data).forEach(name => {
+    data[name] = data[name].map(it => it.id ? it : ({...it, id: Math.random().toString(36).slice(2)}));
+  });
+  save();
+  renderLists();
+  render();
+  updateProgress();
+}
+init();
+</script>
 </body>
 </html>
