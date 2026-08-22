@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>5amwithleanna</title>
+  <title>5amwithleanna Anime Tracker</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
   </header>
 
   <main>
-    <!-- Anime Info Section -->
+    <!-- AniList Metadata -->
     <section id="anime-info">
       <h2 id="anime-title">Anime Title</h2>
       <img id="anime-poster" alt="Anime Poster">
@@ -20,26 +20,19 @@
       <p id="anime-episodes">Episodes: </p>
     </section>
 
-    <!-- Progress Tracking -->
-    <section id="progress">
-      <h3>Continue Watching</h3>
-      <p>Current Episode: <span id="current-episode">0</span></p>
-      <p>Timestamp: <span id="current-timestamp">0</span> seconds</p>
-      <button onclick="saveProgress()">Save Progress</button>
+    <!-- Manual Add Form -->
+    <section id="manual-add">
+      <h3>Add Anime to Continue Watching</h3>
+      <input type="text" id="anime-name" placeholder="Anime Name">
+      <input type="number" id="episode-number" placeholder="Episode Number">
+      <input type="number" id="timestamp" placeholder="Timestamp (seconds)">
+      <button onclick="addAnime()">Add</button>
     </section>
 
-    <!-- Lists Management -->
-    <section id="lists">
-      <h3>My Lists</h3>
-      <select id="anime-status" onchange="updateStatus()">
-        <option value="Watching">Watching</option>
-        <option value="Completed">Completed</option>
-        <option value="Dropped">Dropped</option>
-        <option value="Paused">Paused</option>
-        <option value="Planning">Planning</option>
-        <option value="Favorite">Favorite</option>
-      </select>
-      <p>Current Status: <span id="status-display">Watching</span></p>
+    <!-- Continue Watching List -->
+    <section id="continue">
+      <h3>Continue Watching</h3>
+      <div id="continue-list"></div>
     </section>
   </main>
 
