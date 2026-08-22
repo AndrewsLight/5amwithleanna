@@ -9,144 +9,660 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>5amwithleanna Anime Tracker</title>
+    <meta
+        name="description"
+        content="5amwithleanna anime tracker powered by AniList"
+    >
+
+    <title>5amwithleanna — Anime Tracker</title>
 
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <!-- HEADER -->
-    <header>
+    <div id="app">
 
-        <h1>5amwithleanna Anime Tracker</h1>
+        <!-- =========================================
+             SIDEBAR
+        ========================================== -->
 
-        <button id="login-button" onclick="loginAniList()">
-            Login with AniList
-        </button>
+        <aside class="sidebar" id="sidebar">
 
-    </header>
+            <div class="brand">
+
+                <div class="brand-logo">
+                    5
+                </div>
+
+                <div class="brand-text">
+
+                    <h1>
+                        5amwithleanna
+                    </h1>
+
+                    <span>
+                        ANIME TRACKER
+                    </span>
+
+                </div>
+
+            </div>
 
 
-    <main>
+            <nav class="navigation">
 
-        <!-- ANILIST USER -->
-        <section id="account">
+                <button
+                    class="nav-item active"
+                    data-view="home"
+                    type="button"
+                >
 
-            <h2>AniList Account</h2>
+                    <span class="nav-icon">
+                        ⌂
+                    </span>
 
-            <div id="user-info">
-                <p>You're not logged into AniList.</p>
+                    <span>
+                        Home
+                    </span>
 
-                <button onclick="loginAniList()">
+                </button>
+
+
+                <button
+                    class="nav-item"
+                    data-view="watching"
+                    type="button"
+                >
+
+                    <span class="nav-icon">
+                        ▶
+                    </span>
+
+                    <span>
+                        Watching
+                    </span>
+
+                </button>
+
+
+                <button
+                    class="nav-item"
+                    data-view="completed"
+                    type="button"
+                >
+
+                    <span class="nav-icon">
+                        ✓
+                    </span>
+
+                    <span>
+                        Completed
+                    </span>
+
+                </button>
+
+
+                <button
+                    class="nav-item"
+                    data-view="planning"
+                    type="button"
+                >
+
+                    <span class="nav-icon">
+                        ＋
+                    </span>
+
+                    <span>
+                        Planning
+                    </span>
+
+                </button>
+
+
+                <button
+                    class="nav-item"
+                    data-view="paused"
+                    type="button"
+                >
+
+                    <span class="nav-icon">
+                        Ⅱ
+                    </span>
+
+                    <span>
+                        Paused
+                    </span>
+
+                </button>
+
+
+                <button
+                    class="nav-item"
+                    data-view="dropped"
+                    type="button"
+                >
+
+                    <span class="nav-icon">
+                        ×
+                    </span>
+
+                    <span>
+                        Dropped
+                    </span>
+
+                </button>
+
+            </nav>
+
+
+            <div class="sidebar-bottom">
+
+                <div
+                    id="sidebar-user"
+                    class="sidebar-user"
+                >
+
+                    <div class="avatar-placeholder">
+                    </div>
+
+                    <div class="sidebar-user-info">
+
+                        <strong>
+                            Not connected
+                        </strong>
+
+                        <small>
+                            AniList
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    id="auth-button"
+                    class="login-button"
+                    type="button"
+                >
                     Login with AniList
                 </button>
+
             </div>
 
-        </section>
+        </aside>
 
 
-        <!-- ANIME INFORMATION -->
-        <section id="anime-info">
+        <!-- =========================================
+             MAIN CONTENT
+        ========================================== -->
 
-            <h2 id="anime-title">
-                Select an anime
-            </h2>
+        <main class="main">
 
-            <img
-                id="anime-poster"
-                src=""
-                alt="Anime Poster"
+
+            <!-- =====================================
+                 TOP BAR
+            ====================================== -->
+
+            <header class="topbar">
+
+                <button
+                    id="mobile-menu"
+                    class="mobile-menu"
+                    type="button"
+                    aria-label="Open menu"
+                >
+                    ☰
+                </button>
+
+
+                <div class="search-container">
+
+                    <span
+                        class="search-icon"
+                        aria-hidden="true"
+                    >
+                        ⌕
+                    </span>
+
+                    <input
+                        id="search-input"
+                        type="search"
+                        placeholder="Search anime..."
+                        autocomplete="off"
+                        aria-label="Search anime"
+                    >
+
+                </div>
+
+
+                <button
+                    id="refresh-button"
+                    class="icon-button"
+                    type="button"
+                    title="Refresh AniList"
+                    aria-label="Refresh AniList"
+                >
+                    ↻
+                </button>
+
+            </header>
+
+
+            <!-- =====================================
+                 HOME VIEW
+            ====================================== -->
+
+            <section
+                id="home-view"
+                class="view active-view"
             >
 
-            <p id="anime-description">
-                Select an anime from your AniList collection.
-            </p>
 
-            <p id="anime-episodes">
-                Episodes:
-            </p>
+                <!-- HERO -->
 
-            <p id="anime-status">
-                Status:
-            </p>
+                <div class="hero">
 
-            <p id="anime-score">
-                Score:
-            </p>
+                    <div class="hero-content">
 
-        </section>
+                        <span class="eyebrow">
+                            YOUR ANIME LIBRARY
+                        </span>
 
 
-        <!-- ANILIST ANIME LIST -->
-        <section id="anilist-list">
-
-            <h2>My AniList Anime</h2>
-
-            <div id="anime-list">
-                <p>
-                    Login with AniList to load your anime.
-                </p>
-            </div>
-
-        </section>
+                        <h2 id="welcome-title">
+                            Your anime. Your way.
+                        </h2>
 
 
-        <!-- MANUAL ADD -->
-        <section id="manual-add">
+                        <p id="welcome-description">
+                            Connect your AniList account to load your anime library, progress and watch history.
+                        </p>
 
-            <h2>Add to Continue Watching</h2>
 
-            <input
-                type="text"
-                id="anime-name"
-                placeholder="Anime Name"
+                        <button
+                            id="hero-login"
+                            class="primary-button"
+                            type="button"
+                        >
+                            Connect AniList
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================
+                     CONTINUE WATCHING
+                ================================== -->
+
+                <section class="content-section">
+
+                    <div class="section-heading">
+
+                        <div>
+
+                            <span class="section-kicker">
+                                PICK UP WHERE YOU LEFT OFF
+                            </span>
+
+                            <h2>
+                                Continue Watching
+                            </h2>
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        id="continue-grid"
+                        class="anime-grid"
+                    >
+
+                        <!-- Cards inserted by app.js -->
+
+                    </div>
+
+                </section>
+
+
+                <!-- =================================
+                     CURRENTLY WATCHING
+                ================================== -->
+
+                <section class="content-section">
+
+                    <div class="section-heading">
+
+                        <div>
+
+                            <span class="section-kicker">
+                                ANILIST
+                            </span>
+
+                            <h2>
+                                Currently Watching
+                            </h2>
+
+                        </div>
+
+
+                        <button
+                            class="view-all"
+                            data-view="watching"
+                            type="button"
+                        >
+                            View all →
+                        </button>
+
+                    </div>
+
+
+                    <div
+                        id="watching-grid"
+                        class="anime-grid"
+                    >
+
+                        <!-- Cards inserted by app.js -->
+
+                    </div>
+
+                </section>
+
+
+                <!-- =================================
+                     RECENTLY UPDATED
+                ================================== -->
+
+                <section class="content-section">
+
+                    <div class="section-heading">
+
+                        <div>
+
+                            <span class="section-kicker">
+                                YOUR LIBRARY
+                            </span>
+
+                            <h2>
+                                Recently Updated
+                            </h2>
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        id="recent-grid"
+                        class="anime-grid"
+                    >
+
+                        <!-- Cards inserted by app.js -->
+
+                    </div>
+
+                </section>
+
+            </section>
+
+
+            <!-- =====================================
+                 LIBRARY VIEW
+            ====================================== -->
+
+            <section
+                id="library-view"
+                class="view"
             >
 
-            <input
-                type="number"
-                id="episode-number"
-                placeholder="Episode Number"
-                min="0"
+                <div class="page-heading">
+
+                    <span
+                        id="library-kicker"
+                        class="section-kicker"
+                    >
+                        ANILIST LIBRARY
+                    </span>
+
+
+                    <h2 id="library-title">
+                        My Anime
+                    </h2>
+
+
+                    <p id="library-count">
+                        0 anime
+                    </p>
+
+                </div>
+
+
+                <div
+                    id="library-grid"
+                    class="anime-grid large-grid"
+                >
+
+                    <!-- Library cards inserted by app.js -->
+
+                </div>
+
+            </section>
+
+
+            <!-- =====================================
+                 SEARCH VIEW
+            ====================================== -->
+
+            <section
+                id="search-view"
+                class="view"
             >
 
-            <input
-                type="number"
-                id="timestamp"
-                placeholder="Timestamp (seconds)"
-                min="0"
-            >
+                <div class="page-heading">
 
-            <button onclick="addAnime()">
-                Add
+                    <span class="section-kicker">
+                        SEARCH
+                    </span>
+
+
+                    <h2 id="search-title">
+                        Search Anime
+                    </h2>
+
+                </div>
+
+
+                <div
+                    id="search-grid"
+                    class="anime-grid large-grid"
+                >
+
+                    <!-- Search results inserted by app.js -->
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <!-- =========================================
+         ANIME DETAIL MODAL
+    ========================================== -->
+
+    <div
+        id="anime-modal"
+        class="modal hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+    >
+
+        <div class="modal-backdrop"></div>
+
+
+        <div class="anime-modal">
+
+            <button
+                id="close-modal"
+                class="modal-close"
+                type="button"
+                aria-label="Close anime details"
+            >
+                ×
             </button>
 
-        </section>
+
+            <!-- Banner -->
+
+            <div
+                id="modal-banner"
+                class="modal-banner"
+            ></div>
 
 
-        <!-- CONTINUE WATCHING -->
-        <section id="continue">
+            <!-- Modal Content -->
 
-            <h2>Continue Watching</h2>
+            <div class="modal-body">
 
-            <div id="continue-list">
-                <p>Nothing here yet.</p>
+
+                <!-- Poster -->
+
+                <div class="modal-poster-container">
+
+                    <img
+                        id="modal-poster"
+                        class="modal-poster"
+                        src=""
+                        alt=""
+                    >
+
+                </div>
+
+
+                <!-- Information -->
+
+                <div class="modal-info">
+
+                    <span
+                        id="modal-status"
+                        class="status-badge"
+                    >
+                    </span>
+
+
+                    <h2 id="modal-title">
+                        Anime
+                    </h2>
+
+
+                    <p
+                        id="modal-subtitle"
+                        class="modal-subtitle"
+                    >
+                    </p>
+
+
+                    <!-- Metadata -->
+
+                    <div
+                        id="modal-meta"
+                        class="meta-row"
+                    >
+                    </div>
+
+
+                    <!-- Genres -->
+
+                    <div
+                        id="modal-genres"
+                        class="genres"
+                    >
+                    </div>
+
+
+                    <!-- Description -->
+
+                    <div class="description-container">
+
+                        <h3>
+                            Description
+                        </h3>
+
+
+                        <p
+                            id="modal-description"
+                            class="description"
+                        >
+                            No description available.
+                        </p>
+
+                    </div>
+
+
+                    <!-- Progress -->
+
+                    <div
+                        id="modal-progress"
+                        class="modal-progress"
+                    >
+                    </div>
+
+
+                    <!-- Actions -->
+
+                    <div class="modal-actions">
+
+                        <button
+                            id="continue-button"
+                            class="primary-button"
+                            type="button"
+                        >
+                            Continue Watching
+                        </button>
+
+
+                        <button
+                            id="anilist-button"
+                            class="secondary-button"
+                            type="button"
+                        >
+                            Open AniList
+                        </button>
+
+                    </div>
+
+                </div>
+
             </div>
 
-        </section>
+        </div>
 
-    </main>
+    </div>
 
 
-    <!-- FOOTER -->
-    <footer>
+    <!-- =========================================
+         TOAST NOTIFICATIONS
+    ========================================== -->
 
-        <p>
-            Powered by AniList API
-        </p>
+    <div
+        id="toast"
+        class="toast"
+        role="status"
+        aria-live="polite"
+    >
+    </div>
 
-    </footer>
 
+    <!-- =========================================
+         JAVASCRIPT
+    ========================================== -->
 
     <script src="app.js"></script>
 
