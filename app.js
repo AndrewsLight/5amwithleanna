@@ -1,28 +1,26 @@
 // AniList API setup
-const CLIENT_ID = 49189; // your AniList client ID
+const CLIENT_ID = 49189;
 const REDIRECT_URI = "https://5amwithleanna.online/";
 const API_URL = "https://graphql.anilist.co";
 
-// Step 1: Handle OAuth login (implicit flow)
+// OAuth login (implicit flow)
 function loginAniList() {
   const url = `https://anilist.co/api/v2/oauth/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${REDIRECT_URI}`;
   window.location.href = url;
 }
 
-// Step 2: Extract access token from URL hash after redirect
+// Extract token
 function getAccessToken() {
-  // Check if token is already stored
   const storedToken = localStorage.getItem("anilist_token");
   if (storedToken) return storedToken;
 
-  // Parse from URL hash
   const hash = window.location.hash;
   if (hash) {
     const params = new URLSearchParams(hash.replace("#", "?"));
     const token = params.get("access_token");
     if (token) {
-      localStorage.setItem("anilist_token", token); // save for reuse
-      window.location.hash = ""; // clean up URL
+      localStorage.setItem("anilist_token", token);
+      window.location.hash = "";
       return token;
     }
   }
@@ -31,7 +29,7 @@ function getAccessToken() {
 
 const token = getAccessToken();
 
-// Step 3: Example GraphQL query (fetch anime by ID)
+// Fetch AniList metadata
 async function fetchAnime(id) {
   const query = `
     query ($id: Int) {
@@ -58,49 +56,67 @@ async function fetchAnime(id) {
   return data.data.Media;
 }
 
-// Step 4: Render anime data into HTML
+// Render AniList metadata
 async function renderAnime() {
-  const anime = await fetchAnime(49189); // test with your ID
+  const anime = await fetchAnime(49189); // Example ID
   document.getElementById("anime-title").innerText = anime.title.romaji;
   document.getElementById("anime-description").innerHTML = anime.description;
   document.getElementById("anime-poster").src = anime.coverImage.large;
   document.getElementById("anime-episodes").innerText = `Episodes: ${anime.episodes}`;
 }
 
-// Step 5: Progress tracking (localStorage)
-function saveProgress() {
-  const progress = {
-    animeId: 49189,
-    currentEpisode: document.getElementById("current-episode").innerText,
-    timestamp: document.getElementById("current-timestamp").innerText
-  };
-  localStorage.setItem("progress", JSON.stringify(progress));
-  alert("Progress saved!");
+// Manual add to Continue Watching
+function addAnime() {
+  const name = document.getElementById("anime-name").value;
+  const episode = document.getElementById("episode-number").value;
+  const timestamp = document.getElementById("timestamp").value;
+
+  let continueList = JSON.parse(localStorage.getItem("continueWatching")) || [];
+  continueList.push({ name, episode, timestamp });
+  localStorage.setItem("continueWatching", JSON.stringify(continueList));
+
+  renderContinueWatching();
 }
 
-function updateStatus() {
-  const status = document.getElementById("anime-status").value;
-  document.getElementById("status-display").innerText = status;
-  localStorage.setItem("status", status);
+// Render Continue Watching list
+function renderContinueWatching() {
+  const list = JSON.parse(localStorage.getItem("continueWatching")) || [];
+  const container = document.getElementById("continue-list");
+  container.innerHTML = "";
+  list.forEach((anime, index) => {
+    container.innerHTML += `
+      <div>
+        <strong>${anime.name}</strong> - Episode ${anime.episode} at ${anime.timestamp}s
+        <button onclick="editAnime(${index})">Edit</button>
+        <button onclick="deleteAnime(${index})">Delete</button>
+      </div>
+    `;
+  });
 }
 
-// Run render on page load
+// Edit entry
+function editAnime(index) {
+  let list = JSON.parse(localStorage.getItem("continueWatching")) || [];
+  const anime = list[index];
+  const newEpisode = prompt("Update episode number:", anime.episode);
+  const newTimestamp = prompt("Update timestamp (seconds):", anime.timestamp);
+  list[index] = { ...anime, episode: newEpisode, timestamp: newTimestamp };
+  localStorage.setItem("continueWatching", JSON.stringify(list));
+  renderContinueWatching();
+}
+
+// Delete entry
+function deleteAnime(index) {
+  let list = JSON.parse(localStorage.getItem("continueWatching")) || [];
+  list.splice(index, 1);
+  localStorage.setItem("continueWatching", JSON.stringify(list));
+  renderContinueWatching();
+}
+
+// On page load
 window.onload = () => {
-  if (!token) {
-    loginAniList();
-  } else {
+  if (token) {
     renderAnime();
-
-    // Load saved progress/status if available
-    const savedProgress = JSON.parse(localStorage.getItem("progress"));
-    if (savedProgress) {
-      document.getElementById("current-episode").innerText = savedProgress.currentEpisode;
-      document.getElementById("current-timestamp").innerText = savedProgress.timestamp;
-    }
-    const savedStatus = localStorage.getItem("status");
-    if (savedStatus) {
-      document.getElementById("anime-status").value = savedStatus;
-      document.getElementById("status-display").innerText = savedStatus;
-    }
   }
+  renderContinueWatching();
 };
