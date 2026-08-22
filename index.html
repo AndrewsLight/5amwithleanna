@@ -1,47 +1,155 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <title>5amwithleanna Anime Tracker</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>5amwithleanna Anime Tracker</title>
+
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <!-- Header -->
-  <header>
-    <h1>5amwithleanna Anime Tracker</h1>
-    <button onclick="loginAniList()">Login with AniList</button>
-  </header>
 
-  <main>
-    <!-- AniList Metadata Section -->
-    <section id="anime-info">
-      <h2 id="anime-title">Anime Title</h2>
-      <img id="anime-poster" alt="Anime Poster">
-      <p id="anime-description">Description will appear here.</p>
-      <p id="anime-episodes">Episodes: </p>
-    </section>
+    <!-- HEADER -->
+    <header>
 
-    <!-- Manual Add Form -->
-    <section id="manual-add">
-      <h3>Add Anime to Continue Watching</h3>
-      <input type="text" id="anime-name" placeholder="Anime Name">
-      <input type="number" id="episode-number" placeholder="Episode Number">
-      <input type="number" id="timestamp" placeholder="Timestamp (seconds)">
-      <button onclick="addAnime()">Add</button>
-    </section>
+        <h1>5amwithleanna Anime Tracker</h1>
 
-    <!-- Continue Watching List -->
-    <section id="continue">
-      <h3>Continue Watching</h3>
-      <div id="continue-list"></div>
-    </section>
-  </main>
+        <button id="login-button" onclick="loginAniList()">
+            Login with AniList
+        </button>
 
-  <!-- Footer -->
-  <footer>
-    <p>Powered by AniList API</p>
-  </footer>
+    </header>
 
-  <script src="app.js"></script>
+
+    <main>
+
+        <!-- ANILIST USER -->
+        <section id="account">
+
+            <h2>AniList Account</h2>
+
+            <div id="user-info">
+                <p>You're not logged into AniList.</p>
+
+                <button onclick="loginAniList()">
+                    Login with AniList
+                </button>
+            </div>
+
+        </section>
+
+
+        <!-- ANIME INFORMATION -->
+        <section id="anime-info">
+
+            <h2 id="anime-title">
+                Select an anime
+            </h2>
+
+            <img
+                id="anime-poster"
+                src=""
+                alt="Anime Poster"
+            >
+
+            <p id="anime-description">
+                Select an anime from your AniList collection.
+            </p>
+
+            <p id="anime-episodes">
+                Episodes:
+            </p>
+
+            <p id="anime-status">
+                Status:
+            </p>
+
+            <p id="anime-score">
+                Score:
+            </p>
+
+        </section>
+
+
+        <!-- ANILIST ANIME LIST -->
+        <section id="anilist-list">
+
+            <h2>My AniList Anime</h2>
+
+            <div id="anime-list">
+                <p>
+                    Login with AniList to load your anime.
+                </p>
+            </div>
+
+        </section>
+
+
+        <!-- MANUAL ADD -->
+        <section id="manual-add">
+
+            <h2>Add to Continue Watching</h2>
+
+            <input
+                type="text"
+                id="anime-name"
+                placeholder="Anime Name"
+            >
+
+            <input
+                type="number"
+                id="episode-number"
+                placeholder="Episode Number"
+                min="0"
+            >
+
+            <input
+                type="number"
+                id="timestamp"
+                placeholder="Timestamp (seconds)"
+                min="0"
+            >
+
+            <button onclick="addAnime()">
+                Add
+            </button>
+
+        </section>
+
+
+        <!-- CONTINUE WATCHING -->
+        <section id="continue">
+
+            <h2>Continue Watching</h2>
+
+            <div id="continue-list">
+                <p>Nothing here yet.</p>
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- FOOTER -->
+    <footer>
+
+        <p>
+            Powered by AniList API
+        </p>
+
+    </footer>
+
+
+    <script src="app.js"></script>
+
 </body>
+
 </html>
