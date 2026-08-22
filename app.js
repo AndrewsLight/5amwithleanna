@@ -1,5 +1,5 @@
 // AniList API setup
-const CLIENT_ID = 49189; // your AniList client ID
+const CLIENT_ID = 49199; // your new AniList client ID
 const REDIRECT_URI = "https://5amwithleanna.online/";
 const API_URL = "https://graphql.anilist.co";
 
@@ -11,17 +11,15 @@ function loginAniList() {
 
 // Step 2: Extract access token from URL hash after redirect
 function getAccessToken() {
-  // Check if token is already stored
   const storedToken = localStorage.getItem("anilist_token");
   if (storedToken) return storedToken;
 
-  // Parse from URL hash
   const hash = window.location.hash;
   if (hash) {
     const params = new URLSearchParams(hash.replace("#", "?"));
     const token = params.get("access_token");
     if (token) {
-      localStorage.setItem("anilist_token", token); // save for reuse
+      localStorage.setItem("anilist_token", token);
       window.location.hash = ""; // clean up URL
       return token;
     }
@@ -60,11 +58,15 @@ async function fetchAnime(id) {
 
 // Step 4: Render AniList metadata into HTML
 async function renderAnime() {
-  const anime = await fetchAnime(49189); // Example ID
-  document.getElementById("anime-title").innerText = anime.title.romaji;
-  document.getElementById("anime-description").innerHTML = anime.description;
-  document.getElementById("anime-poster").src = anime.coverImage.large;
-  document.getElementById("anime-episodes").innerText = `Episodes: ${anime.episodes}`;
+  try {
+    const anime = await fetchAnime(49189); // Example anime ID
+    document.getElementById("anime-title").innerText = anime.title.romaji;
+    document.getElementById("anime-description").innerHTML = anime.description;
+    document.getElementById("anime-poster").src = anime.coverImage.large;
+    document.getElementById("anime-episodes").innerText = `Episodes: ${anime.episodes}`;
+  } catch (err) {
+    console.error("AniList fetch failed:", err);
+  }
 }
 
 // Step 5: Manual Continue Watching management
