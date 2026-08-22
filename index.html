@@ -2,65 +2,51 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Anime Tracker</title>
-  <link rel="stylesheet" href="./style.css">
+  <title>5amwithleanna</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="./">5AM Anime</a>
-
-    <nav>
-      <button data-view="continue">Continue</button>
-      <button data-view="watching">Watching</button>
-      <button data-view="completed">Completed</button>
-      <button data-view="paused">Paused</button>
-      <button data-view="dropped">Dropped</button>
-      <button data-view="planning">Planning</button>
-    </nav>
-
-    <div id="account"></div>
+  <header>
+    <h1>5amwithleanna Anime Tracker</h1>
+    <button onclick="loginAniList()">Login with AniList</button>
   </header>
 
-  <main class="container">
-    <section id="loginView" class="login-view">
-      <div class="login-card">
-        <p class="eyebrow">YOUR ANIME LIST</p>
-        <h1>Your anime.<br>One place.</h1>
-        <p class="muted">
-          Connect AniList to load your watching progress, completed anime,
-          paused shows, dropped shows, and planning list.
-        </p>
-
-        <button id="loginButton" class="primary-button">
-          Login with AniList
-        </button>
-
-        <p id="loginError" class="error"></p>
-      </div>
+  <main>
+    <!-- Anime Info Section -->
+    <section id="anime-info">
+      <h2 id="anime-title">Anime Title</h2>
+      <img id="anime-poster" alt="Anime Poster">
+      <p id="anime-description">Description will appear here.</p>
+      <p id="anime-episodes">Episodes: </p>
     </section>
 
-    <section id="appView" hidden>
-      <div class="hero">
-        <div>
-          <p class="eyebrow">YOUR LIBRARY</p>
-          <h1 id="pageTitle">Continue Watching</h1>
-          <p id="pageDescription" class="muted">
-            Pick up where you left off.
-          </p>
-        </div>
+    <!-- Progress Tracking -->
+    <section id="progress">
+      <h3>Continue Watching</h3>
+      <p>Current Episode: <span id="current-episode">0</span></p>
+      <p>Timestamp: <span id="current-timestamp">0</span> seconds</p>
+      <button onclick="saveProgress()">Save Progress</button>
+    </section>
 
-        <button id="refreshButton" class="secondary-button">
-          Refresh
-        </button>
-      </div>
-
-      <div id="stats" class="stats"></div>
-
-      <section id="animeGrid" class="anime-grid"></section>
+    <!-- Lists Management -->
+    <section id="lists">
+      <h3>My Lists</h3>
+      <select id="anime-status" onchange="updateStatus()">
+        <option value="Watching">Watching</option>
+        <option value="Completed">Completed</option>
+        <option value="Dropped">Dropped</option>
+        <option value="Paused">Paused</option>
+        <option value="Planning">Planning</option>
+        <option value="Favorite">Favorite</option>
+      </select>
+      <p>Current Status: <span id="status-display">Watching</span></p>
     </section>
   </main>
 
-  <script src="./app.js"></script>
+  <footer>
+    <p>Powered by AniList API</p>
+  </footer>
+
+  <script src="app.js"></script>
 </body>
 </html>
