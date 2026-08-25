@@ -1,671 +1,1509 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<title>kawaii chat ♡</title>
 
-    <meta
-        name="description"
-        content="5amwithleanna anime tracker powered by AniList"
-    >
+<style>
+    * {
+        box-sizing: border-box;
+    }
 
-    <title>5amwithleanna — Anime Tracker</title>
+    :root {
+        --bg: #fff5fb;
+        --panel: rgba(255,255,255,.88);
+        --border: #f3cfe2;
+        --text: #514553;
+        --muted: #9b8998;
+        --pink: #ff8fbd;
+        --pink-dark: #e86c9e;
+        --shadow: 0 15px 45px rgba(190, 117, 157, .15);
+    }
 
-    <link rel="stylesheet" href="style.css">
+    body {
+        margin: 0;
+        min-height: 100vh;
+        font-family:
+            "Segoe UI",
+            "Trebuchet MS",
+            Arial,
+            sans-serif;
+        color: var(--text);
+        background:
+            radial-gradient(circle at 10% 15%, #ffd9eb 0 70px, transparent 71px),
+            radial-gradient(circle at 90% 10%, #e9dcff 0 90px, transparent 91px),
+            radial-gradient(circle at 85% 90%, #d8f6ff 0 100px, transparent 101px),
+            var(--bg);
+        overflow: hidden;
+    }
+
+    button,
+    input {
+        font: inherit;
+    }
+
+    /* ==============================
+       LOGIN / LOADING
+    ============================== */
+
+    #loadingScreen,
+    #welcomeScreen {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    #loadingScreen {
+        z-index: 20;
+        background: var(--bg);
+    }
+
+    .loading-box {
+        text-align: center;
+        animation: float 2.5s ease-in-out infinite;
+    }
+
+    .loading-face {
+        font-size: 50px;
+        margin-bottom: 15px;
+    }
+
+    .loading-text {
+        color: var(--muted);
+        font-size: 14px;
+    }
+
+    #welcomeScreen {
+        z-index: 10;
+    }
+
+    .welcome-card {
+        width: min(430px, 100%);
+        padding: 35px 30px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(15px);
+        text-align: center;
+    }
+
+    .welcome-face {
+        font-size: 48px;
+        margin-bottom: 8px;
+    }
+
+    .welcome-card h1 {
+        margin: 0;
+        font-size: 28px;
+    }
+
+    .welcome-card p {
+        color: var(--muted);
+        line-height: 1.6;
+        font-size: 14px;
+    }
+
+    .identity-preview {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 13px;
+        margin: 20px 0;
+        border: 1px solid var(--border);
+        border-radius: 17px;
+        background: #fff9fc;
+        text-align: left;
+    }
+
+    .avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        flex-shrink: 0;
+        box-shadow: 0 5px 15px rgba(0,0,0,.12);
+    }
+
+    .identity-name {
+        font-weight: 700;
+    }
+
+    .identity-sub {
+        color: var(--muted);
+        font-size: 12px;
+    }
+
+    .enter-btn {
+        width: 100%;
+        border: 0;
+        padding: 14px;
+        border-radius: 16px;
+        cursor: pointer;
+        color: white;
+        background: linear-gradient(135deg, #ff91bf, #d98dff);
+        box-shadow: 0 8px 20px rgba(224, 130, 177, .25);
+        transition: .2s;
+    }
+
+    .enter-btn:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.03);
+    }
+
+    .tiny-note {
+        margin-top: 16px;
+        color: #ad9ca9;
+        font-size: 11px;
+    }
+
+    /* ==============================
+       CHAT
+    ============================== */
+
+    #chatApp {
+        display: none;
+        height: 100vh;
+        padding: 20px;
+    }
+
+    .chat-shell {
+        width: min(1050px, 100%);
+        height: 100%;
+        margin: auto;
+        display: flex;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 27px;
+        background: rgba(255,255,255,.78);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+    }
+
+    /* SIDEBAR */
+
+    .sidebar {
+        width: 245px;
+        flex-shrink: 0;
+        padding: 22px;
+        border-right: 1px solid var(--border);
+        background: rgba(255,249,253,.65);
+    }
+
+    .logo {
+        font-size: 20px;
+        font-weight: 800;
+        margin-bottom: 25px;
+    }
+
+    .logo span {
+        color: var(--pink-dark);
+    }
+
+    .profile-card {
+        padding: 15px;
+        border-radius: 19px;
+        background: white;
+        border: 1px solid var(--border);
+    }
+
+    .profile-top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .profile-name {
+        font-weight: 700;
+        font-size: 14px;
+        word-break: break-word;
+    }
+
+    .online-dot {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        margin-right: 4px;
+        border-radius: 50%;
+        background: #74d69b;
+    }
+
+    .profile-status {
+        color: var(--muted);
+        font-size: 11px;
+        margin-top: 3px;
+    }
+
+    .side-decoration {
+        margin-top: 25px;
+        text-align: center;
+        color: #c3aabb;
+        line-height: 2;
+        font-size: 13px;
+    }
+
+    /* CHAT */
+
+    .chat-main {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-header {
+        height: 75px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 23px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(255,255,255,.55);
+    }
+
+    .room-title {
+        font-weight: 800;
+    }
+
+    .room-subtitle {
+        color: var(--muted);
+        font-size: 11px;
+        margin-top: 3px;
+    }
+
+    .online-count {
+        padding: 7px 11px;
+        border-radius: 20px;
+        background: #f2fff7;
+        color: #67b989;
+        font-size: 12px;
+        border: 1px solid #d5f2e1;
+    }
+
+    #messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 25px;
+        scroll-behavior: smooth;
+    }
+
+    #messages::-webkit-scrollbar {
+        width: 7px;
+    }
+
+    #messages::-webkit-scrollbar-thumb {
+        background: #efc8dc;
+        border-radius: 10px;
+    }
+
+    .empty-chat {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: var(--muted);
+    }
+
+    .empty-face {
+        font-size: 40px;
+        margin-bottom: 10px;
+    }
+
+    /* MESSAGE */
+
+    .message {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 18px;
+        animation: messageIn .25s ease;
+    }
+
+    .message.mine {
+        flex-direction: row-reverse;
+    }
+
+    .message-content {
+        max-width: min(70%, 600px);
+    }
+
+    .message.mine .message-content {
+        text-align: right;
+    }
+
+    .message-name {
+        margin: 0 6px 5px;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .bubble {
+        display: inline-block;
+        padding: 10px 14px;
+        border-radius: 17px;
+        background: white;
+        border: 1px solid #f1dce7;
+        line-height: 1.5;
+        font-size: 14px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        text-align: left;
+        box-shadow: 0 3px 12px rgba(0,0,0,.025);
+    }
+
+    .mine .bubble {
+        color: white;
+        border: 0;
+        background: linear-gradient(135deg, #ff91bd, #d98dff);
+    }
+
+    .message-meta {
+        margin: 4px 7px 0;
+        font-size: 10px;
+        color: #ae9eaa;
+    }
+
+    .delete-btn {
+        display: none;
+        border: 0;
+        background: transparent;
+        color: #d99ab9;
+        cursor: pointer;
+        font-size: 11px;
+        margin-top: 3px;
+    }
+
+    .message.mine:hover .delete-btn {
+        display: inline-block;
+    }
+
+    /* COMPOSER */
+
+    .composer {
+        padding: 15px;
+        border-top: 1px solid var(--border);
+        background: rgba(255,255,255,.65);
+    }
+
+    .composer-inner {
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+        padding: 8px;
+        border: 1px solid var(--border);
+        border-radius: 19px;
+        background: white;
+    }
+
+    #messageInput {
+        flex: 1;
+        min-width: 0;
+        resize: none;
+        border: 0;
+        outline: 0;
+        padding: 8px;
+        max-height: 110px;
+        color: var(--text);
+        background: transparent;
+    }
+
+    #sendBtn {
+        width: 42px;
+        height: 42px;
+        border: 0;
+        border-radius: 14px;
+        cursor: pointer;
+        color: white;
+        background: linear-gradient(135deg, #ff91bd, #d98dff);
+        transition: .2s;
+        flex-shrink: 0;
+    }
+
+    #sendBtn:hover {
+        transform: scale(1.05);
+    }
+
+    #sendBtn:disabled {
+        opacity: .5;
+        cursor: not-allowed;
+    }
+
+    .kaomoji-bar {
+        display: flex;
+        gap: 7px;
+        margin-top: 8px;
+        overflow-x: auto;
+    }
+
+    .kaomoji {
+        border: 1px solid var(--border);
+        background: white;
+        color: #967e8e;
+        border-radius: 10px;
+        padding: 4px 8px;
+        font-size: 11px;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .kaomoji:hover {
+        background: #fff2f8;
+    }
+
+    /* TOAST */
+
+    #toast {
+        position: fixed;
+        left: 50%;
+        bottom: 25px;
+        transform: translate(-50%, 20px);
+        padding: 10px 16px;
+        background: #514553;
+        color: white;
+        border-radius: 13px;
+        font-size: 12px;
+        opacity: 0;
+        pointer-events: none;
+        transition: .25s;
+        z-index: 100;
+    }
+
+    #toast.show {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+
+    @keyframes messageIn {
+        from {
+            opacity: 0;
+            transform: translateY(7px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-7px);
+        }
+    }
+
+    /* MOBILE */
+
+    @media (max-width: 700px) {
+
+        body {
+            overflow: auto;
+        }
+
+        #chatApp {
+            padding: 0;
+            height: 100dvh;
+        }
+
+        .chat-shell {
+            border-radius: 0;
+            border: 0;
+        }
+
+        .sidebar {
+            display: none;
+        }
+
+        .chat-header {
+            height: 67px;
+            padding: 0 15px;
+        }
+
+        #messages {
+            padding: 18px 13px;
+        }
+
+        .message-content {
+            max-width: 82%;
+        }
+
+        .bubble {
+            font-size: 13px;
+        }
+
+        .composer {
+            padding: 10px;
+        }
+
+        .kaomoji-bar {
+            padding-bottom: 2px;
+        }
+    }
+</style>
 </head>
 
 <body>
 
-    <div id="app">
+<!-- =========================
+     LOADING
+========================= -->
 
-        <!-- =========================================
-             SIDEBAR
-        ========================================== -->
+<div id="loadingScreen">
+    <div class="loading-box">
+        <div class="loading-face">૮ ˶ᵔ ᵕ ᵔ˶ ა</div>
+        <div class="loading-text">connecting to the little chat...</div>
+    </div>
+</div>
 
-        <aside class="sidebar" id="sidebar">
 
-            <div class="brand">
+<!-- =========================
+     WELCOME
+========================= -->
 
-                <div class="brand-logo">
-                    5
+<div id="welcomeScreen" style="display:none;">
+
+    <div class="welcome-card">
+
+        <div class="welcome-face">૮₍ ˶ᵔ ᵕ ᵔ˶ ₎ა</div>
+
+        <h1>welcome to kawaii chat ♡</h1>
+
+        <p>
+            no email. no password.<br>
+            just enter anonymously and start talking.
+        </p>
+
+        <div class="identity-preview">
+
+            <div class="avatar" id="previewAvatar">?</div>
+
+            <div>
+                <div class="identity-name" id="previewName">
+                    anonymous
                 </div>
 
-                <div class="brand-text">
+                <div class="identity-sub">
+                    your permanent anonymous identity
+                </div>
+            </div>
 
-                    <h1>
-                        5amwithleanna
-                    </h1>
+        </div>
 
-                    <span>
-                        ANIME TRACKER
-                    </span>
+        <button class="enter-btn" id="enterBtn">
+            enter chat ♡
+        </button>
+
+        <div class="tiny-note">
+            (｡•̀ᴗ-)✧ your identity is remembered on this browser
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     CHAT APP
+========================= -->
+
+<div id="chatApp">
+
+    <div class="chat-shell">
+
+        <aside class="sidebar">
+
+            <div class="logo">
+                kawaii<span>chat</span> ♡
+            </div>
+
+            <div class="profile-card">
+
+                <div class="profile-top">
+
+                    <div class="avatar" id="myAvatar">
+                        ?
+                    </div>
+
+                    <div>
+                        <div class="profile-name" id="myName">
+                            anonymous
+                        </div>
+
+                        <div class="profile-status">
+                            <span class="online-dot"></span>
+                            chatting anonymously
+                        </div>
+                    </div>
 
                 </div>
 
             </div>
 
-
-            <nav class="navigation">
-
-                <button
-                    class="nav-item active"
-                    data-view="home"
-                    type="button"
-                >
-
-                    <span class="nav-icon">
-                        ⌂
-                    </span>
-
-                    <span>
-                        Home
-                    </span>
-
-                </button>
-
-
-                <button
-                    class="nav-item"
-                    data-view="watching"
-                    type="button"
-                >
-
-                    <span class="nav-icon">
-                        ▶
-                    </span>
-
-                    <span>
-                        Watching
-                    </span>
-
-                </button>
-
-
-                <button
-                    class="nav-item"
-                    data-view="completed"
-                    type="button"
-                >
-
-                    <span class="nav-icon">
-                        ✓
-                    </span>
-
-                    <span>
-                        Completed
-                    </span>
-
-                </button>
-
-
-                <button
-                    class="nav-item"
-                    data-view="planning"
-                    type="button"
-                >
-
-                    <span class="nav-icon">
-                        ＋
-                    </span>
-
-                    <span>
-                        Planning
-                    </span>
-
-                </button>
-
-
-                <button
-                    class="nav-item"
-                    data-view="paused"
-                    type="button"
-                >
-
-                    <span class="nav-icon">
-                        Ⅱ
-                    </span>
-
-                    <span>
-                        Paused
-                    </span>
-
-                </button>
-
-
-                <button
-                    class="nav-item"
-                    data-view="dropped"
-                    type="button"
-                >
-
-                    <span class="nav-icon">
-                        ×
-                    </span>
-
-                    <span>
-                        Dropped
-                    </span>
-
-                </button>
-
-            </nav>
-
-
-            <div class="sidebar-bottom">
-
-                <div
-                    id="sidebar-user"
-                    class="sidebar-user"
-                >
-
-                    <div class="avatar-placeholder">
-                    </div>
-
-                    <div class="sidebar-user-info">
-
-                        <strong>
-                            Not connected
-                        </strong>
-
-                        <small>
-                            AniList
-                        </small>
-
-                    </div>
-
-                </div>
-
-
-                <button
-                    id="auth-button"
-                    class="login-button"
-                    type="button"
-                >
-                    Login with AniList
-                </button>
-
+            <div class="side-decoration">
+                (づ｡◕‿‿◕｡)づ<br>
+                be nice ♡<br>
+                have fun!<br>
+                ٩(◕‿◕｡)۶
             </div>
 
         </aside>
 
 
-        <!-- =========================================
-             MAIN CONTENT
-        ========================================== -->
+        <main class="chat-main">
 
-        <main class="main">
+            <header class="chat-header">
 
+                <div>
+                    <div class="room-title">
+                        💬 main room
+                    </div>
 
-            <!-- =====================================
-                 TOP BAR
-            ====================================== -->
-
-            <header class="topbar">
-
-                <button
-                    id="mobile-menu"
-                    class="mobile-menu"
-                    type="button"
-                    aria-label="Open menu"
-                >
-                    ☰
-                </button>
-
-
-                <div class="search-container">
-
-                    <span
-                        class="search-icon"
-                        aria-hidden="true"
-                    >
-                        ⌕
-                    </span>
-
-                    <input
-                        id="search-input"
-                        type="search"
-                        placeholder="Search anime..."
-                        autocomplete="off"
-                        aria-label="Search anime"
-                    >
-
+                    <div class="room-subtitle">
+                        everyone is anonymous ♡
+                    </div>
                 </div>
 
-
-                <button
-                    id="refresh-button"
-                    class="icon-button"
-                    type="button"
-                    title="Refresh AniList"
-                    aria-label="Refresh AniList"
-                >
-                    ↻
-                </button>
+                <div class="online-count">
+                    ● live chat
+                </div>
 
             </header>
 
 
-            <!-- =====================================
-                 HOME VIEW
-            ====================================== -->
+            <section id="messages">
 
-            <section
-                id="home-view"
-                class="view active-view"
-            >
+                <div class="empty-chat" id="emptyChat">
 
-
-                <!-- HERO -->
-
-                <div class="hero">
-
-                    <div class="hero-content">
-
-                        <span class="eyebrow">
-                            YOUR ANIME LIBRARY
-                        </span>
-
-
-                        <h2 id="welcome-title">
-                            Your anime. Your way.
-                        </h2>
-
-
-                        <p id="welcome-description">
-                            Connect your AniList account to load your anime library, progress and watch history.
-                        </p>
-
-
-                        <button
-                            id="hero-login"
-                            class="primary-button"
-                            type="button"
-                        >
-                            Connect AniList
-                        </button>
-
-                    </div>
-
-                </div>
-
-
-                <!-- =================================
-                     CONTINUE WATCHING
-                ================================== -->
-
-                <section class="content-section">
-
-                    <div class="section-heading">
-
-                        <div>
-
-                            <span class="section-kicker">
-                                PICK UP WHERE YOU LEFT OFF
-                            </span>
-
-                            <h2>
-                                Continue Watching
-                            </h2>
-
+                    <div>
+                        <div class="empty-face">
+                            (｡•́‿•̀｡)
                         </div>
 
-                    </div>
-
-
-                    <div
-                        id="continue-grid"
-                        class="anime-grid"
-                    >
-
-                        <!-- Cards inserted by app.js -->
-
-                    </div>
-
-                </section>
-
-
-                <!-- =================================
-                     CURRENTLY WATCHING
-                ================================== -->
-
-                <section class="content-section">
-
-                    <div class="section-heading">
-
                         <div>
-
-                            <span class="section-kicker">
-                                ANILIST
-                            </span>
-
-                            <h2>
-                                Currently Watching
-                            </h2>
-
+                            nobody has said anything yet...
                         </div>
 
-
-                        <button
-                            class="view-all"
-                            data-view="watching"
-                            type="button"
-                        >
-                            View all →
-                        </button>
-
+                        <small>
+                            be the first ♡
+                        </small>
                     </div>
-
-
-                    <div
-                        id="watching-grid"
-                        class="anime-grid"
-                    >
-
-                        <!-- Cards inserted by app.js -->
-
-                    </div>
-
-                </section>
-
-
-                <!-- =================================
-                     RECENTLY UPDATED
-                ================================== -->
-
-                <section class="content-section">
-
-                    <div class="section-heading">
-
-                        <div>
-
-                            <span class="section-kicker">
-                                YOUR LIBRARY
-                            </span>
-
-                            <h2>
-                                Recently Updated
-                            </h2>
-
-                        </div>
-
-                    </div>
-
-
-                    <div
-                        id="recent-grid"
-                        class="anime-grid"
-                    >
-
-                        <!-- Cards inserted by app.js -->
-
-                    </div>
-
-                </section>
-
-            </section>
-
-
-            <!-- =====================================
-                 LIBRARY VIEW
-            ====================================== -->
-
-            <section
-                id="library-view"
-                class="view"
-            >
-
-                <div class="page-heading">
-
-                    <span
-                        id="library-kicker"
-                        class="section-kicker"
-                    >
-                        ANILIST LIBRARY
-                    </span>
-
-
-                    <h2 id="library-title">
-                        My Anime
-                    </h2>
-
-
-                    <p id="library-count">
-                        0 anime
-                    </p>
-
-                </div>
-
-
-                <div
-                    id="library-grid"
-                    class="anime-grid large-grid"
-                >
-
-                    <!-- Library cards inserted by app.js -->
 
                 </div>
 
             </section>
 
 
-            <!-- =====================================
-                 SEARCH VIEW
-            ====================================== -->
+            <footer class="composer">
 
-            <section
-                id="search-view"
-                class="view"
-            >
+                <div class="composer-inner">
 
-                <div class="page-heading">
+                    <textarea
+                        id="messageInput"
+                        rows="1"
+                        maxlength="1000"
+                        placeholder="say something... (｡•̀ᴗ-)✧"
+                    ></textarea>
 
-                    <span class="section-kicker">
-                        SEARCH
-                    </span>
-
-
-                    <h2 id="search-title">
-                        Search Anime
-                    </h2>
+                    <button id="sendBtn">
+                        ➤
+                    </button>
 
                 </div>
 
+                <div class="kaomoji-bar">
 
-                <div
-                    id="search-grid"
-                    class="anime-grid large-grid"
-                >
-
-                    <!-- Search results inserted by app.js -->
+                    <button class="kaomoji">(｡•̀ᴗ-)✧</button>
+                    <button class="kaomoji">૮ ˶ᵔ ᵕ ᵔ˶ ა</button>
+                    <button class="kaomoji">૮₍ ˶ᵔ ᵕ ᵔ˶ ₎ა</button>
+                    <button class="kaomoji">(*≧ω≦*)</button>
+                    <button class="kaomoji">♡</button>
+                    <button class="kaomoji">(╥﹏╥)</button>
+                    <button class="kaomoji">ヽ(>∀<☆)ノ</button>
 
                 </div>
 
-            </section>
+            </footer>
 
         </main>
 
     </div>
 
-
-    <!-- =========================================
-         ANIME DETAIL MODAL
-    ========================================== -->
-
-    <div
-        id="anime-modal"
-        class="modal hidden"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-title"
-    >
-
-        <div class="modal-backdrop"></div>
+</div>
 
 
-        <div class="anime-modal">
-
-            <button
-                id="close-modal"
-                class="modal-close"
-                type="button"
-                aria-label="Close anime details"
-            >
-                ×
-            </button>
+<div id="toast"></div>
 
 
-            <!-- Banner -->
+<script type="module">
 
-            <div
-                id="modal-banner"
-                class="modal-banner"
-            ></div>
+/* =========================================
+   FIREBASE
+========================================= */
 
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
 
-            <!-- Modal Content -->
+import {
+    getAuth,
+    signInAnonymously,
+    onAuthStateChanged
+}
+from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
 
-            <div class="modal-body">
-
-
-                <!-- Poster -->
-
-                <div class="modal-poster-container">
-
-                    <img
-                        id="modal-poster"
-                        class="modal-poster"
-                        src=""
-                        alt=""
-                    >
-
-                </div>
-
-
-                <!-- Information -->
-
-                <div class="modal-info">
-
-                    <span
-                        id="modal-status"
-                        class="status-badge"
-                    >
-                    </span>
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    query,
+    orderBy,
+    limit,
+    onSnapshot,
+    serverTimestamp,
+    doc,
+    getDoc,
+    setDoc,
+    deleteDoc
+}
+from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
 
-                    <h2 id="modal-title">
-                        Anime
-                    </h2>
+const firebaseConfig = {
+
+    apiKey: "AIzaSyCvhhLbOUom3CVWKq6pHqrK_nHiMGbW_-E",
+
+    authDomain: "chat-14103.firebaseapp.com",
+
+    projectId: "chat-14103",
+
+    storageBucket: "chat-14103.firebasestorage.app",
+
+    messagingSenderId: "432992246016",
+
+    appId: "1:432992246016:web:9775ddf67ab3fe6a1ebbe5"
+
+};
 
 
-                    <p
-                        id="modal-subtitle"
-                        class="modal-subtitle"
-                    >
-                    </p>
+const app = initializeApp(firebaseConfig);
+
+const auth = getAuth(app);
+
+const db = getFirestore(app);
 
 
-                    <!-- Metadata -->
+/* =========================================
+   ELEMENTS
+========================================= */
 
-                    <div
-                        id="modal-meta"
-                        class="meta-row"
-                    >
-                    </div>
+const loadingScreen =
+    document.getElementById("loadingScreen");
 
+const welcomeScreen =
+    document.getElementById("welcomeScreen");
 
-                    <!-- Genres -->
+const chatApp =
+    document.getElementById("chatApp");
 
-                    <div
-                        id="modal-genres"
-                        class="genres"
-                    >
-                    </div>
+const enterBtn =
+    document.getElementById("enterBtn");
 
+const previewName =
+    document.getElementById("previewName");
 
-                    <!-- Description -->
+const previewAvatar =
+    document.getElementById("previewAvatar");
 
-                    <div class="description-container">
+const myName =
+    document.getElementById("myName");
 
-                        <h3>
-                            Description
-                        </h3>
+const myAvatar =
+    document.getElementById("myAvatar");
 
+const messages =
+    document.getElementById("messages");
 
-                        <p
-                            id="modal-description"
-                            class="description"
-                        >
-                            No description available.
-                        </p>
+const emptyChat =
+    document.getElementById("emptyChat");
 
-                    </div>
+const messageInput =
+    document.getElementById("messageInput");
 
+const sendBtn =
+    document.getElementById("sendBtn");
 
-                    <!-- Progress -->
-
-                    <div
-                        id="modal-progress"
-                        class="modal-progress"
-                    >
-                    </div>
+const toast =
+    document.getElementById("toast");
 
 
-                    <!-- Actions -->
+/* =========================================
+   USERNAME GENERATOR
+========================================= */
 
-                    <div class="modal-actions">
+const adjectives = [
+    "sleepy",
+    "tiny",
+    "fluffy",
+    "happy",
+    "sparkly",
+    "soft",
+    "dreamy",
+    "silly",
+    "cozy",
+    "bubbly",
+    "shy",
+    "sweet",
+    "little",
+    "kawaii",
+    "cloudy",
+    "peachy"
+];
 
-                        <button
-                            id="continue-button"
-                            class="primary-button"
-                            type="button"
-                        >
-                            Continue Watching
-                        </button>
-
-
-                        <button
-                            id="anilist-button"
-                            class="secondary-button"
-                            type="button"
-                        >
-                            Open AniList
-                        </button>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <!-- =========================================
-         TOAST NOTIFICATIONS
-    ========================================== -->
-
-    <div
-        id="toast"
-        class="toast"
-        role="status"
-        aria-live="polite"
-    >
-    </div>
+const animals = [
+    "bunny",
+    "cat",
+    "fox",
+    "bear",
+    "panda",
+    "otter",
+    "hamster",
+    "kitten",
+    "duck",
+    "koala",
+    "momo",
+    "penguin",
+    "puppy",
+    "mouse",
+    "frog",
+    "raccoon"
+];
 
 
-    <!-- =========================================
-         JAVASCRIPT
-    ========================================== -->
+function randomItem(array) {
+    return array[
+        Math.floor(Math.random() * array.length)
+    ];
+}
 
-    <script src="app.js"></script>
+
+function generateUsername() {
+
+    const adjective =
+        randomItem(adjectives);
+
+    const animal =
+        randomItem(animals);
+
+    const number =
+        Math.floor(100 + Math.random() * 900);
+
+    return `${adjective}_${animal}_${number}`;
+}
+
+
+/* =========================================
+   COLORS
+========================================= */
+
+const colors = [
+    "#ff7eaf",
+    "#b77cff",
+    "#65b9ff",
+    "#ff9c61",
+    "#67cfa0",
+    "#e786c9",
+    "#e6a447",
+    "#7e9fff",
+    "#ef6e78",
+    "#61c6bd"
+];
+
+
+function randomColor() {
+
+    return randomItem(colors);
+
+}
+
+
+/* =========================================
+   USER PROFILE
+========================================= */
+
+let currentUser = null;
+let currentProfile = null;
+
+
+async function createOrLoadProfile(user) {
+
+    const userRef =
+        doc(db, "users", user.uid);
+
+    const snapshot =
+        await getDoc(userRef);
+
+
+    if (snapshot.exists()) {
+
+        return snapshot.data();
+
+    }
+
+
+    const profile = {
+
+        username: generateUsername(),
+
+        color: randomColor(),
+
+        createdAt: serverTimestamp()
+
+    };
+
+
+    await setDoc(
+        userRef,
+        profile
+    );
+
+
+    return profile;
+
+}
+
+
+/* =========================================
+   FIREBASE AUTH
+========================================= */
+
+onAuthStateChanged(auth, async (user) => {
+
+    if (!user) {
+
+        try {
+
+            await signInAnonymously(auth);
+
+        } catch (error) {
+
+            console.error(error);
+
+            showToast(
+                "couldn't connect to Firebase ♡"
+            );
+
+        }
+
+        return;
+
+    }
+
+
+    currentUser = user;
+
+
+    try {
+
+        currentProfile =
+            await createOrLoadProfile(user);
+
+
+        previewName.textContent =
+            currentProfile.username;
+
+        previewAvatar.textContent =
+            currentProfile.username
+                .charAt(0)
+                .toUpperCase();
+
+        previewAvatar.style.background =
+            currentProfile.color;
+
+
+        myName.textContent =
+            currentProfile.username;
+
+        myAvatar.textContent =
+            currentProfile.username
+                .charAt(0)
+                .toUpperCase();
+
+        myAvatar.style.background =
+            currentProfile.color;
+
+
+        loadingScreen.style.display =
+            "none";
+
+        welcomeScreen.style.display =
+            "flex";
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        showToast(
+            "couldn't load your identity ♡"
+        );
+
+    }
+
+});
+
+
+/* =========================================
+   ENTER CHAT
+========================================= */
+
+enterBtn.addEventListener(
+    "click",
+    () => {
+
+        welcomeScreen.style.display =
+            "none";
+
+        chatApp.style.display =
+            "block";
+
+        messageInput.focus();
+
+    }
+);
+
+
+/* =========================================
+   SEND MESSAGE
+========================================= */
+
+async function sendMessage() {
+
+    const text =
+        messageInput.value.trim();
+
+
+    if (!text) return;
+
+    if (!currentUser || !currentProfile)
+        return;
+
+
+    sendBtn.disabled = true;
+
+
+    try {
+
+        await addDoc(
+            collection(db, "messages"),
+            {
+
+                text: text,
+
+                uid: currentUser.uid,
+
+                username:
+                    currentProfile.username,
+
+                color:
+                    currentProfile.color,
+
+                createdAt:
+                    serverTimestamp()
+
+            }
+        );
+
+
+        messageInput.value = "";
+
+        messageInput.style.height =
+            "auto";
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        showToast(
+            "message failed to send ♡"
+        );
+
+    }
+
+
+    sendBtn.disabled = false;
+
+    messageInput.focus();
+
+}
+
+
+sendBtn.addEventListener(
+    "click",
+    sendMessage
+);
+
+
+/* ENTER TO SEND */
+
+messageInput.addEventListener(
+    "keydown",
+    (event) => {
+
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey
+        ) {
+
+            event.preventDefault();
+
+            sendMessage();
+
+        }
+
+    }
+);
+
+
+/* =========================================
+   AUTO RESIZE TEXTAREA
+========================================= */
+
+messageInput.addEventListener(
+    "input",
+    () => {
+
+        messageInput.style.height =
+            "auto";
+
+        messageInput.style.height =
+            Math.min(
+                messageInput.scrollHeight,
+                110
+            ) + "px";
+
+    }
+);
+
+
+/* =========================================
+   KAOMOJI BUTTONS
+========================================= */
+
+document.querySelectorAll(
+    ".kaomoji"
+).forEach(button => {
+
+    button.addEventListener(
+        "click",
+        () => {
+
+            messageInput.value +=
+                button.textContent;
+
+            messageInput.focus();
+
+            messageInput.dispatchEvent(
+                new Event("input")
+            );
+
+        }
+    );
+
+});
+
+
+/* =========================================
+   LOAD REAL-TIME MESSAGES
+========================================= */
+
+const messagesQuery = query(
+    collection(db, "messages"),
+    orderBy("createdAt", "asc"),
+    limit(100)
+);
+
+
+onSnapshot(
+    messagesQuery,
+    (snapshot) => {
+
+        messages.innerHTML = "";
+
+        if (snapshot.empty) {
+
+            messages.appendChild(
+                emptyChat
+            );
+
+            emptyChat.style.display =
+                "flex";
+
+            return;
+
+        }
+
+
+        emptyChat.style.display =
+            "none";
+
+
+        snapshot.forEach(
+            messageDoc => {
+
+                renderMessage(
+                    messageDoc.id,
+                    messageDoc.data()
+                );
+
+            }
+        );
+
+
+        requestAnimationFrame(
+            () => {
+
+                messages.scrollTop =
+                    messages.scrollHeight;
+
+            }
+        );
+
+    },
+
+    error => {
+
+        console.error(error);
+
+        showToast(
+            "couldn't load messages ♡"
+        );
+
+    }
+);
+
+
+/* =========================================
+   RENDER MESSAGE
+========================================= */
+
+function renderMessage(id, data) {
+
+    const wrapper =
+        document.createElement("div");
+
+
+    wrapper.className =
+        "message";
+
+
+    const isMine =
+        currentUser &&
+        data.uid === currentUser.uid;
+
+
+    if (isMine) {
+
+        wrapper.classList.add("mine");
+
+    }
+
+
+    const avatar =
+        document.createElement("div");
+
+    avatar.className =
+        "avatar";
+
+    avatar.textContent =
+        (data.username || "?")
+            .charAt(0)
+            .toUpperCase();
+
+    avatar.style.background =
+        data.color || "#ff8fbd";
+
+
+    const content =
+        document.createElement("div");
+
+    content.className =
+        "message-content";
+
+
+    const name =
+        document.createElement("div");
+
+    name.className =
+        "message-name";
+
+    name.textContent =
+        data.username || "anonymous";
+
+    name.style.color =
+        data.color || "#ff8fbd";
+
+
+    const bubble =
+        document.createElement("div");
+
+    bubble.className =
+        "bubble";
+
+    /*
+       IMPORTANT:
+       textContent is used instead of innerHTML.
+       This prevents users from injecting HTML
+       or scripts into the chat.
+    */
+
+    bubble.textContent =
+        data.text || "";
+
+
+    const meta =
+        document.createElement("div");
+
+    meta.className =
+        "message-meta";
+
+
+    meta.textContent =
+        formatTime(data.createdAt);
+
+
+    content.appendChild(name);
+
+    content.appendChild(bubble);
+
+    content.appendChild(meta);
+
+
+    /* DELETE */
+
+    if (isMine) {
+
+        const deleteButton =
+            document.createElement("button");
+
+        deleteButton.className =
+            "delete-btn";
+
+        deleteButton.textContent =
+            "delete";
+
+        deleteButton.addEventListener(
+            "click",
+            async () => {
+
+                try {
+
+                    await deleteDoc(
+                        doc(
+                            db,
+                            "messages",
+                            id
+                        )
+                    );
+
+                } catch (error) {
+
+                    console.error(error);
+
+                    showToast(
+                        "couldn't delete message"
+                    );
+
+                }
+
+            }
+        );
+
+
+        content.appendChild(
+            deleteButton
+        );
+
+    }
+
+
+    wrapper.appendChild(avatar);
+
+    wrapper.appendChild(content);
+
+
+    messages.appendChild(wrapper);
+
+}
+
+
+/* =========================================
+   TIME
+========================================= */
+
+function formatTime(timestamp) {
+
+    if (!timestamp)
+        return "sending...";
+
+
+    const date =
+        timestamp.toDate();
+
+
+    return date.toLocaleTimeString(
+        [],
+        {
+            hour: "numeric",
+            minute: "2-digit"
+        }
+    );
+
+}
+
+
+/* =========================================
+   TOAST
+========================================= */
+
+let toastTimer;
+
+
+function showToast(text) {
+
+    toast.textContent =
+        text;
+
+    toast.classList.add("show");
+
+
+    clearTimeout(toastTimer);
+
+
+    toastTimer =
+        setTimeout(
+            () => {
+
+                toast.classList.remove(
+                    "show"
+                );
+
+            },
+            2500
+        );
+
+}
+
+</script>
 
 </body>
-
 </html>
