@@ -1,228 +1,355 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Website Unavailable</title>
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<style>
+    * {
+        box-sizing: border-box;
+    }
 
-    <meta
-        name="description"
-        content="Mochachat — a cute anonymous real-time chat."
-    >
+    html, body {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+    }
 
-    <meta
-        name="theme-color"
-        content="#fff4fa"
-    >
+    body {
+        background:
+            radial-gradient(circle at 50% 15%, rgba(255,255,255,.035), transparent 35%),
+            #080808;
+        color: #bdbdbd;
+        font-family: Arial, Helvetica, sans-serif;
+        overflow-x: hidden;
+    }
 
-    <title>Mochachat ♡</title>
+    /* subtle old/dead-site texture */
+    body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        opacity: .035;
+        background-image:
+            repeating-linear-gradient(
+                0deg,
+                #fff 0px,
+                #fff 1px,
+                transparent 1px,
+                transparent 4px
+            );
+        z-index: 999;
+    }
 
-    <!-- Main stylesheet -->
-    <link rel="stylesheet" href="style.css">
+    .page {
+        width: min(920px, calc(100% - 30px));
+        margin: 0 auto;
+        padding: 65px 0 90px;
+    }
+
+    .top-line {
+        height: 1px;
+        background: #202020;
+        margin-bottom: 34px;
+    }
+
+    .status {
+        color: #777;
+        font-size: 11px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 14px;
+    }
+
+    h1 {
+        margin: 0;
+        color: #d8d8d8;
+        font-size: clamp(34px, 7vw, 66px);
+        font-weight: 300;
+        letter-spacing: -2px;
+    }
+
+    .subtitle {
+        margin-top: 15px;
+        color: #666;
+        font-size: 14px;
+        line-height: 1.7;
+        max-width: 650px;
+    }
+
+    .error-box {
+        margin-top: 38px;
+        border: 1px solid #242424;
+        background: #0c0c0c;
+        padding: 28px;
+    }
+
+    .error-code {
+        font-family: Consolas, monospace;
+        color: #555;
+        font-size: 12px;
+        margin-bottom: 18px;
+    }
+
+    .error-title {
+        color: #cfcfcf;
+        font-size: 19px;
+        margin-bottom: 10px;
+    }
+
+    .error-text {
+        color: #666;
+        font-size: 13px;
+        line-height: 1.8;
+    }
+
+    .details {
+        margin-top: 22px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        background: #222;
+        border: 1px solid #222;
+    }
+
+    .detail {
+        background: #0b0b0b;
+        padding: 17px;
+    }
+
+    .detail span {
+        display: block;
+        color: #444;
+        font-size: 9px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-bottom: 7px;
+    }
+
+    .detail strong {
+        color: #777;
+        font-family: Consolas, monospace;
+        font-size: 11px;
+        font-weight: normal;
+    }
+
+    /* ADS */
+
+    .ad-section {
+        margin-top: 48px;
+    }
+
+    .ad-label {
+        color: #3d3d3d;
+        font-size: 9px;
+        text-align: center;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin-bottom: 9px;
+    }
+
+    .ad {
+        position: relative;
+        display: block;
+        min-height: 105px;
+        padding: 20px 24px;
+        text-decoration: none;
+        color: inherit;
+        border: 1px solid #222;
+        background:
+            linear-gradient(
+                110deg,
+                #101010,
+                #161616,
+                #0d0d0d
+            );
+        overflow: hidden;
+        transition: .2s ease;
+    }
+
+    .ad:hover {
+        border-color: #414141;
+        background: #151515;
+    }
+
+    .ad::after {
+        content: "ADVERTISEMENT";
+        position: absolute;
+        right: 12px;
+        top: 8px;
+        color: #333;
+        font-size: 7px;
+        letter-spacing: 2px;
+    }
+
+    .ad-company {
+        color: #8a8a8a;
+        font-size: 10px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    .ad-title {
+        color: #d0d0d0;
+        font-size: 20px;
+        margin-top: 7px;
+    }
+
+    .ad-description {
+        color: #666;
+        font-size: 11px;
+        margin-top: 5px;
+    }
+
+    .ad-button {
+        position: absolute;
+        right: 25px;
+        bottom: 20px;
+        border: 1px solid #363636;
+        padding: 8px 13px;
+        color: #999;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .ad-button:hover {
+        color: white;
+        border-color: #666;
+    }
+
+    .fake-ad-note {
+        text-align: center;
+        margin-top: 10px;
+        color: #303030;
+        font-size: 8px;
+    }
+
+    .divider {
+        height: 1px;
+        background: #1c1c1c;
+        margin: 48px 0 25px;
+    }
+
+    .footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        color: #3f3f3f;
+        font-size: 10px;
+        font-family: Consolas, monospace;
+    }
+
+    .footer a {
+        color: #555;
+        text-decoration: none;
+    }
+
+    .footer a:hover {
+        color: #aaa;
+    }
+
+    .terminal {
+        margin-top: 32px;
+        border: 1px solid #1b1b1b;
+        background: #070707;
+        padding: 18px;
+        font-family: Consolas, monospace;
+        font-size: 10px;
+        line-height: 1.9;
+        color: #444;
+    }
+
+    .terminal .green {
+        color: #555;
+    }
+
+    .cursor {
+        display: inline-block;
+        width: 6px;
+        height: 11px;
+        background: #555;
+        animation: blink 1s steps(1) infinite;
+        vertical-align: middle;
+    }
+
+    @keyframes blink {
+        50% {
+            opacity: 0;
+        }
+    }
+
+    @media (max-width: 650px) {
+        .page {
+            padding-top: 35px;
+        }
+
+        .details {
+            grid-template-columns: 1fr;
+        }
+
+        .ad-button {
+            position: static;
+            display: inline-block;
+            margin-top: 13px;
+        }
+
+        .footer {
+            flex-direction: column;
+        }
+    }
+</style>
 </head>
 
 <body>
 
-    <!-- =========================================================
-         APP LOADING SCREEN
-    ========================================================== -->
+<div class="page">
 
-    <div
-        id="loadingScreen"
-        class="screen"
-        aria-live="polite"
-    >
-        <div class="loading-card">
+    <div class="top-line"></div>
 
-            <div class="loading-kaomoji">
-                ૮ ˶ᵔ ᵕ ᵔ˶ ა
-            </div>
+    <div class="status">SERVER STATUS // OFFLINE</div>
 
-            <div class="loading-title">
-                mochachat ♡
-            </div>
+    <h1>This site is unavailable.</h1>
 
-            <div class="loading-message">
-                connecting to the little chat...
-            </div>
-
-            <div class="loading-dots">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-
-        </div>
+    <div class="subtitle">
+        The requested website can no longer be reached.
+        The domain may have been suspended, removed, or abandoned by its owner.
     </div>
 
+    <div class="error-box">
 
-    <!-- =========================================================
-         RULES / FIRST-TIME WELCOME
-    ========================================================== -->
+        <div class="error-code">
+            ERROR 410 // GONE
+        </div>
 
-    <div
-        id="rulesScreen"
-        class="screen hidden"
-        aria-hidden="true"
-    >
+        <div class="error-title">
+            This website has been taken down.
+        </div>
 
-        <div
-            class="rules-card modal-card"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="rulesTitle"
-        >
+        <div class="error-text">
+            The content you're looking for is no longer available at this
+            address. The server returned a permanent removal response.
+            Please check the address and try again later.
+        </div>
 
-            <div class="rules-decoration">
-                ✦ ♡ ✦
+        <div class="details">
+
+            <div class="detail">
+                <span>HTTP Status</span>
+                <strong>410 GONE</strong>
             </div>
 
-            <div class="rules-kaomoji">
-                ૮₍ ˶ᵔ ᵕ ᵔ˶ ₎ა
+            <div class="detail">
+                <span>Server</span>
+                <strong>UNKNOWN</strong>
             </div>
 
-            <h1 id="rulesTitle">
-                welcome to mochachat ♡
-            </h1>
-
-            <p class="rules-intro">
-                you're about to enter a little anonymous
-                corner of the internet.
-            </p>
-
-            <div class="identity-preview">
-
-                <div
-                    id="rulesAvatar"
-                    class="avatar avatar-large"
-                >
-                    ?
-                </div>
-
-                <div class="identity-information">
-
-                    <div
-                        id="rulesUsername"
-                        class="identity-username"
-                    >
-                        anonymous
-                    </div>
-
-                    <div class="identity-description">
-                        your anonymous identity
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <!-- RULES -->
-
-            <div class="rules-list">
-
-                <div class="rule-item">
-                    <div class="rule-icon">♡</div>
-
-                    <div>
-                        <strong>be respectful</strong>
-
-                        <span>
-                            treat other people like actual humans.
-                        </span>
-                    </div>
-                </div>
-
-
-                <div class="rule-item">
-                    <div class="rule-icon">☁</div>
-
-                    <div>
-                        <strong>no harassment</strong>
-
-                        <span>
-                            don't bully, threaten, or repeatedly
-                            target other users.
-                        </span>
-                    </div>
-                </div>
-
-
-                <div class="rule-item">
-                    <div class="rule-icon">✦</div>
-
-                    <div>
-                        <strong>no spam</strong>
-
-                        <span>
-                            don't flood the chat or abuse the service.
-                        </span>
-                    </div>
-                </div>
-
-
-                <div class="rule-item">
-                    <div class="rule-icon">♡</div>
-
-                    <div>
-                        <strong>keep it appropriate</strong>
-
-                        <span>
-                            no explicit or inappropriate content.
-                        </span>
-                    </div>
-                </div>
-
-
-                <div class="rule-item">
-                    <div class="rule-icon">🔒</div>
-
-                    <div>
-                        <strong>protect your privacy</strong>
-
-                        <span>
-                            don't post passwords, addresses, or
-                            other sensitive information.
-                        </span>
-                    </div>
-                </div>
-
-
-                <div class="rule-item">
-                    <div class="rule-icon">૮</div>
-
-                    <div>
-                        <strong>don't impersonate people</strong>
-
-                        <span>
-                            everyone here has their own identity.
-                        </span>
-                    </div>
-                </div>
-
-            </div>
-
-
-            <div class="rules-warning">
-                By entering Mochachat, you agree to follow
-                these rules.
-            </div>
-
-
-            <button
-                id="acceptRulesButton"
-                class="primary-button"
-                type="button"
-            >
-                I understand ♡
-            </button>
-
-
-            <div class="rules-footer">
-                (｡•̀ᴗ-)✧ be nice • have fun • make friends
+            <div class="detail">
+                <span>Last Response</span>
+                <strong id="lastResponse">--:--:--</strong>
             </div>
 
         </div>
@@ -230,1596 +357,216 @@
     </div>
 
 
-    <!-- =========================================================
-         MAIN APPLICATION
-    ========================================================== -->
+    <!-- AD AREA -->
 
-    <div
-        id="chatApp"
-        class="app hidden"
-        aria-hidden="true"
-    >
+    <div class="ad-section">
 
-        <!-- =====================================================
-             MOBILE HEADER
-        ====================================================== -->
+        <div class="ad-label">
+            Sponsored
+        </div>
 
-        <header class="mobile-header">
+        <a
+            id="adLink"
+            class="ad"
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer"
+        >
 
-            <button
-                id="mobileMenuButton"
-                class="icon-button"
-                type="button"
-                aria-label="Open menu"
-                aria-expanded="false"
-            >
-                ☰
-            </button>
-
-            <div class="mobile-logo">
-                mochachat <span>♡</span>
+            <div class="ad-company" id="adCompany">
+                Sponsor
             </div>
 
-            <button
-                id="mobileProfileButton"
-                class="mobile-avatar-button"
-                type="button"
-                aria-label="Open profile"
-            >
-                <span
-                    id="mobileAvatar"
-                    class="avatar avatar-small"
-                >
-                    ?
-                </span>
-            </button>
+            <div class="ad-title" id="adTitle">
+                Advertisement
+            </div>
 
-        </header>
+            <div class="ad-description" id="adDescription">
+                Loading advertisement...
+            </div>
 
+            <div class="ad-button">
+                Visit
+            </div>
 
-        <!-- =====================================================
-             APPLICATION SHELL
-        ====================================================== -->
+        </a>
 
-        <div class="app-shell">
-
-
-            <!-- =================================================
-                 SIDEBAR
-            ================================================== -->
-
-            <aside
-                id="sidebar"
-                class="sidebar"
-                aria-label="Main navigation"
-            >
-
-                <!-- LOGO -->
-
-                <div class="sidebar-header">
-
-                    <div class="brand">
-
-                        <div class="brand-mark">
-                            ♡
-                        </div>
-
-                        <div>
-
-                            <div class="brand-name">
-                                mochachat
-                            </div>
-
-                            <div class="brand-subtitle">
-                                little talks, big smiles
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <button
-                        id="closeSidebarButton"
-                        class="sidebar-close-button"
-                        type="button"
-                        aria-label="Close menu"
-                    >
-                        ×
-                    </button>
-
-                </div>
-
-
-                <!-- USER PROFILE CARD -->
-
-                <button
-                    id="sidebarProfileButton"
-                    class="sidebar-profile"
-                    type="button"
-                >
-
-                    <span
-                        id="sidebarAvatar"
-                        class="avatar"
-                    >
-                        ?
-                    </span>
-
-                    <span class="sidebar-profile-information">
-
-                        <span
-                            id="sidebarUsername"
-                            class="sidebar-username"
-                        >
-                            anonymous
-                        </span>
-
-                        <span class="sidebar-user-status">
-                            <span class="status-dot"></span>
-                            anonymous
-                        </span>
-
-                    </span>
-
-                    <span class="sidebar-profile-arrow">
-                        ›
-                    </span>
-
-                </button>
-
-
-                <!-- ROOMS -->
-
-                <nav class="room-navigation">
-
-                    <div class="navigation-label">
-                        ROOMS
-                    </div>
-
-
-                    <button
-                        class="room-button active"
-                        type="button"
-                        data-room-id="general"
-                    >
-
-                        <span class="room-icon">
-                            ♡
-                        </span>
-
-                        <span class="room-information">
-
-                            <span class="room-name">
-                                General
-                            </span>
-
-                            <span class="room-description">
-                                talk about anything
-                            </span>
-
-                        </span>
-
-                    </button>
-
-
-                    <button
-                        class="room-button"
-                        type="button"
-                        data-room-id="anime"
-                    >
-
-                        <span class="room-icon">
-                            ✦
-                        </span>
-
-                        <span class="room-information">
-
-                            <span class="room-name">
-                                Anime
-                            </span>
-
-                            <span class="room-description">
-                                anime & manga
-                            </span>
-
-                        </span>
-
-                    </button>
-
-
-                    <button
-                        class="room-button"
-                        type="button"
-                        data-room-id="gaming"
-                    >
-
-                        <span class="room-icon">
-                            🎮
-                        </span>
-
-                        <span class="room-information">
-
-                            <span class="room-name">
-                                Gaming
-                            </span>
-
-                            <span class="room-description">
-                                games & gaming
-                            </span>
-
-                        </span>
-
-                    </button>
-
-
-                    <button
-                        class="room-button"
-                        type="button"
-                        data-room-id="music"
-                    >
-
-                        <span class="room-icon">
-                            ♫
-                        </span>
-
-                        <span class="room-information">
-
-                            <span class="room-name">
-                                Music
-                            </span>
-
-                            <span class="room-description">
-                                songs & artists
-                            </span>
-
-                        </span>
-
-                    </button>
-
-
-                    <button
-                        class="room-button"
-                        type="button"
-                        data-room-id="random"
-                    >
-
-                        <span class="room-icon">
-                            ☁
-                        </span>
-
-                        <span class="room-information">
-
-                            <span class="room-name">
-                                Random
-                            </span>
-
-                            <span class="room-description">
-                                completely random
-                            </span>
-
-                        </span>
-
-                    </button>
-
-                </nav>
-
-
-                <!-- SIDEBAR BOTTOM -->
-
-                <div class="sidebar-bottom">
-
-                    <button
-                        id="rulesButton"
-                        class="sidebar-action"
-                        type="button"
-                    >
-                        <span>📜</span>
-                        <span>Community rules</span>
-                    </button>
-
-
-                    <button
-                        id="settingsButton"
-                        class="sidebar-action"
-                        type="button"
-                    >
-                        <span>⚙️</span>
-                        <span>Settings</span>
-                    </button>
-
-
-                    <!-- This will later only appear for
-                         moderators/admins/owner -->
-
-                    <button
-                        id="moderationButton"
-                        class="sidebar-action staff-only hidden"
-                        type="button"
-                    >
-                        <span>🛡️</span>
-                        <span>Moderation</span>
-
-                        <span
-                            id="reportCountBadge"
-                            class="notification-badge hidden"
-                        >
-                            0
-                        </span>
-
-                    </button>
-
-                </div>
-
-            </aside>
-
-
-            <!-- =================================================
-                 CHAT AREA
-            ================================================== -->
-
-            <main class="chat-area">
-
-
-                <!-- CHAT HEADER -->
-
-                <header class="chat-header">
-
-                    <div class="chat-header-information">
-
-                        <div class="chat-room-icon">
-                            ♡
-                        </div>
-
-                        <div>
-
-                            <h1
-                                id="currentRoomName"
-                                class="chat-room-name"
-                            >
-                                General
-                            </h1>
-
-                            <p
-                                id="currentRoomDescription"
-                                class="chat-room-description"
-                            >
-                                talk about anything ♡
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="chat-header-actions">
-
-                        <div
-                            id="connectionStatus"
-                            class="connection-status"
-                        >
-                            <span class="status-dot"></span>
-                            <span>connected</span>
-                        </div>
-
-
-                        <button
-                            id="rulesHeaderButton"
-                            class="header-icon-button"
-                            type="button"
-                            aria-label="Community rules"
-                            title="Community rules"
-                        >
-                            📜
-                        </button>
-
-                    </div>
-
-                </header>
-
-
-                <!-- =================================================
-                     MESSAGE AREA
-                ================================================== -->
-
-                <section
-                    id="messageContainer"
-                    class="message-container"
-                    aria-label="Chat messages"
-                >
-
-                    <!-- Empty state -->
-
-                    <div
-                        id="emptyChat"
-                        class="empty-chat"
-                    >
-
-                        <div class="empty-chat-decoration">
-                            ✦
-                        </div>
-
-                        <div class="empty-chat-kaomoji">
-                            (｡•́‿•̀｡)
-                        </div>
-
-                        <h2>
-                            it's quiet here...
-                        </h2>
-
-                        <p>
-                            be the first little bean
-                            to say something ♡
-                        </p>
-
-                    </div>
-
-
-                    <!-- Messages are inserted here by app.js -->
-
-                    <div
-                        id="messages"
-                        class="messages"
-                    ></div>
-
-                </section>
-
-
-                <!-- =================================================
-                     TYPING INDICATOR
-                ================================================== -->
-
-                <div
-                    id="typingIndicator"
-                    class="typing-indicator hidden"
-                    aria-live="polite"
-                >
-
-                    <span class="typing-name">
-                        someone
-                    </span>
-
-                    <span>
-                        is typing
-                    </span>
-
-                    <span class="typing-dots">
-                        <i></i>
-                        <i></i>
-                        <i></i>
-                    </span>
-
-                </div>
-
-
-                <!-- =================================================
-                     MESSAGE COMPOSER
-                ================================================== -->
-
-                <footer class="composer">
-
-                    <div class="composer-box">
-
-                        <button
-                            id="emojiButton"
-                            class="composer-icon-button"
-                            type="button"
-                            aria-label="Open kaomoji picker"
-                            title="Kaomoji"
-                        >
-                            ☺
-                        </button>
-
-
-                        <textarea
-                            id="messageInput"
-                            class="message-input"
-                            rows="1"
-                            maxlength="1000"
-                            placeholder="say something... (｡•̀ᴗ-)✧"
-                            aria-label="Message"
-                        ></textarea>
-
-
-                        <div class="composer-actions">
-
-                            <span
-                                id="characterCounter"
-                                class="character-counter"
-                            >
-                                0/1000
-                            </span>
-
-                            <button
-                                id="sendButton"
-                                class="send-button"
-                                type="button"
-                                aria-label="Send message"
-                                title="Send message"
-                            >
-                                ➤
-                            </button>
-
-                        </div>
-
-                    </div>
-
-
-                    <!-- KAO MOJI QUICK BAR -->
-
-                    <div
-                        id="kaomojiBar"
-                        class="kaomoji-bar"
-                    >
-
-                        <button
-                            class="kaomoji-button"
-                            type="button"
-                            data-kaomoji="(｡•̀ᴗ-)✧"
-                        >
-                            (｡•̀ᴗ-)✧
-                        </button>
-
-                        <button
-                            class="kaomoji-button"
-                            type="button"
-                            data-kaomoji="૮ ˶ᵔ ᵕ ᵔ˶ ა"
-                        >
-                            ૮ ˶ᵔ ᵕ ᵔ˶ ა
-                        </button>
-
-                        <button
-                            class="kaomoji-button"
-                            type="button"
-                            data-kaomoji="(*≧ω≦*)"
-                        >
-                            (*≧ω≦*)
-                        </button>
-
-                        <button
-                            class="kaomoji-button"
-                            type="button"
-                            data-kaomoji="(╥﹏╥)"
-                        >
-                            (╥﹏╥)
-                        </button>
-
-                        <button
-                            class="kaomoji-button"
-                            type="button"
-                            data-kaomoji="ヽ(>∀<☆)ノ"
-                        >
-                            ヽ(>∀<☆)ノ
-                        </button>
-
-                        <button
-                            class="kaomoji-button"
-                            type="button"
-                            data-kaomoji="♡"
-                        >
-                            ♡
-                        </button>
-
-                    </div>
-
-                </footer>
-
-            </main>
-
-
-            <!-- =================================================
-                 ONLINE USERS PANEL
-            ================================================== -->
-
-            <aside
-                id="usersPanel"
-                class="users-panel"
-                aria-label="People in chat"
-            >
-
-                <div class="users-panel-header">
-
-                    <div>
-
-                        <h2>
-                            little beans
-                        </h2>
-
-                        <p>
-                            people around the chat
-                        </p>
-
-                    </div>
-
-                    <span
-                        id="onlineCount"
-                        class="online-count"
-                    >
-                        0
-                    </span>
-
-                </div>
-
-
-                <div
-                    id="onlineUsers"
-                    class="online-users"
-                >
-
-                    <!-- Online users will be inserted by app.js -->
-
-                </div>
-
-            </aside>
-
+        <div class="fake-ad-note">
+            Advertisement rotation updates automatically
         </div>
 
     </div>
 
 
-    <!-- =========================================================
-         MOBILE OVERLAY
-    ========================================================== -->
+    <div class="terminal">
 
-    <div
-        id="mobileOverlay"
-        class="mobile-overlay hidden"
-    ></div>
+        <div>
+            <span class="green">system@server</span>:~$ checking domain...
+        </div>
 
+        <div>
+            response: <span id="terminalStatus">FAILED</span>
+        </div>
 
-    <!-- =========================================================
-         PROFILE MODAL
-    ========================================================== -->
+        <div>
+            connection: CLOSED
+        </div>
 
-    <div
-        id="profileModal"
-        class="modal hidden"
-        aria-hidden="true"
-    >
+        <div>
+            reason: DOMAIN_UNAVAILABLE
+        </div>
 
-        <div
-            class="modal-backdrop"
-            data-close-modal="profileModal"
-        ></div>
-
-        <div
-            class="modal-content profile-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="profileModalTitle"
-        >
-
-            <button
-                class="modal-close"
-                type="button"
-                data-close-modal="profileModal"
-                aria-label="Close"
-            >
-                ×
-            </button>
-
-
-            <div class="profile-modal-decoration">
-                ✦ ♡ ✦
-            </div>
-
-
-            <div
-                id="profileModalAvatar"
-                class="avatar avatar-profile"
-            >
-                ?
-            </div>
-
-
-            <h2 id="profileModalTitle">
-                your little profile
-            </h2>
-
-
-            <div
-                id="profileModalUsername"
-                class="profile-modal-username"
-            >
-                anonymous
-            </div>
-
-
-            <div class="profile-edit-section">
-
-                <label for="usernameInput">
-                    username
-                </label>
-
-                <input
-                    id="usernameInput"
-                    type="text"
-                    maxlength="24"
-                    autocomplete="off"
-                    spellcheck="false"
-                    placeholder="your username"
-                >
-
-                <div class="input-hint">
-                    3–24 characters • letters, numbers,
-                    underscores and hyphens
-                </div>
-
-            </div>
-
-
-            <div class="profile-edit-section">
-
-                <label>
-                    favorite color
-                </label>
-
-                <div
-                    id="colorPicker"
-                    class="color-picker"
-                >
-
-                    <button
-                        type="button"
-                        class="color-option"
-                        data-color="#ff7eaf"
-                        style="--color:#ff7eaf"
-                        aria-label="Pink"
-                    ></button>
-
-                    <button
-                        type="button"
-                        class="color-option"
-                        data-color="#b77cff"
-                        style="--color:#b77cff"
-                        aria-label="Purple"
-                    ></button>
-
-                    <button
-                        type="button"
-                        class="color-option"
-                        data-color="#65b9ff"
-                        style="--color:#65b9ff"
-                        aria-label="Blue"
-                    ></button>
-
-                    <button
-                        type="button"
-                        class="color-option"
-                        data-color="#ff9c61"
-                        style="--color:#ff9c61"
-                        aria-label="Orange"
-                    ></button>
-
-                    <button
-                        type="button"
-                        class="color-option"
-                        data-color="#67cfa0"
-                        style="--color:#67cfa0"
-                        aria-label="Green"
-                    ></button>
-
-                    <button
-                        type="button"
-                        class="color-option"
-                        data-color="#e786c9"
-                        style="--color:#e786c9"
-                        aria-label="Rose"
-                    ></button>
-
-                </div>
-
-            </div>
-
-
-            <div class="profile-edit-section">
-
-                <label for="statusInput">
-                    little status
-                </label>
-
-                <input
-                    id="statusInput"
-                    type="text"
-                    maxlength="60"
-                    placeholder="probably watching anime..."
-                >
-
-            </div>
-
-
-            <div class="profile-modal-actions">
-
-                <button
-                    id="saveProfileButton"
-                    class="primary-button"
-                    type="button"
-                >
-                    save profile ♡
-                </button>
-
-            </div>
-
+        <div>
+            <span class="green">system@server</span>:~$
+            <span class="cursor"></span>
         </div>
 
     </div>
 
 
-    <!-- =========================================================
-         OTHER USER PROFILE MODAL
-    ========================================================== -->
+    <div class="divider"></div>
 
-    <div
-        id="userProfileModal"
-        class="modal hidden"
-        aria-hidden="true"
-    >
+    <div class="footer">
 
-        <div
-            class="modal-backdrop"
-            data-close-modal="userProfileModal"
-        ></div>
+        <span>
+            © <span id="year"></span> — DOMAIN OFFLINE
+        </span>
 
-        <div
-            class="modal-content user-profile-modal"
-            role="dialog"
-            aria-modal="true"
-        >
-
-            <button
-                class="modal-close"
-                type="button"
-                data-close-modal="userProfileModal"
-                aria-label="Close"
-            >
-                ×
-            </button>
-
-
-            <div
-                id="viewUserAvatar"
-                class="avatar avatar-profile"
-            >
-                ?
-            </div>
-
-
-            <h2 id="viewUserUsername">
-                anonymous
-            </h2>
-
-
-            <div
-                id="viewUserRole"
-                class="user-role-badge hidden"
-            >
-                MEMBER
-            </div>
-
-
-            <p
-                id="viewUserStatus"
-                class="view-user-status"
-            >
-                just hanging out ♡
-            </p>
-
-
-            <div class="profile-stats">
-
-                <div class="profile-stat">
-
-                    <strong
-                        id="viewUserMessageCount"
-                    >
-                        0
-                    </strong>
-
-                    <span>
-                        messages
-                    </span>
-
-                </div>
-
-
-                <div class="profile-stat">
-
-                    <strong
-                        id="viewUserJoined"
-                    >
-                        —
-                    </strong>
-
-                    <span>
-                        joined
-                    </span>
-
-                </div>
-
-            </div>
-
-
-            <div class="user-profile-actions">
-
-                <button
-                    id="blockUserButton"
-                    class="secondary-button"
-                    type="button"
-                >
-                    block
-                </button>
-
-                <button
-                    id="reportUserButton"
-                    class="danger-outline-button"
-                    type="button"
-                >
-                    report
-                </button>
-
-            </div>
-
-        </div>
+        <span>
+            <a href="#" onclick="location.reload(); return false;">
+                TRY AGAIN
+            </a>
+        </span>
 
     </div>
 
+</div>
 
-    <!-- =========================================================
-         REPORT MODAL
-    ========================================================== -->
 
-    <div
-        id="reportModal"
-        class="modal hidden"
-        aria-hidden="true"
-    >
+<script>
+/*
+    Fake rotating advertisement system.
 
-        <div
-            class="modal-backdrop"
-            data-close-modal="reportModal"
-        ></div>
+    Replace these with your own legitimate ad destinations
+    if you want the ads to point somewhere specific.
+*/
 
-        <div
-            class="modal-content report-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="reportTitle"
-        >
+const ads = [
 
-            <button
-                class="modal-close"
-                type="button"
-                data-close-modal="reportModal"
-                aria-label="Close"
-            >
-                ×
-            </button>
+    {
+        company: "VOID NETWORK",
+        title: "The internet remembers everything.",
+        description: "Explore something you weren't supposed to find.",
+        url: "https://example.com/"
+    },
 
+    {
+        company: "NIGHTLINE",
+        title: "Something is still online.",
+        description: "A strange collection of forgotten pages.",
+        url: "https://example.com/"
+    },
 
-            <div class="modal-kaomoji">
-                (｡•́︿•̀｡)
-            </div>
+    {
+        company: "ARCHIVE",
+        title: "Lost websites never really disappear.",
+        description: "Browse the remains of the old web.",
+        url: "https://example.com/"
+    },
 
+    {
+        company: "UNKNOWN",
+        title: "You've reached the wrong place.",
+        description: "Maybe that's exactly where you were supposed to end up.",
+        url: "https://example.com/"
+    }
+];
 
-            <h2 id="reportTitle">
-                report something
-            </h2>
+let currentAd = 0;
 
+const adLink = document.getElementById("adLink");
+const adCompany = document.getElementById("adCompany");
+const adTitle = document.getElementById("adTitle");
+const adDescription = document.getElementById("adDescription");
 
-            <p class="modal-description">
-                tell the moderators what's going on.
-            </p>
+function showAd() {
 
+    const ad = ads[currentAd];
 
-            <div class="report-target">
+    adCompany.textContent = ad.company;
+    adTitle.textContent = ad.title;
+    adDescription.textContent = ad.description;
 
-                <div class="report-target-label">
-                    reporting
-                </div>
+    adLink.href = ad.url;
 
-                <div id="reportTargetText">
-                    message
-                </div>
+    currentAd++;
 
-            </div>
+    if (currentAd >= ads.length) {
+        currentAd = 0;
+    }
+}
 
+/* Initial advertisement */
+showAd();
 
-            <div class="report-options">
+/* Rotate every 15 seconds */
+setInterval(showAd, 15000);
 
-                <label class="radio-option">
 
-                    <input
-                        type="radio"
-                        name="reportReason"
-                        value="spam"
-                    >
+/*
+    Makes the fake server information look live.
+*/
 
-                    <span>spam</span>
+function updateServerTime() {
 
-                </label>
+    const now = new Date();
 
+    const time =
+        String(now.getHours()).padStart(2, "0") + ":" +
+        String(now.getMinutes()).padStart(2, "0") + ":" +
+        String(now.getSeconds()).padStart(2, "0");
 
-                <label class="radio-option">
+    document.getElementById("lastResponse").textContent = time;
+}
 
-                    <input
-                        type="radio"
-                        name="reportReason"
-                        value="harassment"
-                    >
+updateServerTime();
+setInterval(updateServerTime, 1000);
 
-                    <span>harassment</span>
 
-                </label>
+/* Current year */
 
+document.getElementById("year").textContent =
+    new Date().getFullYear();
 
-                <label class="radio-option">
 
-                    <input
-                        type="radio"
-                        name="reportReason"
-                        value="inappropriate"
-                    >
+/*
+    Tiny fake connection status effect.
+*/
 
-                    <span>inappropriate content</span>
+const statuses = [
+    "FAILED",
+    "TIMEOUT",
+    "REFUSED",
+    "NOT_FOUND",
+    "FAILED"
+];
 
-                </label>
+let statusIndex = 0;
 
+setInterval(() => {
 
-                <label class="radio-option">
+    statusIndex++;
 
-                    <input
-                        type="radio"
-                        name="reportReason"
-                        value="impersonation"
-                    >
+    if (statusIndex >= statuses.length) {
+        statusIndex = 0;
+    }
 
-                    <span>impersonation</span>
+    document.getElementById("terminalStatus").textContent =
+        statuses[statusIndex];
 
-                </label>
-
-
-                <label class="radio-option">
-
-                    <input
-                        type="radio"
-                        name="reportReason"
-                        value="other"
-                    >
-
-                    <span>other</span>
-
-                </label>
-
-            </div>
-
-
-            <label
-                class="textarea-label"
-                for="reportDetails"
-            >
-                additional details
-            </label>
-
-            <textarea
-                id="reportDetails"
-                maxlength="500"
-                placeholder="tell us what happened..."
-            ></textarea>
-
-
-            <button
-                id="submitReportButton"
-                class="primary-button"
-                type="button"
-            >
-                send report ♡
-            </button>
-
-        </div>
-
-    </div>
-
-
-    <!-- =========================================================
-         RULES MODAL
-    ========================================================== -->
-
-    <div
-        id="rulesModal"
-        class="modal hidden"
-        aria-hidden="true"
-    >
-
-        <div
-            class="modal-backdrop"
-            data-close-modal="rulesModal"
-        ></div>
-
-        <div
-            class="modal-content rules-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="communityRulesTitle"
-        >
-
-            <button
-                class="modal-close"
-                type="button"
-                data-close-modal="rulesModal"
-                aria-label="Close"
-            >
-                ×
-            </button>
-
-
-            <div class="modal-kaomoji">
-                ૮₍ ˶ᵔ ᵕ ᵔ˶ ₎ა
-            </div>
-
-
-            <h2 id="communityRulesTitle">
-                community rules ♡
-            </h2>
-
-
-            <div class="rules-modal-list">
-
-                <div>
-                    <strong>01 · Be kind</strong>
-                    <p>
-                        Treat people with respect.
-                    </p>
-                </div>
-
-                <div>
-                    <strong>02 · No harassment</strong>
-                    <p>
-                        Don't target, threaten, or bully people.
-                    </p>
-                </div>
-
-                <div>
-                    <strong>03 · No spam</strong>
-                    <p>
-                        Don't flood rooms or abuse the service.
-                    </p>
-                </div>
-
-                <div>
-                    <strong>04 · Keep it appropriate</strong>
-                    <p>
-                        Keep content suitable for the community.
-                    </p>
-                </div>
-
-                <div>
-                    <strong>05 · Protect privacy</strong>
-                    <p>
-                        Don't share sensitive personal information.
-                    </p>
-                </div>
-
-                <div>
-                    <strong>06 · Listen to moderators</strong>
-                    <p>
-                        Moderators help keep the community safe.
-                    </p>
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <!-- =========================================================
-         SETTINGS MODAL
-    ========================================================== -->
-
-    <div
-        id="settingsModal"
-        class="modal hidden"
-        aria-hidden="true"
-    >
-
-        <div
-            class="modal-backdrop"
-            data-close-modal="settingsModal"
-        ></div>
-
-        <div
-            class="modal-content settings-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="settingsTitle"
-        >
-
-            <button
-                class="modal-close"
-                type="button"
-                data-close-modal="settingsModal"
-                aria-label="Close"
-            >
-                ×
-            </button>
-
-
-            <div class="modal-kaomoji">
-                ✿
-            </div>
-
-
-            <h2 id="settingsTitle">
-                settings
-            </h2>
-
-
-            <div class="settings-section">
-
-                <div class="settings-section-title">
-                    appearance
-                </div>
-
-
-                <div class="setting-row">
-
-                    <div>
-
-                        <strong>
-                            theme
-                        </strong>
-
-                        <span>
-                            choose your little aesthetic
-                        </span>
-
-                    </div>
-
-
-                    <select
-                        id="themeSelect"
-                        class="settings-select"
-                    >
-
-                        <option value="sakura">
-                            Sakura
-                        </option>
-
-                        <option value="matcha">
-                            Matcha
-                        </option>
-
-                        <option value="lavender">
-                            Lavender
-                        </option>
-
-                        <option value="blueberry">
-                            Blueberry
-                        </option>
-
-                        <option value="night">
-                            Night
-                        </option>
-
-                    </select>
-
-                </div>
-
-            </div>
-
-
-            <div class="settings-section">
-
-                <div class="settings-section-title">
-                    chat
-                </div>
-
-
-                <div class="setting-row">
-
-                    <div>
-
-                        <strong>
-                            message sounds
-                        </strong>
-
-                        <span>
-                            tiny sound when messages arrive
-                        </span>
-
-                    </div>
-
-
-                    <label class="toggle">
-
-                        <input
-                            id="soundToggle"
-                            type="checkbox"
-                        >
-
-                        <span class="toggle-slider"></span>
-
-                    </label>
-
-                </div>
-
-
-                <div class="setting-row">
-
-                    <div>
-
-                        <strong>
-                            show kaomoji bar
-                        </strong>
-
-                        <span>
-                            quick access to cute faces
-                        </span>
-
-                    </div>
-
-
-                    <label class="toggle">
-
-                        <input
-                            id="kaomojiToggle"
-                            type="checkbox"
-                            checked
-                        >
-
-                        <span class="toggle-slider"></span>
-
-                    </label>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <!-- =========================================================
-         MODERATION PANEL
-         Hidden from normal members.
-         app.js will only reveal this for authorized staff.
-    ========================================================== -->
-
-    <div
-        id="moderationModal"
-        class="modal hidden"
-        aria-hidden="true"
-    >
-
-        <div
-            class="modal-backdrop"
-            data-close-modal="moderationModal"
-        ></div>
-
-        <div
-            class="modal-content moderation-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="moderationTitle"
-        >
-
-            <button
-                class="modal-close"
-                type="button"
-                data-close-modal="moderationModal"
-                aria-label="Close"
-            >
-                ×
-            </button>
-
-
-            <div class="modal-kaomoji">
-                🛡️
-            </div>
-
-
-            <h2 id="moderationTitle">
-                moderation
-            </h2>
-
-
-            <div class="moderation-tabs">
-
-                <button
-                    class="moderation-tab active"
-                    type="button"
-                    data-mod-tab="reports"
-                >
-                    reports
-                    <span
-                        id="moderationReportsBadge"
-                        class="notification-badge"
-                    >
-                        0
-                    </span>
-                </button>
-
-
-                <button
-                    class="moderation-tab"
-                    type="button"
-                    data-mod-tab="users"
-                >
-                    users
-                </button>
-
-
-                <button
-                    class="moderation-tab"
-                    type="button"
-                    data-mod-tab="logs"
-                >
-                    logs
-                </button>
-
-            </div>
-
-
-            <!-- REPORTS -->
-
-            <div
-                id="moderationReports"
-                class="moderation-tab-content active"
-            >
-
-                <div
-                    id="reportsList"
-                    class="reports-list"
-                >
-
-                    <div class="moderation-empty">
-                        no reports right now ♡
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <!-- USERS -->
-
-            <div
-                id="moderationUsers"
-                class="moderation-tab-content hidden"
-            >
-
-                <div class="moderation-search">
-
-                    <input
-                        id="moderationUserSearch"
-                        type="search"
-                        placeholder="search users..."
-                    >
-
-                </div>
-
-
-                <div
-                    id="moderationUsersList"
-                    class="moderation-users-list"
-                >
-
-                    <div class="moderation-empty">
-                        search for a user ♡
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <!-- LOGS -->
-
-            <div
-                id="moderationLogs"
-                class="moderation-tab-content hidden"
-            >
-
-                <div
-                    id="moderationLogsList"
-                    class="moderation-logs-list"
-                >
-
-                    <div class="moderation-empty">
-                        no moderation actions yet.
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <!-- =========================================================
-         CONTEXT MENU
-         Used for message actions.
-    ========================================================== -->
-
-    <div
-        id="messageContextMenu"
-        class="context-menu hidden"
-    >
-
-        <button
-            type="button"
-            data-action="reply"
-        >
-            ↩ Reply
-        </button>
-
-
-        <button
-            type="button"
-            data-action="react"
-        >
-            ♡ React
-        </button>
-
-
-        <button
-            type="button"
-            data-action="copy"
-        >
-            ⧉ Copy
-        </button>
-
-
-        <button
-            type="button"
-            data-action="edit"
-            class="own-message-action"
-        >
-            ✎ Edit
-        </button>
-
-
-        <button
-            type="button"
-            data-action="delete"
-            class="own-message-action danger-action"
-        >
-            ♡ Delete
-        </button>
-
-
-        <button
-            type="button"
-            data-action="report"
-            class="other-message-action"
-        >
-            ⚑ Report
-        </button>
-
-    </div>
-
-
-    <!-- =========================================================
-         TOAST NOTIFICATIONS
-    ========================================================== -->
-
-    <div
-        id="toastContainer"
-        class="toast-container"
-        aria-live="polite"
-        aria-atomic="true"
-    ></div>
-
-
-    <!-- =========================================================
-         JAVASCRIPT
-    ========================================================== -->
-
-    <script type="module" src="app.js"></script>
+}, 3500);
+</script>
 
 </body>
 </html>
+```
