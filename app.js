@@ -1,3378 +1,4061 @@
 /* =========================================================
-   5AMWITHLEANNA — ANIME TRACKER
-   AniList-powered frontend
+   MOCHACHAT
+   Firebase realtime anonymous chat
+   ========================================================= */
 
-   Works with:
-   - index.html
-   - style.css
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
 
-   AniList OAuth:
-   - Implicit Grant
-   - Access token returned in URL hash
-   - Viewer -> authenticated user
-   - MediaListCollection(userId) -> anime library
-========================================================= */
+import {
+    getAuth,
+    signInAnonymously,
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
 
-"use strict";
+import {
+    getDatabase,
+    ref,
+    set,
+    get,
+    push,
+    update,
+    remove,
+    onValue,
+    onDisconnect,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
 
 
 /* =========================================================
-   CONFIG
-========================================================= */
+   01. FIREBASE
+   ========================================================= */
 
-const CONFIG = {
-    CLIENT_ID: "49199",
-
-    API_URL: "https://graphql.anilist.co",
-
-    OAUTH_URL:
-        "https://anilist.co/api/v2/oauth/authorize",
-
-    TOKEN_KEY:
-        "5am_anilist_token",
-
-    CONTINUE_KEY:
-        "5am_continue_watching",
-
-    CACHE_KEY:
-        "5am_anilist_cache",
-
-    CACHE_TIME:
-        5 * 60 * 1000
+const firebaseConfig = {
+    apiKey: "AIzaSyCvhhLbOUom3CVWKq6pHqrK_nHiMGbW_-E",
+    authDomain: "chat-14103.firebaseapp.com",
+    projectId: "chat-14103",
+    storageBucket: "chat-14103.firebasestorage.app",
+    messagingSenderId: "432992246016",
+    appId: "1:432992246016:web:9775ddf67ab3fe6a1ebbe5"
 };
 
+const firebaseApp = initializeApp(firebaseConfig);
+
+const auth = getAuth(firebaseApp);
+const db = getDatabase(firebaseApp);
+
 
 /* =========================================================
-   APPLICATION STATE
-========================================================= */
+   02. APP STATE
+   ========================================================= */
 
 const state = {
-    token: null,
 
     user: null,
 
-    lists: [],
+    profile: null,
 
-    anime: [],
+    currentRoom: "general",
 
-    currentView: "home",
+    currentRoomName: "General",
 
-    currentAnime: null,
+    messages: {},
 
-    searchTimer: null,
+    users: {},
 
-    isLoading: false
+    reports: {},
+
+    bannedUsers: {},
+
+    moderationLogs: {},
+
+    typingUsers: {},
+
+    listeners: {},
+
+    reportTarget: null,
+
+    editingMessage: null,
+
+    replyingTo: null,
+
+    isModerator: false,
+
+    isOwner: false,
+
+    acceptedRules: false,
+
+    loaded: false,
+
+    onlinePresenceStarted: false,
+
+    selectedColor: null,
+
+    settings: {
+        theme: "pink",
+        sound: true,
+        enterToSend: true
+    }
 };
 
 
 /* =========================================================
-   DOM HELPERS
-========================================================= */
-
-function $(selector) {
-    return document.querySelector(selector);
-}
-
-
-function $$(selector) {
-    return document.querySelectorAll(selector);
-}
-
-
-/* =========================================================
-   INITIALIZATION
-========================================================= */
-
-document.addEventListener(
-    "DOMContentLoaded",
-    initializeApp
-);
-
-
-async function initializeApp() {
-
-    setupNavigation();
-
-    setupSearch();
-
-    setupButtons();
-
-    setupModal();
-
-    setupMobileMenu();
-
-    /*
-     * First check whether AniList just redirected us
-     * with a new access token.
-     */
-    const urlToken =
-        readTokenFromURL();
-
-    if (urlToken) {
-        state.token = urlToken;
-    } else {
-        state.token =
-            localStorage.getItem(
-                CONFIG.TOKEN_KEY
-            );
-    }
-
-
-    updateAuthUI();
-
-    renderContinueWatching();
-
-
-    /*
-     * No automatic AniList redirect.
-     *
-     * This prevents the redirect loop you were
-     * previously getting.
-     */
-
-    if (!state.token) {
-
-        showLoggedOutState();
-
-        return;
-    }
-
-
-    await loadAniList();
-
-}
-
-
-/* =========================================================
-   OAUTH
-========================================================= */
-
-function loginAniList() {
-
-    const url =
-        `${CONFIG.OAUTH_URL}` +
-        `?client_id=${encodeURIComponent(CONFIG.CLIENT_ID)}` +
-        `&response_type=token`;
-
-
-    /*
-     * AniList's current Implicit Grant authorization
-     * request uses client_id + response_type=token.
-     */
-
-    window.location.href = url;
-}
-
-
-function logoutAniList() {
-
-    localStorage.removeItem(
-        CONFIG.TOKEN_KEY
-    );
-
-    localStorage.removeItem(
-        CONFIG.CACHE_KEY
-    );
-
-
-    state.token = null;
-
-    state.user = null;
-
-    state.lists = [];
-
-    state.anime = [];
-
-    state.currentAnime = null;
-
-
-    updateAuthUI();
-
-    showLoggedOutState();
-
-
-    showToast(
-        "Logged out of AniList."
-    );
-}
-
-
-/* =========================================================
-   READ TOKEN FROM REDIRECT
-========================================================= */
-
-function readTokenFromURL() {
-
-    const hash =
-        window.location.hash;
-
-
-    if (!hash) {
-        return null;
-    }
-
-
-    const params =
-        new URLSearchParams(
-            hash.substring(1)
-        );
-
-
-    /*
-     * AniList returns:
-     *
-     * #access_token=...
-     */
-
-    const token =
-        params.get(
-            "access_token"
-        );
-
-
-    /*
-     * Check for an OAuth error too.
-     */
-
-    const error =
-        params.get("error");
-
-
-    if (error) {
-
-        const description =
-            params.get(
-                "error_description"
-            );
-
-
-        window.history.replaceState(
-            {},
-            document.title,
-            window.location.pathname +
-            window.location.search
-        );
-
-
-        showToast(
-            description ||
-            `AniList login failed: ${error}`
-        );
-
-
-        return null;
-    }
-
-
-    if (!token) {
-        return null;
-    }
-
-
-    /*
-     * Save token locally.
-     */
-
-    localStorage.setItem(
-        CONFIG.TOKEN_KEY,
-        token
-    );
-
-
-    /*
-     * Remove token from the visible
-     * browser URL.
-     */
-
-    window.history.replaceState(
-        {},
-        document.title,
-        window.location.pathname +
-        window.location.search
-    );
-
-
-    return token;
-}
-
-
-/* =========================================================
-   GRAPHQL REQUEST
-========================================================= */
-
-async function anilistRequest(
-    query,
-    variables = {},
-    options = {}
-) {
-
-    if (!state.token) {
-
-        throw new Error(
-            "You are not logged into AniList."
-        );
-    }
-
-
-    const controller =
-        new AbortController();
-
-
-    const timeout =
-        setTimeout(
-            () => controller.abort(),
-            options.timeout || 20000
-        );
-
-
-    try {
-
-        const response =
-            await fetch(
-                CONFIG.API_URL,
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json",
-
-                        "Accept":
-                            "application/json",
-
-                        "Authorization":
-                            `Bearer ${state.token}`
-                    },
-
-                    body:
-                        JSON.stringify({
-                            query,
-                            variables
-                        }),
-
-                    signal:
-                        controller.signal
-                }
-            );
-
-
-        let json;
-
-        try {
-
-            json =
-                await response.json();
-
-        } catch {
-
-            throw new Error(
-                "AniList returned an invalid response."
-            );
-
-        }
-
-
-        /*
-         * HTTP-level errors.
-         */
-
-        if (!response.ok) {
-
-            const message =
-                json?.errors?.[0]?.message ||
-                `AniList HTTP ${response.status}`;
-
-            throw new Error(
-                message
-            );
-        }
-
-
-        /*
-         * GraphQL errors.
-         */
-
-        if (
-            Array.isArray(
-                json.errors
-            ) &&
-            json.errors.length
-        ) {
-
-            const message =
-                json.errors
-                    .map(
-                        error =>
-                            error.message
-                    )
-                    .filter(Boolean)
-                    .join(" | ");
-
-
-            throw new Error(
-                message ||
-                "AniList GraphQL request failed."
-            );
-        }
-
-
-        if (!json.data) {
-
-            throw new Error(
-                "AniList returned no data."
-            );
-        }
-
-
-        return json.data;
-
-    } catch (error) {
-
-        if (
-            error.name ===
-            "AbortError"
-        ) {
-
-            throw new Error(
-                "AniList request timed out. Try refreshing."
-            );
-
-        }
-
-
-        throw error;
-
-    } finally {
-
-        clearTimeout(
-            timeout
-        );
-
-    }
-}
-
-
-/* =========================================================
-   LOAD ANILIST
-========================================================= */
-
-async function loadAniList() {
-
-    if (state.isLoading) {
-        return;
-    }
-
-
-    state.isLoading = true;
-
-
-    showLoadingState();
-
-
-    try {
-
-        /*
-         * -----------------------------------------
-         * STEP 1
-         * Get authenticated AniList user.
-         * -----------------------------------------
-         */
-
-        const viewerData =
-            await anilistRequest(`
-
-                query {
-
-                    Viewer {
-
-                        id
-
-                        name
-
-                        avatar {
-                            large
-                            medium
-                        }
-
-                        about
-
-                        siteUrl
-
-                    }
-
-                }
-
-            `);
-
-
-        state.user =
-            viewerData.Viewer;
-
-
-        if (!state.user) {
-
-            throw new Error(
-                "AniList did not return your account."
-            );
-        }
-
-
-        /*
-         * -----------------------------------------
-         * STEP 2
-         * Get the complete anime lists.
-         *
-         * AniList does NOT infer the user for
-         * MediaListCollection, even with a token.
-         * -----------------------------------------
-         */
-
-        const listData =
-            await anilistRequest(
-
-                `
-
-                query (
-                    $userId: Int!
-                ) {
-
-                    MediaListCollection(
-                        userId: $userId
-                        type: ANIME
-                    ) {
-
-                        lists {
-
-                            name
-
-                            status
-
-                            isCustomList
-
-                            isSplitCompletedList
-
-                            entries {
-
-                                id
-
-                                userId
-
-                                mediaId
-
-                                status
-
-                                score
-
-                                progress
-                                progressVolumes
-
-                                repeat
-
-                                priority
-
-                                private
-
-                                notes
-
-                                hiddenFromStatusLists
-
-                                customLists
-
-                                advancedScores
-
-                                startedAt {
-                                    year
-                                    month
-                                    day
-                                }
-
-                                completedAt {
-                                    year
-                                    month
-                                    day
-                                }
-
-                                updatedAt
-
-                                createdAt
-
-                                media {
-
-                                    id
-
-                                    type
-
-                                    title {
-                                        userPreferred
-                                        romaji
-                                        english
-                                        native
-                                    }
-
-                                    description(
-                                        asHtml: false
-                                    )
-
-                                    episodes
-
-                                    duration
-
-                                    status
-
-                                    format
-
-                                    season
-
-                                    seasonYear
-
-                                    averageScore
-
-                                    meanScore
-
-                                    genres
-
-                                    countryOfOrigin
-
-                                    isAdult
-
-                                    coverImage {
-                                        extraLarge
-                                        large
-                                        medium
-                                        color
-                                    }
-
-                                    bannerImage
-
-                                    siteUrl
-
-                                    nextAiringEpisode {
-                                        id
-                                        episode
-                                        airingAt
-                                        timeUntilAiring
-                                    }
-
-                                    startDate {
-                                        year
-                                        month
-                                        day
-                                    }
-
-                                    endDate {
-                                        year
-                                        month
-                                        day
-                                    }
-
-                                }
-
-                            }
-
-                        }
-
-                    }
-
-                }
-
-                `,
-
-                {
-                    userId:
-                        Number(
-                            state.user.id
-                        )
-                }
-
-            );
-
-
-        state.lists =
-            listData
-                .MediaListCollection
-                ?.lists ||
-            [];
-
-
-        /*
-         * -----------------------------------------
-         * STEP 3
-         * Convert all lists into one collection.
-         * -----------------------------------------
-         */
-
-        state.anime =
-            flattenAniListLists(
-                state.lists
-            );
-
-
-        /*
-         * Cache data locally.
-         */
-
-        saveCache();
-
-
-        /*
-         * Update application.
-         */
-
-        updateAuthUI();
-
-        renderHome();
-
-        renderContinueWatching();
-
-
-        /*
-         * If currently looking at a library,
-         * refresh the current library too.
-         */
-
-        if (
-            [
-                "watching",
-                "completed",
-                "planning",
-                "paused",
-                "dropped"
-            ].includes(
-                state.currentView
-            )
-        ) {
-
-            renderLibrary(
-                state.currentView
-            );
-
-        }
-
-
-        showToast(
-            `Loaded ${state.anime.length} anime from AniList.`
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "AniList load failed:",
-            error
-        );
-
-
-        handleAniListError(
-            error
-        );
-
-    } finally {
-
-        state.isLoading = false;
-
-    }
-}
-
-
-/* =========================================================
-   FLATTEN ANILIST LISTS
-========================================================= */
-
-function flattenAniListLists(
-    lists
-) {
-
-    const mediaMap =
-        new Map();
-
-
-    for (
-        const list of lists
-    ) {
-
-        if (
-            !Array.isArray(
-                list.entries
-            )
-        ) {
-
-            continue;
-        }
-
-
-        for (
-            const entry of list.entries
-        ) {
-
-            if (
-                !entry ||
-                !entry.media
-            ) {
-
-                continue;
-            }
-
-
-            const mediaId =
-                entry.media.id;
-
-
-            /*
-             * Preserve custom list information.
-             */
-
-            if (
-                !mediaMap.has(
-                    mediaId
-                )
-            ) {
-
-                mediaMap.set(
-                    mediaId,
-                    {
-
-                        ...entry,
-
-                        media:
-                            entry.media,
-
-                        lists: [
-                            list.name
-                        ]
-
-                    }
-                );
-
-
-            } else {
-
-                const existing =
-                    mediaMap.get(
-                        mediaId
-                    );
-
-
-                if (
-                    !existing.lists.includes(
-                        list.name
-                    )
-                ) {
-
-                    existing.lists.push(
-                        list.name
-                    );
-
-                }
-
-
-                /*
-                 * Keep whichever entry has the
-                 * most recently updated data.
-                 */
-
-                if (
-                    (entry.updatedAt || 0) >
-                    (existing.updatedAt || 0)
-                ) {
-
-                    existing.status =
-                        entry.status;
-
-                    existing.score =
-                        entry.score;
-
-                    existing.progress =
-                        entry.progress;
-
-                    existing.progressVolumes =
-                        entry.progressVolumes;
-
-                    existing.repeat =
-                        entry.repeat;
-
-                    existing.priority =
-                        entry.priority;
-
-                    existing.private =
-                        entry.private;
-
-                    existing.notes =
-                        entry.notes;
-
-                    existing.updatedAt =
-                        entry.updatedAt;
-
-                }
-
-            }
-
-        }
-
-    }
-
-
-    return Array.from(
-        mediaMap.values()
-    );
-
-}
-
-
-/* =========================================================
-   FILTER BY ANILIST STATUS
-========================================================= */
-
-function getEntriesByStatus(
-    status
-) {
-
-    return state.anime.filter(
-        entry =>
-            entry.status ===
-            status
-    );
-
-}
-
-
-/* =========================================================
-   HOME PAGE
-========================================================= */
-
-function renderHome() {
-
-    if (!state.user) {
-
-        showLoggedOutState();
-
-        return;
-    }
-
-
-    /*
-     * Welcome text.
-     */
-
-    $("#welcome-title").textContent =
-        `Welcome back, ${state.user.name}.`;
-
-
-    $("#welcome-description").textContent =
-        `${state.anime.length} anime are in your AniList library.`;
-
-
-    $("#hero-login").style.display =
-        "none";
-
-
-    /*
-     * Currently watching.
-     */
-
-    const watching =
-        getEntriesByStatus(
-            "CURRENT"
-        );
-
-
-    renderAnimeGrid(
-        "#watching-grid",
-        watching.slice(0, 6)
-    );
-
-
-    /*
-     * Recently updated.
-     */
-
-    const recent =
-        [...state.anime]
-            .sort(
-                (a, b) =>
-                    (b.updatedAt || 0) -
-                    (a.updatedAt || 0)
-            )
-            .slice(
-                0,
-                6
-            );
-
-
-    renderAnimeGrid(
-        "#recent-grid",
-        recent
-    );
-
-
-    /*
-     * Continue Watching.
-     */
-
-    renderContinueWatching();
-
-}
-
-
-/* =========================================================
-   LIBRARY
-========================================================= */
-
-const LIBRARY_CONFIG = {
-
-    watching: {
-        title: "Currently Watching",
-        status: "CURRENT"
+   03. CONSTANTS
+   ========================================================= */
+
+const MAX_MESSAGE_LENGTH = 500;
+
+const MAX_USERNAME_LENGTH = 24;
+
+const TYPING_TIMEOUT = 2500;
+
+const COLORS = [
+    "#ff79a9",
+    "#ff8fae",
+    "#f08ccf",
+    "#c792ed",
+    "#9e8bea",
+    "#78a9e8",
+    "#69b8d6",
+    "#65cfa0",
+    "#9acb70",
+    "#e6ad69",
+    "#e98873",
+    "#d783a7"
+];
+
+const KAOMOJI = [
+    "(｡•́‿•̀｡)",
+    "(≧▽≦)",
+    "(｡♥‿♥｡)",
+    "(´• ω •`)",
+    "(╥﹏╥)",
+    "(づ｡◕‿‿◕｡)づ",
+    "(˶ᵔ ᵕ ᵔ˶)",
+    "(✿◠‿◠)",
+    "(๑˃ᴗ˂)ﻭ",
+    "٩(◕‿◕｡)۶",
+    "(っ˘ω˘ς )",
+    "(¬‿¬)",
+    "(•̀ᴗ•́)و",
+    "ヽ(>∀<☆)ノ"
+];
+
+const ROOM_DATA = {
+    general: {
+        name: "General",
+        icon: "💬",
+        description: "Talk about anything"
     },
 
-    completed: {
-        title: "Completed",
-        status: "COMPLETED"
+    random: {
+        name: "Random",
+        icon: "🎀",
+        description: "Random conversations"
     },
 
-    planning: {
-        title: "Planning",
-        status: "PLANNING"
+    anime: {
+        name: "Anime",
+        icon: "🌸",
+        description: "Anime & manga"
     },
 
-    paused: {
-        title: "Paused",
-        status: "PAUSED"
-    },
-
-    dropped: {
-        title: "Dropped",
-        status: "DROPPED"
+    games: {
+        name: "Games",
+        icon: "🎮",
+        description: "Gaming chat"
     }
-
 };
 
 
-function renderLibrary(
-    libraryName
-) {
+/* =========================================================
+   04. DOM HELPERS
+   ========================================================= */
 
-    const config =
-        LIBRARY_CONFIG[
-            libraryName
-        ];
+const $ = (selector) => document.querySelector(selector);
 
+const $$ = (selector) => document.querySelectorAll(selector);
 
-    if (!config) {
-        return;
+function getElement(...selectors) {
+    for (const selector of selectors) {
+        const element = document.querySelector(selector);
+
+        if (element) {
+            return element;
+        }
     }
 
+    return null;
+}
 
-    const entries =
-        getEntriesByStatus(
-            config.status
-        );
+function escapeHTML(value) {
+    if (value === null || value === undefined) {
+        return "";
+    }
 
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
 
-    $("#library-kicker").textContent =
-        "ANILIST LIBRARY";
+function getInitials(username) {
+    if (!username) {
+        return "?";
+    }
 
+    return username
+        .trim()
+        .slice(0, 2)
+        .toUpperCase();
+}
 
-    $("#library-title").textContent =
-        config.title;
+function randomItem(array) {
+    return array[Math.floor(Math.random() * array.length)];
+}
 
+function formatTime(timestamp) {
+    if (!timestamp) {
+        return "now";
+    }
 
-    $("#library-count").textContent =
-        `${entries.length} anime`;
+    const date = new Date(timestamp);
 
+    if (Number.isNaN(date.getTime())) {
+        return "now";
+    }
 
-    renderAnimeGrid(
-        "#library-grid",
-        entries
-    );
+    return date.toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit"
+    });
+}
 
+function formatDate(timestamp) {
+    if (!timestamp) {
+        return "";
+    }
+
+    const date = new Date(timestamp);
+
+    if (Number.isNaN(date.getTime())) {
+        return "";
+    }
+
+    return date.toLocaleDateString([], {
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+    });
+}
+
+function sanitizeUsername(username) {
+
+    let clean = String(username || "")
+        .trim()
+        .replace(/[<>]/g, "")
+        .replace(/\s+/g, " ");
+
+    clean = clean.slice(0, MAX_USERNAME_LENGTH);
+
+    return clean;
+}
+
+function isValidUsername(username) {
+
+    if (!username) {
+        return false;
+    }
+
+    if (username.length < 2) {
+        return false;
+    }
+
+    return true;
 }
 
 
 /* =========================================================
-   ANIME GRID
-========================================================= */
+   05. TOAST
+   ========================================================= */
 
-function renderAnimeGrid(
-    selector,
-    entries
-) {
+function toast(message, type = "normal") {
 
     const container =
-        $(selector);
-
+        getElement("#toastContainer", ".toast-container");
 
     if (!container) {
         return;
     }
 
+    const toastElement = document.createElement("div");
 
-    container.innerHTML = "";
+    toastElement.className = "toast";
+
+    let icon = "♡";
+
+    if (type === "success") {
+        icon = "✓";
+    }
+
+    if (type === "error") {
+        icon = "!";
+    }
+
+    if (type === "warning") {
+        icon = "⚠";
+    }
+
+    toastElement.innerHTML = `
+        <span>${icon}</span>
+        <span>${escapeHTML(message)}</span>
+    `;
+
+    container.appendChild(toastElement);
+
+    setTimeout(() => {
+        toastElement.remove();
+    }, 4200);
+}
 
 
-    if (
-        !entries ||
-        !entries.length
-    ) {
+/* =========================================================
+   06. LOADING / SCREEN MANAGEMENT
+   ========================================================= */
 
-        container.innerHTML = `
+function showElement(element) {
+    if (!element) return;
 
-            <div class="empty-state">
+    element.classList.remove("hidden");
+}
 
-                <p>
-                    Nothing here yet.
+function hideElement(element) {
+    if (!element) return;
+
+    element.classList.add("hidden");
+}
+
+function showApp() {
+
+    const loading = getElement("#loadingScreen", ".loading-screen");
+    const rules = getElement("#rulesScreen", ".rules-screen");
+    const app = getElement("#app", ".app");
+
+    hideElement(loading);
+
+    if (state.acceptedRules) {
+        hideElement(rules);
+        showElement(app);
+    } else {
+        showElement(rules);
+        hideElement(app);
+    }
+}
+
+function showLoading(message = "Loading Mochachat...") {
+
+    const loading = getElement("#loadingScreen", ".loading-screen");
+
+    if (!loading) {
+        return;
+    }
+
+    const messageElement =
+        getElement("#loadingMessage", ".loading-message");
+
+    if (messageElement) {
+        messageElement.textContent = message;
+    }
+
+    showElement(loading);
+}
+
+
+/* =========================================================
+   07. LOCAL STORAGE
+   ========================================================= */
+
+function loadLocalSettings() {
+
+    try {
+
+        const saved = localStorage.getItem("mochachat_settings");
+
+        if (saved) {
+            state.settings = {
+                ...state.settings,
+                ...JSON.parse(saved)
+            };
+        }
+
+    } catch (error) {
+        console.warn("Could not load settings.", error);
+    }
+}
+
+function saveLocalSettings() {
+
+    try {
+
+        localStorage.setItem(
+            "mochachat_settings",
+            JSON.stringify(state.settings)
+        );
+
+    } catch (error) {
+        console.warn("Could not save settings.", error);
+    }
+}
+
+function getRulesAccepted() {
+
+    try {
+        return localStorage.getItem("mochachat_rules_accepted") === "true";
+    } catch {
+        return false;
+    }
+}
+
+function setRulesAccepted() {
+
+    try {
+        localStorage.setItem(
+            "mochachat_rules_accepted",
+            "true"
+        );
+    } catch {
+        /* ignored */
+    }
+
+    state.acceptedRules = true;
+}
+
+
+/* =========================================================
+   08. ANONYMOUS LOGIN
+   ========================================================= */
+
+async function startAuthentication() {
+
+    showLoading("Connecting you anonymously...");
+
+    try {
+
+        await signInAnonymously(auth);
+
+    } catch (error) {
+
+        console.error(error);
+
+        showLoading("Could not connect to Firebase.");
+
+        toast(
+            "Firebase authentication failed. Check your Firebase settings.",
+            "error"
+        );
+    }
+}
+
+onAuthStateChanged(auth, async (user) => {
+
+    if (!user) {
+        return;
+    }
+
+    state.user = user;
+
+    console.log("Anonymous Firebase user:", user.uid);
+
+    await initializeUser(user);
+
+});
+
+
+/* =========================================================
+   09. CREATE / LOAD USER PROFILE
+   ========================================================= */
+
+async function initializeUser(user) {
+
+    showLoading("Preparing your identity...");
+
+    const userRef = ref(db, `users/${user.uid}`);
+
+    try {
+
+        const snapshot = await get(userRef);
+
+        if (snapshot.exists()) {
+
+            state.profile = snapshot.val();
+
+        } else {
+
+            const newProfile = {
+                uid: user.uid,
+
+                username: generateUsername(),
+
+                color: randomItem(COLORS),
+
+                createdAt: Date.now(),
+
+                lastSeen: serverTimestamp(),
+
+                status: "online",
+
+                role: "user",
+
+                banned: false,
+
+                bio: "just another lil bean ♡",
+
+                messageCount: 0
+            };
+
+            await set(userRef, newProfile);
+
+            state.profile = newProfile;
+        }
+
+        state.selectedColor = state.profile.color;
+
+        state.isModerator =
+            state.profile.role === "moderator" ||
+            state.profile.role === "admin" ||
+            state.profile.role === "owner";
+
+        state.isOwner =
+            state.profile.role === "owner";
+
+        await checkBan();
+
+        await startPresence();
+
+        startFirebaseListeners();
+
+        setupInterface();
+
+        state.loaded = true;
+
+        showApp();
+
+        renderCurrentUser();
+
+    } catch (error) {
+
+        console.error("User initialization failed:", error);
+
+        toast(
+            "Couldn't load your account.",
+            "error"
+        );
+    }
+}
+
+
+/* =========================================================
+   10. USERNAME GENERATOR
+   ========================================================= */
+
+function generateUsername() {
+
+    const first = [
+        "mochi",
+        "boba",
+        "sakura",
+        "mimi",
+        "yuki",
+        "kiki",
+        "momo",
+        "pocky",
+        "choco",
+        "nana",
+        "coco",
+        "kuma",
+        "pika",
+        "peach",
+        "berry",
+        "miso",
+        "tofu",
+        "suki",
+        "luna",
+        "riri"
+    ];
+
+    const second = [
+        "bun",
+        "bean",
+        "cat",
+        "bunny",
+        "star",
+        "berry",
+        "puff",
+        "chan",
+        "cupcake",
+        "sprite",
+        "cloud",
+        "muffin",
+        "kitty",
+        "pearl",
+        "flower"
+    ];
+
+    const number =
+        Math.floor(100 + Math.random() * 900);
+
+    return `${randomItem(first)}${randomItem(second)}${number}`;
+}
+
+
+/* =========================================================
+   11. BAN CHECK
+   ========================================================= */
+
+async function checkBan() {
+
+    if (!state.user) {
+        return false;
+    }
+
+    const banRef =
+        ref(db, `bans/${state.user.uid}`);
+
+    try {
+
+        const snapshot = await get(banRef);
+
+        if (!snapshot.exists()) {
+            return false;
+        }
+
+        const ban = snapshot.val();
+
+        if (!ban.permanent && ban.expiresAt) {
+
+            if (Date.now() > ban.expiresAt) {
+
+                await remove(banRef);
+
+                return false;
+            }
+        }
+
+        showBannedScreen(ban);
+
+        return true;
+
+    } catch (error) {
+
+        console.error("Ban check failed:", error);
+
+        return false;
+    }
+}
+
+
+/* =========================================================
+   12. BAN SCREEN
+   ========================================================= */
+
+function showBannedScreen(ban) {
+
+    const reason =
+        escapeHTML(ban.reason || "No reason provided.");
+
+    const until =
+        ban.permanent
+            ? "Permanent"
+            : formatDate(ban.expiresAt);
+
+    document.body.innerHTML = `
+        <div class="screen">
+            <div class="loading-card">
+                <div class="loading-kaomoji">(╥﹏╥)</div>
+
+                <h1 class="loading-title">
+                    You are banned
+                </h1>
+
+                <p class="loading-message">
+                    You cannot use Mochachat right now.
                 </p>
 
+                <br>
+
+                <p style="font-size:12px;color:var(--text-soft)">
+                    <strong>Reason:</strong><br>
+                    ${reason}
+                </p>
+
+                <br>
+
+                <p style="font-size:11px;color:var(--text-muted)">
+                    ${until}
+                </p>
+            </div>
+        </div>
+    `;
+
+    throw new Error("User is banned.");
+}
+
+
+/* =========================================================
+   13. PRESENCE
+   ========================================================= */
+
+async function startPresence() {
+
+    if (!state.user || state.onlinePresenceStarted) {
+        return;
+    }
+
+    state.onlinePresenceStarted = true;
+
+    const uid = state.user.uid;
+
+    const userStatusRef =
+        ref(db, `presence/${uid}`);
+
+    const userRef =
+        ref(db, `users/${uid}`);
+
+    try {
+
+        await set(userStatusRef, {
+            online: true,
+            lastSeen: serverTimestamp()
+        });
+
+        await update(userRef, {
+            status: "online",
+            lastSeen: serverTimestamp()
+        });
+
+        onDisconnect(userStatusRef).set({
+            online: false,
+            lastSeen: serverTimestamp()
+        });
+
+        onDisconnect(userRef).update({
+            status: "offline",
+            lastSeen: serverTimestamp()
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Presence initialization failed:",
+            error
+        );
+    }
+}
+
+
+/* =========================================================
+   14. FIREBASE LISTENERS
+   ========================================================= */
+
+function startFirebaseListeners() {
+
+    listenToUsers();
+
+    listenToPresence();
+
+    listenToRoom(state.currentRoom);
+
+    listenToReports();
+
+    listenToBans();
+
+    listenToModerationLogs();
+}
+
+
+/* =========================================================
+   15. USERS
+   ========================================================= */
+
+function listenToUsers() {
+
+    const usersRef = ref(db, "users");
+
+    state.listeners.users =
+        onValue(usersRef, (snapshot) => {
+
+            state.users =
+                snapshot.val() || {};
+
+            renderOnlineUsers();
+
+        });
+}
+
+
+/* =========================================================
+   16. PRESENCE
+   ========================================================= */
+
+function listenToPresence() {
+
+    const presenceRef = ref(db, "presence");
+
+    state.listeners.presence =
+        onValue(presenceRef, (snapshot) => {
+
+            state.presence =
+                snapshot.val() || {};
+
+            renderOnlineUsers();
+
+        });
+}
+
+
+/* =========================================================
+   17. ROOM MESSAGES
+   ========================================================= */
+
+function listenToRoom(roomId) {
+
+    if (state.listeners.messages) {
+        state.listeners.messages();
+    }
+
+    state.messages = {};
+
+    const messagesRef =
+        ref(db, `messages/${roomId}`);
+
+    state.listeners.messages =
+        onValue(messagesRef, (snapshot) => {
+
+            state.messages =
+                snapshot.val() || {};
+
+            renderMessages();
+
+        });
+}
+
+
+/* =========================================================
+   18. REPORTS
+   ========================================================= */
+
+function listenToReports() {
+
+    if (!state.isModerator) {
+        return;
+    }
+
+    const reportsRef =
+        ref(db, "reports");
+
+    state.listeners.reports =
+        onValue(reportsRef, (snapshot) => {
+
+            state.reports =
+                snapshot.val() || {};
+
+            renderReports();
+
+        });
+}
+
+
+/* =========================================================
+   19. BANS
+   ========================================================= */
+
+function listenToBans() {
+
+    if (!state.isModerator) {
+        return;
+    }
+
+    const bansRef =
+        ref(db, "bans");
+
+    state.listeners.bans =
+        onValue(bansRef, (snapshot) => {
+
+            state.bannedUsers =
+                snapshot.val() || {};
+
+            renderModerationUsers();
+
+        });
+}
+
+
+/* =========================================================
+   20. MODERATION LOGS
+   ========================================================= */
+
+function listenToModerationLogs() {
+
+    if (!state.isModerator) {
+        return;
+    }
+
+    const logsRef =
+        ref(db, "moderationLogs");
+
+    state.listeners.logs =
+        onValue(logsRef, (snapshot) => {
+
+            state.moderationLogs =
+                snapshot.val() || {};
+
+            renderModerationLogs();
+
+        });
+}
+
+
+/* =========================================================
+   21. SEND MESSAGE
+   ========================================================= */
+
+async function sendMessage() {
+
+    if (!state.user || !state.profile) {
+        return;
+    }
+
+    const input =
+        getElement("#messageInput", ".message-input");
+
+    if (!input) {
+        return;
+    }
+
+    let text = input.value.trim();
+
+    if (!text) {
+        return;
+    }
+
+    if (text.length > MAX_MESSAGE_LENGTH) {
+
+        toast(
+            `Messages can only be ${MAX_MESSAGE_LENGTH} characters.`,
+            "warning"
+        );
+
+        return;
+    }
+
+    const banned =
+        await checkBan();
+
+    if (banned) {
+        return;
+    }
+
+    const messageRef =
+        push(ref(db, `messages/${state.currentRoom}`));
+
+    const message = {
+
+        id: messageRef.key,
+
+        uid: state.user.uid,
+
+        username: state.profile.username,
+
+        color: state.profile.color,
+
+        text: text,
+
+        createdAt: serverTimestamp(),
+
+        edited: false,
+
+        replyTo: state.replyingTo
+            ? state.replyingTo.id
+            : null
+
+    };
+
+    try {
+
+        await set(messageRef, message);
+
+        input.value = "";
+
+        autoResizeTextarea(input);
+
+        stopTyping();
+
+        state.replyingTo = null;
+
+        renderReplyPreview();
+
+        await incrementMessageCount();
+
+        playMessageSound();
+
+    } catch (error) {
+
+        console.error(error);
+
+        toast(
+            "Message couldn't be sent.",
+            "error"
+        );
+    }
+}
+
+
+/* =========================================================
+   22. MESSAGE COUNT
+   ========================================================= */
+
+async function incrementMessageCount() {
+
+    if (!state.user) {
+        return;
+    }
+
+    const current =
+        Number(state.profile.messageCount || 0);
+
+    state.profile.messageCount = current + 1;
+
+    await update(
+        ref(db, `users/${state.user.uid}`),
+        {
+            messageCount: current + 1
+        }
+    );
+}
+
+
+/* =========================================================
+   23. DELETE MESSAGE
+   ========================================================= */
+
+async function deleteMessage(messageId) {
+
+    const message =
+        state.messages[messageId];
+
+    if (!message) {
+        return;
+    }
+
+    const allowed =
+        message.uid === state.user.uid ||
+        state.isModerator;
+
+    if (!allowed) {
+        toast(
+            "You can't delete that message.",
+            "error"
+        );
+
+        return;
+    }
+
+    try {
+
+        await remove(
+            ref(
+                db,
+                `messages/${state.currentRoom}/${messageId}`
+            )
+        );
+
+        if (state.isModerator && message.uid !== state.user.uid) {
+
+            await createModerationLog(
+                "deleted_message",
+                message.uid,
+                `Deleted message by ${message.username}`
+            );
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        toast(
+            "Couldn't delete the message.",
+            "error"
+        );
+    }
+}
+
+
+/* =========================================================
+   24. EDIT MESSAGE
+   ========================================================= */
+
+async function editMessage(messageId) {
+
+    const message =
+        state.messages[messageId];
+
+    if (!message) {
+        return;
+    }
+
+    if (message.uid !== state.user.uid) {
+        toast(
+            "You can only edit your own messages.",
+            "error"
+        );
+
+        return;
+    }
+
+    const input =
+        getElement("#messageInput", ".message-input");
+
+    if (!input) {
+        return;
+    }
+
+    input.value = message.text;
+
+    state.editingMessage = messageId;
+
+    input.focus();
+
+    toast("Editing your message ♡");
+}
+
+
+/* =========================================================
+   25. SAVE EDIT
+   ========================================================= */
+
+async function saveEditedMessage() {
+
+    if (!state.editingMessage) {
+        return false;
+    }
+
+    const input =
+        getElement("#messageInput", ".message-input");
+
+    if (!input) {
+        return false;
+    }
+
+    const text =
+        input.value.trim();
+
+    if (!text) {
+        return false;
+    }
+
+    if (text.length > MAX_MESSAGE_LENGTH) {
+        toast(
+            `Messages can only be ${MAX_MESSAGE_LENGTH} characters.`,
+            "warning"
+        );
+
+        return false;
+    }
+
+    const messageId =
+        state.editingMessage;
+
+    const message =
+        state.messages[messageId];
+
+    if (!message) {
+        state.editingMessage = null;
+        return false;
+    }
+
+    try {
+
+        await update(
+            ref(
+                db,
+                `messages/${state.currentRoom}/${messageId}`
+            ),
+            {
+                text,
+                edited: true,
+                editedAt: serverTimestamp()
+            }
+        );
+
+        input.value = "";
+
+        state.editingMessage = null;
+
+        autoResizeTextarea(input);
+
+        toast("Message edited ♡");
+
+        return true;
+
+    } catch (error) {
+
+        console.error(error);
+
+        toast(
+            "Couldn't edit the message.",
+            "error"
+        );
+
+        return false;
+    }
+}
+
+
+/* =========================================================
+   26. REPLY
+   ========================================================= */
+
+function startReply(messageId) {
+
+    const message =
+        state.messages[messageId];
+
+    if (!message) {
+        return;
+    }
+
+    state.replyingTo = {
+        id: messageId,
+        username: message.username,
+        text: message.text
+    };
+
+    renderReplyPreview();
+
+    const input =
+        getElement("#messageInput", ".message-input");
+
+    input?.focus();
+}
+
+function renderReplyPreview() {
+
+    let preview =
+        getElement("#replyPreview");
+
+    if (!preview) {
+        return;
+    }
+
+    if (!state.replyingTo) {
+
+        preview.innerHTML = "";
+
+        preview.classList.add("hidden");
+
+        return;
+    }
+
+    preview.classList.remove("hidden");
+
+    preview.innerHTML = `
+        <div style="
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:10px;
+            padding:8px 10px;
+            margin-bottom:6px;
+            background:var(--soft-bg);
+            border:1px solid var(--border);
+            border-radius:10px;
+            font-size:10px;
+        ">
+            <div>
+                <strong style="color:var(--primary-dark)">
+                    Replying to ${escapeHTML(state.replyingTo.username)}
+                </strong>
+                <div style="
+                    color:var(--text-muted);
+                    margin-top:2px;
+                    overflow:hidden;
+                    white-space:nowrap;
+                    text-overflow:ellipsis;
+                ">
+                    ${escapeHTML(state.replyingTo.text)}
+                </div>
             </div>
 
+            <button
+                type="button"
+                id="cancelReplyButton"
+                style="
+                    width:26px;
+                    height:26px;
+                    border-radius:8px;
+                    background:var(--panel-bg);
+                    color:var(--text-muted);
+                "
+            >
+                ×
+            </button>
+        </div>
+    `;
+
+    $("#cancelReplyButton")?.addEventListener(
+        "click",
+        () => {
+
+            state.replyingTo = null;
+
+            renderReplyPreview();
+        }
+    );
+}
+
+
+/* =========================================================
+   27. RENDER MESSAGES
+   ========================================================= */
+
+function renderMessages() {
+
+    const container =
+        getElement("#messages", ".messages");
+
+    if (!container) {
+        return;
+    }
+
+    const messageArray =
+        Object.entries(state.messages)
+            .map(([id, message]) => ({
+                id,
+                ...message
+            }))
+            .sort(
+                (a, b) =>
+                    Number(a.createdAt || 0) -
+                    Number(b.createdAt || 0)
+            );
+
+    if (!messageArray.length) {
+
+        container.innerHTML = `
+            <div class="empty-chat">
+                <div class="empty-chat-decoration">
+                    ✦ ✧ ✦
+                </div>
+
+                <div class="empty-chat-kaomoji">
+                    (｡•́‿•̀｡)
+                </div>
+
+                <h2>
+                    It's quiet here...
+                </h2>
+
+                <p>
+                    Be the first bean to say something ♡
+                </p>
+            </div>
         `;
 
         return;
     }
 
+    container.innerHTML = "";
 
-    const fragment =
-        document.createDocumentFragment();
+    let previousUser = null;
+    let previousTime = null;
 
+    for (const message of messageArray) {
 
-    for (
-        const entry of entries
-    ) {
+        const date =
+            Number(message.createdAt || Date.now());
 
-        fragment.appendChild(
-            createAnimeCard(
-                entry
+        const grouped =
+            previousUser === message.uid &&
+            previousTime &&
+            date - previousTime < 5 * 60 * 1000;
+
+        container.appendChild(
+            createMessageElement(
+                message,
+                grouped
             )
         );
 
+        previousUser = message.uid;
+
+        previousTime = date;
     }
 
+    requestAnimationFrame(() => {
 
-    container.appendChild(
-        fragment
-    );
+        const messageContainer =
+            getElement(
+                "#messageContainer",
+                ".message-container"
+            );
 
+        if (messageContainer) {
+
+            const nearBottom =
+                messageContainer.scrollHeight -
+                messageContainer.scrollTop -
+                messageContainer.clientHeight < 250;
+
+            if (nearBottom) {
+                messageContainer.scrollTop =
+                    messageContainer.scrollHeight;
+            }
+        }
+
+    });
 }
 
 
 /* =========================================================
-   ANIME CARD
-========================================================= */
+   28. CREATE MESSAGE ELEMENT
+   ========================================================= */
 
-function createAnimeCard(
-    entry
-) {
+function createMessageElement(message, grouped) {
 
-    const media =
-        entry.media;
+    const element =
+        document.createElement("article");
 
+    element.className =
+        `message${grouped ? " grouped" : ""}`;
 
-    const title =
-        getBestTitle(
-            media
-        );
+    element.dataset.messageId =
+        message.id;
 
+    const isOwn =
+        message.uid === state.user?.uid;
 
-    const poster =
-        media.coverImage?.large ||
-        media.coverImage?.medium ||
-        "";
+    const canDelete =
+        isOwn || state.isModerator;
 
+    const role =
+        state.users[message.uid]?.role ||
+        "user";
 
-    const episodes =
-        Number(
-            media.episodes
-        ) || 0;
-
-
-    const progress =
-        Number(
-            entry.progress
-        ) || 0;
-
-
-    let percent =
-        0;
-
+    let roleHTML = "";
 
     if (
-        episodes > 0
+        role === "moderator" ||
+        role === "admin" ||
+        role === "owner"
     ) {
 
-        percent =
-            Math.min(
-                100,
-                (
-                    progress /
-                    episodes
-                ) * 100
-            );
-
+        roleHTML = `
+            <span class="message-role">
+                ${escapeHTML(role)}
+            </span>
+        `;
     }
 
+    let replyHTML = "";
 
-    const card =
-        document.createElement(
-            "article"
-        );
+    if (message.replyTo && state.messages[message.replyTo]) {
 
+        const replied =
+            state.messages[message.replyTo];
 
-    card.className =
-        "anime-card";
+        replyHTML = `
+            <div style="
+                margin-bottom:5px;
+                padding:5px 8px;
+                border-left:3px solid var(--primary);
+                background:var(--soft-bg);
+                border-radius:7px;
+                color:var(--text-muted);
+                font-size:9px;
+            ">
+                <strong>
+                    ${escapeHTML(replied.username)}
+                </strong>
+                <br>
+                ${escapeHTML(replied.text)}
+            </div>
+        `;
+    }
 
+    element.innerHTML = `
 
-    card.tabIndex = 0;
+        <div class="message-avatar">
+            <div
+                class="avatar avatar-small"
+                style="
+                    background:
+                    linear-gradient(
+                        135deg,
+                        ${escapeHTML(message.color || state.profile?.color || "#ff79a9")},
+                        ${escapeHTML(message.color || state.profile?.color || "#ff79a9")}aa
+                    );
+                "
+            >
+                ${escapeHTML(getInitials(message.username))}
+            </div>
+        </div>
 
+        <div class="message-body">
 
-    card.setAttribute(
-        "data-anime-id",
-        String(
-            media.id
-        )
-    );
+            <div class="message-meta">
 
+                ${
+                    grouped
+                        ? ""
+                        : `
+                            <span
+                                class="message-username"
+                                data-profile-id="${escapeHTML(message.uid)}"
+                            >
+                                ${escapeHTML(message.username)}
+                            </span>
 
-    card.innerHTML = `
+                            ${roleHTML}
 
-        <div class="poster-wrap">
+                            <span class="message-time">
+                                ${formatTime(message.createdAt)}
+                            </span>
+                        `
+                }
 
-            ${
-                poster
+            </div>
 
-                ?
+            ${replyHTML}
 
-                `
-                <img
-                    src="${escapeAttribute(poster)}"
-                    alt="${escapeAttribute(title)}"
-                    loading="lazy"
-                    decoding="async"
-                >
-                `
+            <div class="message-text">
+                ${escapeHTML(message.text)}
+                ${
+                    message.edited
+                        ? `<span class="message-edited">(edited)</span>`
+                        : ""
+                }
+            </div>
 
-                :
-
-                `
-                <div
-                    class="poster-fallback"
-                    aria-label="${escapeAttribute(title)}"
-                >
-                    ${escapeHTML(title)}
-                </div>
-                `
-            }
-
-
-            <div class="card-overlay">
+            <div class="message-actions">
 
                 <button
-                    class="play-button"
-                    type="button"
-                    aria-label="Open anime"
+                    class="message-action"
+                    data-action="reply"
+                    title="Reply"
                 >
-                    ▶
+                    ↩
+                </button>
+
+                ${
+                    isOwn
+                        ? `
+                            <button
+                                class="message-action"
+                                data-action="edit"
+                                title="Edit"
+                            >
+                                ✎
+                            </button>
+                        `
+                        : ""
+                }
+
+                ${
+                    canDelete
+                        ? `
+                            <button
+                                class="message-action danger"
+                                data-action="delete"
+                                title="Delete"
+                            >
+                                ×
+                            </button>
+                        `
+                        : ""
+                }
+
+                <button
+                    class="message-action"
+                    data-action="report"
+                    title="Report"
+                >
+                    ⚑
                 </button>
 
             </div>
 
         </div>
-
-
-        <div class="card-title">
-            ${escapeHTML(title)}
-        </div>
-
-
-        <div class="card-subtitle">
-
-            ${
-                entry.status ===
-                "CURRENT"
-
-                ?
-
-                `Episode ${progress}${
-                    episodes
-                        ? ` / ${episodes}`
-                        : ""
-                }`
-
-                :
-
-                formatAnimeStatus(
-                    entry.status ||
-                    media.status
-                )
-
-            }
-
-        </div>
-
-
-        ${
-            episodes > 0 &&
-            progress > 0
-
-            ?
-
-            `
-            <div
-                class="progress-bar"
-                aria-label="Anime progress"
-            >
-
-                <div
-                    class="progress-fill"
-                    style="width:${percent}%"
-                ></div>
-
-            </div>
-            `
-
-            :
-
-            ""
-        }
-
     `;
 
-
-    card.addEventListener(
-        "click",
-        () =>
-            openAnime(
-                Number(
-                    media.id
-                )
-            )
-    );
-
-
-    card.addEventListener(
-        "keydown",
-        event => {
-
-            if (
-                event.key ===
-                "Enter"
-            ) {
-
-                openAnime(
-                    Number(
-                        media.id
-                    )
-                );
-
-            }
-
-        }
-    );
-
-
-    return card;
+    return element;
 }
 
 
 /* =========================================================
-   OPEN ANIME
-========================================================= */
+   29. ONLINE USERS
+   ========================================================= */
 
-async function openAnime(
-    animeId
-) {
-
-    showToast(
-        "Loading anime..."
-    );
-
-
-    /*
-     * Find our existing list entry.
-     */
-
-    let entry =
-        state.anime.find(
-            item =>
-                Number(
-                    item.media.id
-                ) ===
-                Number(
-                    animeId
-                )
-        );
-
-
-    try {
-
-        /*
-         * Request fresh metadata from AniList.
-         */
-
-        const data =
-            await anilistRequest(
-
-                `
-
-                query (
-                    $id: Int!
-                ) {
-
-                    Media(
-                        id: $id
-                        type: ANIME
-                    ) {
-
-                        id
-
-                        title {
-                            userPreferred
-                            romaji
-                            english
-                            native
-                        }
-
-                        description(
-                            asHtml: false
-                        )
-
-                        episodes
-
-                        duration
-
-                        status
-
-                        format
-
-                        season
-
-                        seasonYear
-
-                        averageScore
-
-                        meanScore
-
-                        genres
-
-                        countryOfOrigin
-
-                        isAdult
-
-                        coverImage {
-                            extraLarge
-                            large
-                            medium
-                        }
-
-                        bannerImage
-
-                        siteUrl
-
-                        nextAiringEpisode {
-                            id
-                            episode
-                            airingAt
-                            timeUntilAiring
-                        }
-
-                        startDate {
-                            year
-                            month
-                            day
-                        }
-
-                        endDate {
-                            year
-                            month
-                            day
-                        }
-
-                    }
-
-                }
-
-                `,
-
-                {
-                    id:
-                        Number(
-                            animeId
-                        )
-                }
-
-            );
-
-
-        if (
-            !data ||
-            !data.Media
-        ) {
-
-            throw new Error(
-                "AniList could not find that anime."
-            );
-
-        }
-
-
-        /*
-         * If it wasn't already in the user's list,
-         * make a temporary entry so the modal still works.
-         */
-
-        if (!entry) {
-
-            entry = {
-
-                id: null,
-
-                status: null,
-
-                progress: 0,
-
-                score: 0,
-
-                updatedAt: 0,
-
-                media:
-                    data.Media
-
-            };
-
-        } else {
-
-            entry = {
-                ...entry,
-                media:
-                    data.Media
-            };
-
-        }
-
-
-        state.currentAnime =
-            entry;
-
-
-        renderAnimeModal(
-            entry
-        );
-
-
-        showToast(
-            "Anime loaded."
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "Anime detail error:",
-            error
-        );
-
-
-        showToast(
-            error.message ||
-            "Could not load anime."
-        );
-
-    }
-
-}
-
-
-/* =========================================================
-   MODAL RENDER
-========================================================= */
-
-function renderAnimeModal(
-    entry
-) {
-
-    const media =
-        entry.media;
-
-
-    const title =
-        getBestTitle(
-            media
-        );
-
-
-    const englishTitle =
-        media.title?.english;
-
-
-    /*
-     * Title
-     */
-
-    $("#modal-title").textContent =
-        title;
-
-
-    /*
-     * Subtitle
-     */
-
-    if (
-        englishTitle &&
-        englishTitle !== title
-    ) {
-
-        $("#modal-subtitle").textContent =
-            englishTitle;
-
-    } else {
-
-        $("#modal-subtitle").textContent =
-            media.title?.romaji ||
-            media.title?.native ||
-            "";
-
-    }
-
-
-    /*
-     * Status
-     */
-
-    $("#modal-status").textContent =
-        formatAnimeStatus(
-            entry.status ||
-            media.status
-        );
-
-
-    /*
-     * Description
-     */
-
-    $("#modal-description").textContent =
-        cleanDescription(
-            media.description
-        );
-
-
-    /*
-     * Metadata
-     */
-
-    const metadata = [];
-
-
-    if (
-        media.format
-    ) {
-
-        metadata.push(
-            formatAnimeStatus(
-                media.format
-            )
-        );
-
-    }
-
-
-    if (
-        media.episodes
-    ) {
-
-        metadata.push(
-            `${media.episodes} episodes`
-        );
-
-    }
-
-
-    if (
-        media.duration
-    ) {
-
-        metadata.push(
-            `${media.duration} min`
-        );
-
-    }
-
-
-    if (
-        media.seasonYear
-    ) {
-
-        metadata.push(
-            String(
-                media.seasonYear
-            )
-        );
-
-    }
-
-
-    if (
-        Number.isFinite(
-            media.averageScore
-        ) &&
-        media.averageScore > 0
-    ) {
-
-        metadata.push(
-            `★ ${(media.averageScore / 10).toFixed(1)}`
-        );
-
-    }
-
-
-    $("#modal-meta").innerHTML =
-        metadata
-            .map(
-                item =>
-                    `
-                    <span class="meta-item">
-                        ${escapeHTML(item)}
-                    </span>
-                    `
-            )
-            .join("");
-
-
-    /*
-     * Genres
-     */
-
-    $("#modal-genres").innerHTML =
-        (media.genres || [])
-            .map(
-                genre =>
-                    `
-                    <span class="genre">
-                        ${escapeHTML(genre)}
-                    </span>
-                    `
-            )
-            .join("");
-
-
-    /*
-     * Poster
-     */
-
-    const poster =
-        media.coverImage?.extraLarge ||
-        media.coverImage?.large ||
-        media.coverImage?.medium;
-
-
-    if (poster) {
-
-        $("#modal-poster").src =
-            poster;
-
-        $("#modal-poster").alt =
-            title;
-
-    } else {
-
-        $("#modal-poster").removeAttribute(
-            "src"
-        );
-
-        $("#modal-poster").alt =
-            "";
-
-    }
-
-
-    /*
-     * Banner
-     */
-
-    const banner =
-        media.bannerImage ||
-        media.coverImage?.extraLarge ||
-        media.coverImage?.large;
-
-
-    if (banner) {
-
-        $("#modal-banner").style.backgroundImage =
-            `url("${escapeAttribute(banner)}")`;
-
-    } else {
-
-        $("#modal-banner").style.backgroundImage =
-            "none";
-
-    }
-
-
-    /*
-     * User progress
-     */
-
-    renderModalProgress(
-        entry
-    );
-
-
-    /*
-     * Open AniList button.
-     */
-
-    $("#anilist-button").onclick =
-        () => {
-
-            if (
-                media.siteUrl
-            ) {
-
-                window.open(
-                    media.siteUrl,
-                    "_blank",
-                    "noopener,noreferrer"
-                );
-
-            }
-
-        };
-
-
-    /*
-     * Continue Watching.
-     */
-
-    $("#continue-button").onclick =
-        () => {
-
-            saveContinueWatching(
-                media.id,
-                entry
-            );
-
-
-            renderContinueWatching();
-
-
-            showToast(
-                `${title} added to Continue Watching.`
-            );
-
-        };
-
-
-    /*
-     * Show modal.
-     */
-
-    $("#anime-modal")
-        .classList
-        .remove(
-            "hidden"
-        );
-
-}
-
-
-/* =========================================================
-   MODAL PROGRESS
-========================================================= */
-
-function renderModalProgress(
-    entry
-) {
-
-    const media =
-        entry.media;
-
-
-    const progress =
-        Number(
-            entry.progress
-        ) || 0;
-
-
-    const episodes =
-        Number(
-            media.episodes
-        ) || 0;
-
-
-    if (
-        !episodes
-    ) {
-
-        $("#modal-progress").innerHTML =
-            "";
-
-        return;
-    }
-
-
-    const percentage =
-        Math.min(
-            100,
-            (
-                progress /
-                episodes
-            ) * 100
-        );
-
-
-    $("#modal-progress").innerHTML = `
-
-        <div class="card-subtitle">
-
-            Progress:
-            <strong>
-                ${progress}
-            </strong>
-            /
-            <strong>
-                ${episodes}
-            </strong>
-
-        </div>
-
-
-        <div class="progress-bar">
-
-            <div
-                class="progress-fill"
-                style="width:${percentage}%"
-            ></div>
-
-        </div>
-
-    `;
-
-}
-
-
-/* =========================================================
-   CONTINUE WATCHING
-========================================================= */
-
-function getContinueWatching() {
-
-    try {
-
-        const raw =
-            localStorage.getItem(
-                CONFIG.CONTINUE_KEY
-            );
-
-
-        if (!raw) {
-            return [];
-        }
-
-
-        const parsed =
-            JSON.parse(
-                raw
-            );
-
-
-        return Array.isArray(
-            parsed
-        )
-            ? parsed
-            : [];
-
-    } catch {
-
-        return [];
-
-    }
-
-}
-
-
-function saveContinueWatching(
-    mediaId,
-    entry
-) {
-
-    const list =
-        getContinueWatching();
-
-
-    const id =
-        Number(
-            mediaId
-        );
-
-
-    const existing =
-        list.find(
-            item =>
-                Number(
-                    item.mediaId
-                ) ===
-                id
-        );
-
-
-    if (existing) {
-
-        existing.episode =
-            Number(
-                entry.progress
-            ) || 0;
-
-
-        existing.updatedAt =
-            Date.now();
-
-    } else {
-
-        list.unshift({
-
-            mediaId:
-                id,
-
-            episode:
-                Number(
-                    entry.progress
-                ) || 0,
-
-            timestamp:
-                0,
-
-            updatedAt:
-                Date.now()
-
-        });
-
-    }
-
-
-    /*
-     * Keep this manageable.
-     */
-
-    const trimmed =
-        list
-            .sort(
-                (a, b) =>
-                    (b.updatedAt || 0) -
-                    (a.updatedAt || 0)
-            )
-            .slice(
-                0,
-                50
-            );
-
-
-    localStorage.setItem(
-        CONFIG.CONTINUE_KEY,
-        JSON.stringify(
-            trimmed
-        )
-    );
-
-}
-
-
-/* =========================================================
-   RENDER CONTINUE WATCHING
-========================================================= */
-
-function renderContinueWatching() {
+function renderOnlineUsers() {
 
     const container =
-        $("#continue-grid");
-
+        getElement(
+            "#onlineUsers",
+            ".online-users"
+        );
 
     if (!container) {
         return;
     }
 
+    const presence =
+        state.presence || {};
 
-    const saved =
-        getContinueWatching();
+    const users =
+        Object.values(state.users || {})
+            .filter(user => {
+                return presence[user.uid]?.online === true ||
+                    user.uid === state.user?.uid;
+            })
+            .sort((a, b) => {
 
+                if (a.uid === state.user?.uid) return -1;
 
-    const entries =
-        saved
-            .map(
-                savedEntry => {
+                if (b.uid === state.user?.uid) return 1;
 
-                    const entry =
-                        state.anime.find(
-                            item =>
-                                Number(
-                                    item.media.id
-                                ) ===
-                                Number(
-                                    savedEntry.mediaId
-                                )
-                        );
+                return String(a.username)
+                    .localeCompare(String(b.username));
+            });
 
+    if (!users.length) {
 
-                    if (!entry) {
+        container.innerHTML = `
+            <div class="moderation-empty">
+                Nobody is here yet ♡
+            </div>
+        `;
 
-                        return null;
+        updateOnlineCount(0);
 
-                    }
+        return;
+    }
 
+    container.innerHTML = "";
 
-                    return {
+    for (const user of users) {
 
-                        ...entry,
+        const element =
+            document.createElement("button");
 
-                        progress:
-                            savedEntry.episode,
+        element.type = "button";
 
-                        resumeTimestamp:
-                            savedEntry.timestamp
+        element.className = "online-user";
 
-                    };
+        element.dataset.uid = user.uid;
 
-                }
-            )
-            .filter(Boolean)
-            .slice(
-                0,
-                6
-            );
+        const role =
+            user.role &&
+            user.role !== "user"
+                ? ` · ${user.role}`
+                : "";
 
+        element.innerHTML = `
 
-    renderAnimeGrid(
-        "#continue-grid",
-        entries
-    );
+            <div
+                class="avatar avatar-small"
+                style="
+                    background:
+                    linear-gradient(
+                        135deg,
+                        ${escapeHTML(user.color || "#ff79a9")},
+                        ${escapeHTML(user.color || "#ff79a9")}aa
+                    );
+                "
+            >
+                ${escapeHTML(getInitials(user.username))}
+            </div>
 
+            <div class="online-user-info">
+
+                <span class="online-user-name">
+                    ${escapeHTML(user.username)}
+                </span>
+
+                <span class="online-user-status">
+                    <span class="status-dot"></span>
+                    online${escapeHTML(role)}
+                </span>
+
+            </div>
+        `;
+
+        container.appendChild(element);
+    }
+
+    updateOnlineCount(users.length);
+}
+
+function updateOnlineCount(count) {
+
+    const element =
+        getElement("#onlineCount", ".online-count");
+
+    if (element) {
+        element.textContent = count;
+    }
 }
 
 
 /* =========================================================
-   SEARCH
-========================================================= */
+   30. CURRENT USER
+   ========================================================= */
 
-function setupSearch() {
+function renderCurrentUser() {
 
-    const input =
-        $("#search-input");
+    if (!state.profile) {
+        return;
+    }
 
+    const usernameElements =
+        $$(
+            "[data-current-username], #currentUsername, .sidebar-username"
+        );
 
-    input.addEventListener(
-        "input",
-        event => {
+    usernameElements.forEach(element => {
+        element.textContent =
+            state.profile.username;
+    });
 
-            clearTimeout(
-                state.searchTimer
-            );
+    const avatarElements =
+        $$(
+            "[data-current-avatar], #currentAvatar, .sidebar-avatar"
+        );
 
+    avatarElements.forEach(element => {
 
-            const query =
-                event.target.value
-                    .trim();
+        element.textContent =
+            getInitials(state.profile.username);
 
+        element.style.background =
+            `linear-gradient(
+                135deg,
+                ${state.profile.color},
+                ${state.profile.color}aa
+            )`;
+    });
 
-            if (!query) {
-
-                navigate(
-                    "home"
-                );
-
-                return;
-            }
-
-
-            state.searchTimer =
-                setTimeout(
-                    () =>
-                        searchAniList(
-                            query
-                        ),
-                    350
-                );
-
-        }
+    document.documentElement.style.setProperty(
+        "--user-color",
+        state.profile.color
     );
-
 }
 
 
-async function searchAniList(
-    query
-) {
+/* =========================================================
+   31. ROOMS
+   ========================================================= */
 
-    showView(
-        "search"
-    );
+function switchRoom(roomId) {
+
+    if (!ROOM_DATA[roomId]) {
+        return;
+    }
+
+    state.currentRoom = roomId;
+
+    state.currentRoomName =
+        ROOM_DATA[roomId].name;
+
+    $$(".room-button").forEach(button => {
+
+        button.classList.toggle(
+            "active",
+            button.dataset.room === roomId
+        );
+    });
+
+    const roomName =
+        getElement(
+            "#chatRoomName",
+            ".chat-room-name"
+        );
+
+    const roomDescription =
+        getElement(
+            "#chatRoomDescription",
+            ".chat-room-description"
+        );
+
+    const roomIcon =
+        getElement(
+            "#chatRoomIcon",
+            ".chat-room-icon"
+        );
+
+    if (roomName) {
+        roomName.textContent =
+            ROOM_DATA[roomId].name;
+    }
+
+    if (roomDescription) {
+        roomDescription.textContent =
+            ROOM_DATA[roomId].description;
+    }
+
+    if (roomIcon) {
+        roomIcon.textContent =
+            ROOM_DATA[roomId].icon;
+    }
+
+    listenToRoom(roomId);
+
+    closeSidebarMobile();
+}
 
 
-    $("#search-title").textContent =
-        `Search results for "${query}"`;
+/* =========================================================
+   32. TYPING
+   ========================================================= */
 
+let typingTimer = null;
 
-    $("#search-grid").innerHTML = `
+function handleTyping() {
 
-        <div class="empty-state">
+    if (!state.user) {
+        return;
+    }
 
-            <p>
-                Searching AniList...
-            </p>
+    setTyping(true);
 
-        </div>
+    clearTimeout(typingTimer);
 
-    `;
+    typingTimer = setTimeout(() => {
 
+        stopTyping();
+
+    }, TYPING_TIMEOUT);
+}
+
+async function setTyping(active) {
+
+    if (!state.user) {
+        return;
+    }
+
+    const typingRef =
+        ref(
+            db,
+            `typing/${state.currentRoom}/${state.user.uid}`
+        );
+
+    if (!active) {
+
+        try {
+            await remove(typingRef);
+        } catch {
+            /* ignored */
+        }
+
+        return;
+    }
 
     try {
 
-        const data =
-            await anilistRequest(
+        await set(typingRef, {
+            username: state.profile.username,
+            timestamp: serverTimestamp()
+        });
 
-                `
+        onDisconnect(typingRef).remove();
 
-                query (
-                    $search: String!
-                ) {
+    } catch {
+        /* ignored */
+    }
+}
 
-                    Page(
-                        page: 1
-                        perPage: 30
-                    ) {
+function stopTyping() {
 
-                        pageInfo {
+    clearTimeout(typingTimer);
 
-                            total
-
-                            currentPage
-
-                            lastPage
-
-                            hasNextPage
-
-                        }
-
-                        media(
-                            search: $search
-                            type: ANIME
-                            sort: SEARCH_MATCH
-                        ) {
-
-                            id
-
-                            title {
-                                userPreferred
-                                romaji
-                                english
-                                native
-                            }
-
-                            description(
-                                asHtml: false
-                            )
-
-                            episodes
-
-                            duration
-
-                            status
-
-                            format
-
-                            seasonYear
-
-                            averageScore
-
-                            meanScore
-
-                            genres
-
-                            coverImage {
-                                extraLarge
-                                large
-                                medium
-                            }
-
-                            bannerImage
-
-                            siteUrl
-
-                            nextAiringEpisode {
-                                episode
-                                airingAt
-                            }
-
-                        }
-
-                    }
-
-                }
-
-                `,
-
-                {
-                    search:
-                        query
-                }
-
-            );
+    setTyping(false);
+}
 
 
-        const media =
-            data?.Page?.media ||
-            [];
+/* =========================================================
+   33. TYPING LISTENER
+   ========================================================= */
 
+function listenToTyping() {
 
-        const entries =
-            media.map(
-                mediaItem => {
+    if (state.listeners.typing) {
+        state.listeners.typing();
+    }
 
-                    const libraryEntry =
-                        state.anime.find(
-                            entry =>
-                                Number(
-                                    entry.media.id
-                                ) ===
-                                Number(
-                                    mediaItem.id
-                                )
-                        );
-
-
-                    if (
-                        libraryEntry
-                    ) {
-
-                        return {
-
-                            ...libraryEntry,
-
-                            media:
-                                mediaItem
-
-                        };
-
-                    }
-
-
-                    return {
-
-                        id: null,
-
-                        status: null,
-
-                        progress: 0,
-
-                        score: 0,
-
-                        updatedAt: 0,
-
-                        media:
-                            mediaItem
-
-                    };
-
-                }
-            );
-
-
-        renderAnimeGrid(
-            "#search-grid",
-            entries
+    const typingRef =
+        ref(
+            db,
+            `typing/${state.currentRoom}`
         );
 
+    state.listeners.typing =
+        onValue(typingRef, snapshot => {
 
-        if (!entries.length) {
+            state.typingUsers =
+                snapshot.val() || {};
 
-            $("#search-grid").innerHTML = `
+            renderTyping();
+        });
+}
 
-                <div class="empty-state">
+function renderTyping() {
 
-                    <p>
-                        No anime found.
-                    </p>
+    const element =
+        getElement(
+            "#typingIndicator",
+            ".typing-indicator"
+        );
 
-                </div>
+    if (!element) {
+        return;
+    }
 
-            `;
+    const users =
+        Object.entries(state.typingUsers || {})
+            .filter(([uid]) =>
+                uid !== state.user?.uid
+            )
+            .map(([, data]) =>
+                data.username
+            );
 
+    if (!users.length) {
+
+        element.innerHTML = "";
+
+        element.classList.add("hidden");
+
+        return;
+    }
+
+    let text = "";
+
+    if (users.length === 1) {
+        text =
+            `${escapeHTML(users[0])} is typing`;
+    } else if (users.length === 2) {
+        text =
+            `${escapeHTML(users[0])} and ${escapeHTML(users[1])} are typing`;
+    } else {
+        text =
+            `${users.length} people are typing`;
+    }
+
+    element.innerHTML = `
+        <span>${text}</span>
+
+        <span class="typing-dots">
+            <i></i>
+            <i></i>
+            <i></i>
+        </span>
+    `;
+
+    element.classList.remove("hidden");
+}
+
+
+/* =========================================================
+   34. REPORTING
+   ========================================================= */
+
+function openReport(messageId) {
+
+    const message =
+        state.messages[messageId];
+
+    if (!message) {
+        return;
+    }
+
+    state.reportTarget = {
+        messageId,
+        uid: message.uid,
+        username: message.username,
+        text: message.text
+    };
+
+    const target =
+        getElement("#reportTargetText");
+
+    if (target) {
+
+        target.textContent =
+            `${message.username}: ${message.text}`;
+    }
+
+    openModal("reportModal");
+}
+
+async function submitReport() {
+
+    if (!state.user || !state.reportTarget) {
+        return;
+    }
+
+    const reasonElement =
+        getElement(
+            'input[name="reportReason"]:checked'
+        );
+
+    const detailsElement =
+        getElement("#reportDetails");
+
+    const reason =
+        reasonElement?.value ||
+        "other";
+
+    const details =
+        detailsElement?.value.trim() ||
+        "";
+
+    const reportRef =
+        push(ref(db, "reports"));
+
+    const report = {
+
+        id: reportRef.key,
+
+        reporterUid:
+            state.user.uid,
+
+        reporterUsername:
+            state.profile.username,
+
+        targetUid:
+            state.reportTarget.uid,
+
+        targetUsername:
+            state.reportTarget.username,
+
+        messageId:
+            state.reportTarget.messageId,
+
+        messageText:
+            state.reportTarget.text,
+
+        reason,
+
+        details,
+
+        room:
+            state.currentRoom,
+
+        createdAt:
+            serverTimestamp(),
+
+        status:
+            "open"
+
+    };
+
+    try {
+
+        await set(reportRef, report);
+
+        closeModal("reportModal");
+
+        toast(
+            "Report submitted. Thank you for keeping the chat safe ♡",
+            "success"
+        );
+
+        state.reportTarget = null;
+
+        if (detailsElement) {
+            detailsElement.value = "";
         }
-
 
     } catch (error) {
 
-        console.error(
-            "AniList search failed:",
-            error
+        console.error(error);
+
+        toast(
+            "Couldn't submit your report.",
+            "error"
+        );
+    }
+}
+
+
+/* =========================================================
+   35. MODERATION
+   ========================================================= */
+
+async function banUser(uid, duration = "permanent") {
+
+    if (!state.isModerator) {
+        toast(
+            "You don't have permission to do that.",
+            "error"
         );
 
+        return;
+    }
 
-        $("#search-grid").innerHTML = `
+    if (uid === state.user.uid) {
+        toast(
+            "You can't ban yourself.",
+            "warning"
+        );
 
-            <div class="empty-state">
+        return;
+    }
 
-                <p>
-                    Search failed.
-                </p>
+    const user =
+        state.users[uid];
 
-                <small>
-                    ${escapeHTML(
-                        error.message
-                    )}
-                </small>
+    if (!user) {
+        return;
+    }
+
+    if (
+        user.role === "owner" &&
+        !state.isOwner
+    ) {
+
+        toast(
+            "Only the owner can moderate the owner.",
+            "error"
+        );
+
+        return;
+    }
+
+    let expiresAt = null;
+
+    if (duration === "1h") {
+        expiresAt =
+            Date.now() + 60 * 60 * 1000;
+    }
+
+    if (duration === "1d") {
+        expiresAt =
+            Date.now() + 24 * 60 * 60 * 1000;
+    }
+
+    if (duration === "7d") {
+        expiresAt =
+            Date.now() + 7 * 24 * 60 * 60 * 1000;
+    }
+
+    const reason =
+        prompt(
+            `Reason for banning ${user.username}:`
+        );
+
+    if (reason === null) {
+        return;
+    }
+
+    const banData = {
+
+        uid,
+
+        username:
+            user.username,
+
+        reason:
+            reason.trim() ||
+            "Rule violation",
+
+        createdAt:
+            serverTimestamp(),
+
+        createdBy:
+            state.user.uid,
+
+        createdByUsername:
+            state.profile.username,
+
+        permanent:
+            duration === "permanent",
+
+        expiresAt
+
+    };
+
+    try {
+
+        await set(
+            ref(db, `bans/${uid}`),
+            banData
+        );
+
+        await createModerationLog(
+            "ban",
+            uid,
+            `Banned ${user.username}`
+        );
+
+        toast(
+            `${user.username} has been banned.`,
+            "success"
+        );
+
+        renderModerationUsers();
+
+    } catch (error) {
+
+        console.error(error);
+
+        toast(
+            "Couldn't ban that user.",
+            "error"
+        );
+    }
+}
+
+
+/* =========================================================
+   36. UNBAN
+   ========================================================= */
+
+async function unbanUser(uid) {
+
+    if (!state.isModerator) {
+        return;
+    }
+
+    const user =
+        state.users[uid];
+
+    try {
+
+        await remove(
+            ref(db, `bans/${uid}`)
+        );
+
+        await createModerationLog(
+            "unban",
+            uid,
+            `Unbanned ${user?.username || uid}`
+        );
+
+        toast(
+            "User unbanned ♡",
+            "success"
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        toast(
+            "Couldn't unban that user.",
+            "error"
+        );
+    }
+}
+
+
+/* =========================================================
+   37. ROLE MANAGEMENT
+   ========================================================= */
+
+async function changeUserRole(uid, role) {
+
+    if (!state.isOwner) {
+
+        toast(
+            "Only the owner can change staff roles.",
+            "error"
+        );
+
+        return;
+    }
+
+    const user =
+        state.users[uid];
+
+    if (!user) {
+        return;
+    }
+
+    if (uid === state.user.uid) {
+
+        toast(
+            "You can't change your own role.",
+            "warning"
+        );
+
+        return;
+    }
+
+    try {
+
+        await update(
+            ref(db, `users/${uid}`),
+            {
+                role
+            }
+        );
+
+        await createModerationLog(
+            "role_change",
+            uid,
+            `Changed ${user.username}'s role to ${role}`
+        );
+
+        toast(
+            `${user.username} is now ${role}.`,
+            "success"
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        toast(
+            "Couldn't change the user's role.",
+            "error"
+        );
+    }
+}
+
+
+/* =========================================================
+   38. MODERATION LOG
+   ========================================================= */
+
+async function createModerationLog(
+    action,
+    targetUid,
+    description
+) {
+
+    if (!state.user) {
+        return;
+    }
+
+    const logRef =
+        push(ref(db, "moderationLogs"));
+
+    await set(logRef, {
+
+        action,
+
+        targetUid,
+
+        description,
+
+        moderatorUid:
+            state.user.uid,
+
+        moderatorUsername:
+            state.profile.username,
+
+        createdAt:
+            serverTimestamp()
+
+    });
+}
+
+
+/* =========================================================
+   39. REPORT STATUS
+   ========================================================= */
+
+async function resolveReport(reportId) {
+
+    if (!state.isModerator) {
+        return;
+    }
+
+    try {
+
+        await update(
+            ref(db, `reports/${reportId}`),
+            {
+                status: "resolved",
+
+                resolvedBy:
+                    state.user.uid,
+
+                resolvedAt:
+                    serverTimestamp()
+            }
+        );
+
+        toast(
+            "Report marked as resolved.",
+            "success"
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        toast(
+            "Couldn't update the report.",
+            "error"
+        );
+    }
+}
+
+
+/* =========================================================
+   40. MODERATION UI
+   ========================================================= */
+
+function renderReports() {
+
+    const container =
+        getElement("#reportsList");
+
+    if (!container) {
+        return;
+    }
+
+    const reports =
+        Object.entries(state.reports || {})
+            .map(([id, report]) => ({
+                id,
+                ...report
+            }))
+            .filter(report =>
+                report.status !== "resolved"
+            )
+            .sort(
+                (a, b) =>
+                    Number(b.createdAt || 0) -
+                    Number(a.createdAt || 0)
+            );
+
+    if (!reports.length) {
+
+        container.innerHTML = `
+            <div class="moderation-empty">
+                No open reports ♡
+            </div>
+        `;
+
+        return;
+    }
+
+    container.innerHTML = "";
+
+    for (const report of reports) {
+
+        const element =
+            document.createElement("div");
+
+        element.className = "report-card";
+
+        element.innerHTML = `
+
+            <div class="report-card-header">
+
+                <span class="report-reason">
+                    ${escapeHTML(report.reason || "other")}
+                </span>
+
+                <span class="report-time">
+                    ${formatTime(report.createdAt)}
+                </span>
 
             </div>
 
+            <div class="report-card-body">
+
+                <strong>
+                    ${escapeHTML(report.targetUsername)}
+                </strong>
+
+                <br>
+
+                Reported by
+                ${escapeHTML(report.reporterUsername)}
+
+                <br><br>
+
+                "${escapeHTML(report.messageText)}"
+
+                ${
+                    report.details
+                        ? `
+                            <br><br>
+                            <strong>
+                                Details:
+                            </strong>
+                            ${escapeHTML(report.details)}
+                        `
+                        : ""
+                }
+
+            </div>
+
+            <div class="report-card-actions">
+
+                <button
+                    data-report-action="ban"
+                    data-report-user="${escapeHTML(report.targetUid)}"
+                >
+                    Ban
+                </button>
+
+                <button
+                    data-report-action="resolve"
+                    data-report-id="${escapeHTML(report.id)}"
+                >
+                    Resolve
+                </button>
+
+            </div>
         `;
 
+        container.appendChild(element);
     }
-
 }
 
 
 /* =========================================================
-   NAVIGATION
-========================================================= */
+   41. MODERATION USERS
+   ========================================================= */
 
-function setupNavigation() {
+function renderModerationUsers() {
 
-    $$(".nav-item").forEach(
-        button => {
+    const container =
+        getElement("#moderationUsersList");
 
-            button.addEventListener(
-                "click",
-                () => {
+    if (!container) {
+        return;
+    }
 
-                    navigate(
-                        button.dataset.view
+    const users =
+        Object.values(state.users || {});
+
+    if (!users.length) {
+
+        container.innerHTML = `
+            <div class="moderation-empty">
+                No users found.
+            </div>
+        `;
+
+        return;
+    }
+
+    container.innerHTML = "";
+
+    for (const user of users) {
+
+        const banned =
+            Boolean(state.bannedUsers[user.uid]);
+
+        const element =
+            document.createElement("div");
+
+        element.className =
+            "moderation-user-card";
+
+        element.innerHTML = `
+
+            <div
+                class="avatar avatar-small"
+                style="
+                    background:
+                    linear-gradient(
+                        135deg,
+                        ${escapeHTML(user.color || "#ff79a9")},
+                        ${escapeHTML(user.color || "#ff79a9")}aa
                     );
+                "
+            >
+                ${escapeHTML(getInitials(user.username))}
+            </div>
 
-                    closeMobileSidebar();
+            <div class="moderation-user-information">
 
+                <strong>
+                    ${escapeHTML(user.username)}
+                </strong>
+
+                <span>
+                    ${escapeHTML(user.role || "user")}
+                    ${banned ? " · BANNED" : ""}
+                </span>
+
+            </div>
+
+            <div class="moderation-user-actions">
+
+                ${
+                    banned
+                        ? `
+                            <button
+                                data-unban="${escapeHTML(user.uid)}"
+                            >
+                                Unban
+                            </button>
+                        `
+                        : `
+                            <button
+                                data-ban="${escapeHTML(user.uid)}"
+                            >
+                                Ban
+                            </button>
+                        `
                 }
-            );
 
-        }
-    );
-
-
-    $$(".view-all").forEach(
-        button => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    navigate(
-                        button.dataset.view
-                    );
-
+                ${
+                    state.isOwner &&
+                    user.uid !== state.user.uid
+                        ? `
+                            <button
+                                data-promote="${escapeHTML(user.uid)}"
+                            >
+                                Role
+                            </button>
+                        `
+                        : ""
                 }
-            );
 
-        }
-    );
+            </div>
+        `;
 
-}
-
-
-function navigate(
-    view
-) {
-
-    state.currentView =
-        view;
-
-
-    if (
-        view === "home"
-    ) {
-
-        showView(
-            "home"
-        );
-
-        renderHome();
-
-        return;
+        container.appendChild(element);
     }
-
-
-    if (
-        view === "search"
-    ) {
-
-        showView(
-            "search"
-        );
-
-        return;
-    }
-
-
-    if (
-        LIBRARY_CONFIG[
-            view
-        ]
-    ) {
-
-        showView(
-            "library"
-        );
-
-        renderLibrary(
-            view
-        );
-
-        return;
-    }
-
 }
 
 
 /* =========================================================
-   SHOW VIEW
-========================================================= */
+   42. MODERATION LOGS
+   ========================================================= */
 
-function showView(
-    viewName
-) {
+function renderModerationLogs() {
 
-    $$(".view").forEach(
-        view => {
+    const container =
+        getElement("#moderationLogsList");
 
-            view.classList.remove(
-                "active-view"
-            );
-
-        }
-    );
-
-
-    const view =
-        $(`#${viewName}-view`);
-
-
-    if (view) {
-
-        view.classList.add(
-            "active-view"
-        );
-
+    if (!container) {
+        return;
     }
 
+    const logs =
+        Object.values(state.moderationLogs || {})
+            .sort(
+                (a, b) =>
+                    Number(b.createdAt || 0) -
+                    Number(a.createdAt || 0)
+            )
+            .slice(0, 100);
 
-    $$(".nav-item").forEach(
-        button => {
+    if (!logs.length) {
 
-            button.classList.toggle(
-                "active",
-                button.dataset.view ===
-                state.currentView
-            );
+        container.innerHTML = `
+            <div class="moderation-empty">
+                No moderation actions yet.
+            </div>
+        `;
 
-        }
-    );
+        return;
+    }
 
+    container.innerHTML = "";
+
+    for (const log of logs) {
+
+        const element =
+            document.createElement("div");
+
+        element.className =
+            "moderation-log";
+
+        element.innerHTML = `
+            <strong>
+                ${escapeHTML(log.moderatorUsername || "Staff")}
+            </strong>
+
+            ${escapeHTML(log.description || log.action)}
+
+            <div style="
+                margin-top:3px;
+                color:var(--text-muted);
+                font-size:8px;
+            ">
+                ${formatTime(log.createdAt)}
+            </div>
+        `;
+
+        container.appendChild(element);
+    }
 }
 
 
 /* =========================================================
-   BUTTONS
-========================================================= */
+   43. PROFILE EDITING
+   ========================================================= */
 
-function setupButtons() {
+async function saveProfile() {
 
-    $("#auth-button").addEventListener(
-        "click",
+    if (!state.user || !state.profile) {
+        return;
+    }
+
+    const usernameInput =
+        getElement("#profileUsername");
+
+    const bioInput =
+        getElement("#profileBio");
+
+    const username =
+        sanitizeUsername(
+            usernameInput?.value ||
+            state.profile.username
+        );
+
+    const bio =
+        String(
+            bioInput?.value ||
+            state.profile.bio ||
+            ""
+        )
+        .trim()
+        .slice(0, 120);
+
+    if (!isValidUsername(username)) {
+
+        toast(
+            "Username must be at least 2 characters.",
+            "warning"
+        );
+
+        return;
+    }
+
+    const updates = {
+
+        username,
+
+        bio,
+
+        color:
+            state.selectedColor ||
+            state.profile.color
+
+    };
+
+    try {
+
+        await update(
+            ref(db, `users/${state.user.uid}`),
+            updates
+        );
+
+        state.profile = {
+            ...state.profile,
+            ...updates
+        };
+
+        renderCurrentUser();
+
+        closeModal("profileModal");
+
+        toast(
+            "Profile updated ♡",
+            "success"
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        toast(
+            "Couldn't save your profile.",
+            "error"
+        );
+    }
+}
+
+
+/* =========================================================
+   44. PROFILE MODAL
+   ========================================================= */
+
+function openProfileEditor() {
+
+    if (!state.profile) {
+        return;
+    }
+
+    const username =
+        getElement("#profileUsername");
+
+    const bio =
+        getElement("#profileBio");
+
+    if (username) {
+        username.value =
+            state.profile.username;
+    }
+
+    if (bio) {
+        bio.value =
+            state.profile.bio || "";
+    }
+
+    state.selectedColor =
+        state.profile.color;
+
+    renderColorPicker();
+
+    openModal("profileModal");
+}
+
+function renderColorPicker() {
+
+    const container =
+        getElement("#colorPicker");
+
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = "";
+
+    for (const color of COLORS) {
+
+        const button =
+            document.createElement("button");
+
+        button.type = "button";
+
+        button.className =
+            "color-option";
+
+        if (color === state.selectedColor) {
+            button.classList.add("selected");
+        }
+
+        button.style.setProperty(
+            "--color",
+            color
+        );
+
+        button.dataset.color = color;
+
+        container.appendChild(button);
+    }
+}
+
+
+/* =========================================================
+   45. VIEW USER PROFILE
+   ========================================================= */
+
+function openUserProfile(uid) {
+
+    const user =
+        state.users[uid];
+
+    if (!user) {
+        return;
+    }
+
+    const modal =
+        getElement("#userProfileModal");
+
+    if (!modal) {
+        return;
+    }
+
+    const avatar =
+        getElement(
+            "#viewUserAvatar",
+            ".view-user-avatar"
+        );
+
+    const username =
+        getElement(
+            "#viewUserUsername",
+            ".view-user-username"
+        );
+
+    const bio =
+        getElement(
+            "#viewUserBio",
+            ".view-user-bio"
+        );
+
+    const role =
+        getElement(
+            "#viewUserRole",
+            ".user-role-badge"
+        );
+
+    if (avatar) {
+
+        avatar.textContent =
+            getInitials(user.username);
+
+        avatar.style.background =
+            `linear-gradient(
+                135deg,
+                ${user.color || "#ff79a9"},
+                ${user.color || "#ff79a9"}aa
+            )`;
+    }
+
+    if (username) {
+        username.textContent =
+            user.username;
+    }
+
+    if (bio) {
+        bio.textContent =
+            user.bio ||
+            "just another lil bean ♡";
+    }
+
+    if (role) {
+        role.textContent =
+            user.role || "user";
+    }
+
+    const reportButton =
+        getElement("#viewUserReportButton");
+
+    const banButton =
+        getElement("#viewUserBanButton");
+
+    if (reportButton) {
+
+        reportButton.onclick = () => {
+
+            closeModal("userProfileModal");
+
+            openReportForUser(uid);
+        };
+    }
+
+    if (banButton) {
+
+        if (state.isModerator && uid !== state.user.uid) {
+
+            banButton.classList.remove("hidden");
+
+            banButton.onclick = async () => {
+
+                await banUser(uid);
+
+                closeModal("userProfileModal");
+            };
+
+        } else {
+
+            banButton.classList.add("hidden");
+        }
+    }
+
+    openModal("userProfileModal");
+}
+
+
+/* =========================================================
+   46. REPORT USER
+   ========================================================= */
+
+function openReportForUser(uid) {
+
+    const user =
+        state.users[uid];
+
+    if (!user) {
+        return;
+    }
+
+    state.reportTarget = {
+
+        messageId: null,
+
+        uid,
+
+        username:
+            user.username,
+
+        text:
+            "User profile report"
+
+    };
+
+    const target =
+        getElement("#reportTargetText");
+
+    if (target) {
+
+        target.textContent =
+            `User: ${user.username}`;
+    }
+
+    openModal("reportModal");
+}
+
+
+/* =========================================================
+   47. MODALS
+   ========================================================= */
+
+function openModal(id) {
+
+    const modal =
+        document.getElementById(id);
+
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.remove("hidden");
+}
+
+function closeModal(id) {
+
+    const modal =
+        document.getElementById(id);
+
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.add("hidden");
+}
+
+function closeAllModals() {
+
+    $$(".modal").forEach(modal => {
+
+        modal.classList.add("hidden");
+    });
+}
+
+
+/* =========================================================
+   48. SETTINGS
+   ========================================================= */
+
+function applySettings() {
+
+    const theme =
+        state.settings.theme;
+
+    if (theme === "pink") {
+
+        document.body.removeAttribute(
+            "data-theme"
+        );
+
+    } else {
+
+        document.body.dataset.theme =
+            theme;
+    }
+
+    const soundToggle =
+        getElement("#soundToggle");
+
+    if (soundToggle) {
+        soundToggle.checked =
+            state.settings.sound;
+    }
+
+    const enterToggle =
+        getElement("#enterToSendToggle");
+
+    if (enterToggle) {
+        enterToggle.checked =
+            state.settings.enterToSend;
+    }
+
+    const themeSelect =
+        getElement("#themeSelect");
+
+    if (themeSelect) {
+        themeSelect.value =
+            theme;
+    }
+}
+
+
+/* =========================================================
+   49. SOUND
+   ========================================================= */
+
+let audioContext = null;
+
+function playMessageSound() {
+
+    if (!state.settings.sound) {
+        return;
+    }
+
+    try {
+
+        if (!audioContext) {
+
+            audioContext =
+                new (
+                    window.AudioContext ||
+                    window.webkitAudioContext
+                )();
+        }
+
+        const oscillator =
+            audioContext.createOscillator();
+
+        const gain =
+            audioContext.createGain();
+
+        oscillator.type = "sine";
+
+        oscillator.frequency.value = 650;
+
+        gain.gain.setValueAtTime(
+            0.0001,
+            audioContext.currentTime
+        );
+
+        gain.gain.exponentialRampToValueAtTime(
+            0.025,
+            audioContext.currentTime + 0.01
+        );
+
+        gain.gain.exponentialRampToValueAtTime(
+            0.0001,
+            audioContext.currentTime + 0.08
+        );
+
+        oscillator.connect(gain);
+
+        gain.connect(audioContext.destination);
+
+        oscillator.start();
+
+        oscillator.stop(
+            audioContext.currentTime + 0.09
+        );
+
+    } catch {
+        /* Audio isn't essential */
+    }
+}
+
+
+/* =========================================================
+   50. TEXTAREA
+   ========================================================= */
+
+function autoResizeTextarea(textarea) {
+
+    if (!textarea) {
+        return;
+    }
+
+    textarea.style.height = "auto";
+
+    textarea.style.height =
+        `${Math.min(
+            textarea.scrollHeight,
+            130
+        )}px`;
+}
+
+
+/* =========================================================
+   51. KAOMOJI
+   ========================================================= */
+
+function setupKaomoji() {
+
+    const bar =
+        getElement("#kaomojiBar", ".kaomoji-bar");
+
+    if (!bar) {
+        return;
+    }
+
+    if (bar.children.length) {
+        return;
+    }
+
+    for (const kaomoji of KAOMOJI) {
+
+        const button =
+            document.createElement("button");
+
+        button.type = "button";
+
+        button.className =
+            "kaomoji-button";
+
+        button.textContent =
+            kaomoji;
+
+        button.addEventListener(
+            "click",
+            () => insertAtCursor(kaomoji)
+        );
+
+        bar.appendChild(button);
+    }
+}
+
+function insertAtCursor(text) {
+
+    const input =
+        getElement(
+            "#messageInput",
+            ".message-input"
+        );
+
+    if (!input) {
+        return;
+    }
+
+    const start =
+        input.selectionStart;
+
+    const end =
+        input.selectionEnd;
+
+    input.value =
+        input.value.slice(0, start) +
+        text +
+        input.value.slice(end);
+
+    input.selectionStart =
+        input.selectionEnd =
+            start + text.length;
+
+    input.focus();
+
+    autoResizeTextarea(input);
+}
+
+
+/* =========================================================
+   52. SIDEBAR MOBILE
+   ========================================================= */
+
+function openSidebarMobile() {
+
+    const sidebar =
+        getElement(".sidebar");
+
+    const overlay =
+        getElement(".mobile-overlay");
+
+    sidebar?.classList.add(
+        "mobile-open"
+    );
+
+    overlay?.classList.remove(
+        "hidden"
+    );
+}
+
+function closeSidebarMobile() {
+
+    const sidebar =
+        getElement(".sidebar");
+
+    const overlay =
+        getElement(".mobile-overlay");
+
+    sidebar?.classList.remove(
+        "mobile-open"
+    );
+
+    overlay?.classList.add(
+        "hidden"
+    );
+}
+
+
+/* =========================================================
+   53. RULES
+   ========================================================= */
+
+function acceptRules() {
+
+    setRulesAccepted();
+
+    showApp();
+
+    toast(
+        `Welcome to Mochachat, ${state.profile?.username || "bean"} ♡`,
+        "success"
+    );
+}
+
+
+/* =========================================================
+   54. INTERFACE EVENT SETUP
+   ========================================================= */
+
+function setupInterface() {
+
+    loadLocalSettings();
+
+    applySettings();
+
+    setupKaomoji();
+
+    setupMessageInput();
+
+    setupRoomButtons();
+
+    setupModalButtons();
+
+    setupProfileButtons();
+
+    setupSettingsButtons();
+
+    setupModerationButtons();
+
+    setupMobileNavigation();
+
+    setupMessageInteractions();
+
+    setupOnlineUserInteractions();
+
+    setupGlobalClicks();
+
+    listenToTyping();
+
+    renderReplyPreview();
+
+    renderCurrentUser();
+
+    updateModerationVisibility();
+}
+
+
+/* =========================================================
+   55. MESSAGE INPUT
+   ========================================================= */
+
+function setupMessageInput() {
+
+    const input =
+        getElement(
+            "#messageInput",
+            ".message-input"
+        );
+
+    if (!input) {
+        return;
+    }
+
+    input.maxLength =
+        MAX_MESSAGE_LENGTH;
+
+    input.addEventListener(
+        "input",
         () => {
 
-            if (state.token) {
+            autoResizeTextarea(input);
 
-                logoutAniList();
+            handleTyping();
 
-            } else {
-
-                loginAniList();
-
-            }
-
+            updateCharacterCounter(
+                input.value.length
+            );
         }
     );
 
+    input.addEventListener(
+        "keydown",
+        event => {
 
-    $("#hero-login").addEventListener(
-        "click",
-        loginAniList
-    );
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey &&
+                state.settings.enterToSend
+            ) {
 
+                event.preventDefault();
 
-    $("#refresh-button").addEventListener(
-        "click",
-        async () => {
-
-            if (!state.token) {
-
-                loginAniList();
-
-                return;
+                sendOrEdit();
             }
-
-
-            await loadAniList();
-
         }
     );
+}
 
+function sendOrEdit() {
+
+    if (state.editingMessage) {
+
+        saveEditedMessage();
+
+    } else {
+
+        sendMessage();
+    }
+}
+
+function updateCharacterCounter(length) {
+
+    const counter =
+        getElement(
+            "#characterCounter",
+            ".character-counter"
+        );
+
+    if (!counter) {
+        return;
+    }
+
+    counter.textContent =
+        `${length}/${MAX_MESSAGE_LENGTH}`;
 }
 
 
 /* =========================================================
-   MODAL
-========================================================= */
+   56. ROOM BUTTONS
+   ========================================================= */
 
-function setupModal() {
+function setupRoomButtons() {
 
-    $("#close-modal").addEventListener(
-        "click",
-        closeAnimeModal
-    );
+    $$(".room-button").forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                const room =
+                    button.dataset.room;
+
+                switchRoom(room);
+            }
+        );
+    });
+}
 
 
-    $(".modal-backdrop").addEventListener(
-        "click",
-        closeAnimeModal
-    );
+/* =========================================================
+   57. MODAL BUTTONS
+   ========================================================= */
 
+function setupModalButtons() {
+
+    $$(".modal-close").forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                const modal =
+                    button.closest(".modal");
+
+                if (modal) {
+                    closeModal(modal.id);
+                }
+            }
+        );
+    });
+
+    $$(".modal-backdrop").forEach(backdrop => {
+
+        backdrop.addEventListener(
+            "click",
+            () => {
+
+                const modal =
+                    backdrop.closest(".modal");
+
+                if (modal) {
+                    closeModal(modal.id);
+                }
+            }
+        );
+    });
 
     document.addEventListener(
         "keydown",
         event => {
 
-            if (
-                event.key ===
-                "Escape"
-            ) {
-
-                closeAnimeModal();
-
+            if (event.key === "Escape") {
+                closeAllModals();
             }
-
         }
     );
-
-}
-
-
-function closeAnimeModal() {
-
-    $("#anime-modal")
-        .classList
-        .add(
-            "hidden"
-        );
-
 }
 
 
 /* =========================================================
-   MOBILE MENU
-========================================================= */
+   58. PROFILE BUTTONS
+   ========================================================= */
 
-function setupMobileMenu() {
+function setupProfileButtons() {
 
-    $("#mobile-menu").addEventListener(
+    const profileButton =
+        getElement(
+            "#profileButton",
+            ".sidebar-profile"
+        );
+
+    profileButton?.addEventListener(
+        "click",
+        openProfileEditor
+    );
+
+    const saveProfileButton =
+        getElement("#saveProfileButton");
+
+    saveProfileButton?.addEventListener(
+        "click",
+        saveProfile
+    );
+
+    const colorPicker =
+        getElement("#colorPicker");
+
+    colorPicker?.addEventListener(
+        "click",
+        event => {
+
+            const button =
+                event.target.closest(
+                    ".color-option"
+                );
+
+            if (!button) {
+                return;
+            }
+
+            state.selectedColor =
+                button.dataset.color;
+
+            renderColorPicker();
+        }
+    );
+}
+
+
+/* =========================================================
+   59. SETTINGS
+   ========================================================= */
+
+function setupSettingsButtons() {
+
+    const settingsButton =
+        getElement(
+            "#settingsButton",
+            '[data-open="settingsModal"]'
+        );
+
+    settingsButton?.addEventListener(
         "click",
         () => {
 
-            $("#sidebar")
-                .classList
-                .toggle(
-                    "open"
-                );
+            applySettings();
 
+            openModal("settingsModal");
         }
     );
 
-}
+    const themeSelect =
+        getElement("#themeSelect");
 
+    themeSelect?.addEventListener(
+        "change",
+        () => {
 
-function closeMobileSidebar() {
+            state.settings.theme =
+                themeSelect.value;
 
-    $("#sidebar")
-        .classList
-        .remove(
-            "open"
-        );
+            applySettings();
 
+            saveLocalSettings();
+        }
+    );
+
+    const soundToggle =
+        getElement("#soundToggle");
+
+    soundToggle?.addEventListener(
+        "change",
+        () => {
+
+            state.settings.sound =
+                soundToggle.checked;
+
+            saveLocalSettings();
+        }
+    );
+
+    const enterToggle =
+        getElement("#enterToSendToggle");
+
+    enterToggle?.addEventListener(
+        "change",
+        () => {
+
+            state.settings.enterToSend =
+                enterToggle.checked;
+
+            saveLocalSettings();
+        }
+    );
 }
 
 
 /* =========================================================
-   AUTH UI
-========================================================= */
+   60. MODERATION BUTTONS
+   ========================================================= */
 
-function updateAuthUI() {
+function setupModerationButtons() {
 
-    const button =
-        $("#auth-button");
+    const moderationButton =
+        getElement(
+            "#moderationButton",
+            '[data-open="moderationModal"]'
+        );
 
+    moderationButton?.addEventListener(
+        "click",
+        () => {
 
-    const sidebarUser =
-        $("#sidebar-user");
+            if (!state.isModerator) {
 
+                toast(
+                    "You don't have moderation permissions.",
+                    "error"
+                );
 
-    if (!state.user) {
-
-        button.textContent =
-            "Login with AniList";
-
-
-        sidebarUser.innerHTML = `
-
-            <div class="avatar-placeholder">
-            </div>
-
-            <div
-                class="sidebar-user-info"
-            >
-
-                <strong>
-                    Not connected
-                </strong>
-
-                <small>
-                    AniList
-                </small>
-
-            </div>
-
-        `;
-
-
-        return;
-    }
-
-
-    button.textContent =
-        "Logout";
-
-
-    const avatar =
-        state.user.avatar?.large ||
-        state.user.avatar?.medium ||
-        "";
-
-
-    sidebarUser.innerHTML = `
-
-        <div
-            class="avatar-placeholder"
-        >
-
-            ${
-                avatar
-                    ?
-                    `
-                    <img
-                        src="${escapeAttribute(avatar)}"
-                        alt=""
-                    >
-                    `
-                    :
-                    ""
+                return;
             }
 
-        </div>
+            renderReports();
 
+            renderModerationUsers();
 
-        <div
-            class="sidebar-user-info"
-        >
+            renderModerationLogs();
 
-            <strong>
-                ${escapeHTML(
-                    state.user.name
-                )}
-            </strong>
+            openModal("moderationModal");
+        }
+    );
 
-            <small>
-                AniList
-            </small>
+    const submitReportButton =
+        getElement("#submitReportButton");
 
-        </div>
-
-    `;
-
+    submitReportButton?.addEventListener(
+        "click",
+        submitReport
+    );
 }
 
 
 /* =========================================================
-   LOGGED OUT STATE
-========================================================= */
+   61. MODERATION TABS
+   ========================================================= */
 
-function showLoggedOutState() {
+function setupModerationTabs() {
 
-    $("#welcome-title").textContent =
-        "Your anime. Your way.";
+    $$(".moderation-tab").forEach(tab => {
 
-
-    $("#welcome-description").textContent =
-        "Connect your AniList account to instantly load your anime library, progress and watch history.";
-
-
-    $("#hero-login").style.display =
-        "inline-block";
-
-
-    $("#hero-login").textContent =
-        "Connect AniList";
-
-
-    renderAnimeGrid(
-        "#watching-grid",
-        []
-    );
-
-
-    renderAnimeGrid(
-        "#recent-grid",
-        []
-    );
-
-
-    renderAnimeGrid(
-        "#continue-grid",
-        []
-    );
-
-
-    $("#library-grid").innerHTML =
-        "";
-
-
-    updateAuthUI();
-
-}
-
-
-/* =========================================================
-   LOADING STATE
-========================================================= */
-
-function showLoadingState() {
-
-    $("#welcome-title").textContent =
-        "Loading your library...";
-
-
-    $("#welcome-description").textContent =
-        "Connecting to AniList and loading your anime.";
-
-
-    $("#hero-login").style.display =
-        "none";
-
-
-    $("#watching-grid").innerHTML = `
-        <div class="empty-state">
-            <p>Loading anime...</p>
-        </div>
-    `;
-
-
-    $("#recent-grid").innerHTML = `
-        <div class="empty-state">
-            <p>Loading anime...</p>
-        </div>
-    `;
-
-}
-
-
-/* =========================================================
-   ERROR HANDLING
-========================================================= */
-
-function handleAniListError(
-    error
-) {
-
-    const message =
-        error?.message ||
-        "Unknown AniList error.";
-
-
-    console.error(
-        "AniList:",
-        message
-    );
-
-
-    const lower =
-        message.toLowerCase();
-
-
-    /*
-     * Invalid / expired token.
-     */
-
-    if (
-        lower.includes("unauthorized") ||
-        lower.includes("invalid token") ||
-        lower.includes("jwt")
-    ) {
-
-        localStorage.removeItem(
-            CONFIG.TOKEN_KEY
-        );
-
-
-        state.token = null;
-
-        state.user = null;
-
-        state.anime = [];
-
-        state.lists = [];
-
-
-        updateAuthUI();
-
-
-        $("#welcome-title").textContent =
-            "Your AniList session expired.";
-
-
-        $("#welcome-description").textContent =
-            "Reconnect your AniList account to continue.";
-
-
-        $("#hero-login").style.display =
-            "inline-block";
-
-
-        $("#hero-login").textContent =
-            "Reconnect AniList";
-
-
-        showToast(
-            "AniList session expired."
-        );
-
-
-        return;
-    }
-
-
-    /*
-     * Normal API failure.
-     */
-
-    $("#welcome-title").textContent =
-        "AniList connection failed.";
-
-
-    $("#welcome-description").textContent =
-        message;
-
-
-    $("#hero-login").style.display =
-        "inline-block";
-
-
-    $("#hero-login").textContent =
-        "Try Again";
-
-
-    $("#hero-login").onclick =
-        () => loadAniList();
-
-
-    showToast(
-        message
-    );
-
-}
-
-
-/* =========================================================
-   CACHE
-========================================================= */
-
-function saveCache() {
-
-    try {
-
-        const cache = {
-
-            savedAt:
-                Date.now(),
-
-            user:
-                state.user,
-
-            lists:
-                state.lists,
-
-            anime:
-                state.anime
-
-        };
-
-
-        localStorage.setItem(
-            CONFIG.CACHE_KEY,
-            JSON.stringify(
-                cache
-            )
-        );
-
-    } catch (error) {
-
-        console.warn(
-            "Could not cache AniList data.",
-            error
-        );
-
-    }
-
-}
-
-
-function loadCache() {
-
-    try {
-
-        const raw =
-            localStorage.getItem(
-                CONFIG.CACHE_KEY
-            );
-
-
-        if (!raw) {
-            return false;
-        }
-
-
-        const cache =
-            JSON.parse(
-                raw
-            );
-
-
-        if (
-            !cache ||
-            !cache.savedAt
-        ) {
-
-            return false;
-
-        }
-
-
-        const age =
-            Date.now() -
-            cache.savedAt;
-
-
-        if (
-            age >
-            CONFIG.CACHE_TIME
-        ) {
-
-            return false;
-
-        }
-
-
-        if (
-            cache.user
-        ) {
-
-            state.user =
-                cache.user;
-
-        }
-
-
-        if (
-            Array.isArray(
-                cache.lists
-            )
-        ) {
-
-            state.lists =
-                cache.lists;
-
-        }
-
-
-        if (
-            Array.isArray(
-                cache.anime
-            )
-        ) {
-
-            state.anime =
-                cache.anime;
-
-        }
-
-
-        return true;
-
-    } catch {
-
-        return false;
-
-    }
-
-}
-
-
-/* =========================================================
-   UTILITY FUNCTIONS
-========================================================= */
-
-function getBestTitle(
-    media
-) {
-
-    if (!media) {
-        return "Unknown Anime";
-    }
-
-
-    return (
-        media.title?.userPreferred ||
-        media.title?.english ||
-        media.title?.romaji ||
-        media.title?.native ||
-        "Unknown Anime"
-    );
-
-}
-
-
-function formatAnimeStatus(
-    status
-) {
-
-    if (!status) {
-        return "Unknown";
-    }
-
-
-    return String(status)
-        .replace(
-            /_/g,
-            " "
-        )
-        .toLowerCase()
-        .replace(
-            /\b[a-z]/g,
-            letter =>
-                letter.toUpperCase()
-        );
-
-}
-
-
-function cleanDescription(
-    description
-) {
-
-    if (!description) {
-
-        return "No description available.";
-
-    }
-
-
-    return String(
-        description
-    )
-        .replace(
-            /<br\s*\/?>/gi,
-            "\n"
-        )
-        .replace(
-            /<[^>]+>/g,
-            ""
-        )
-        .replace(
-            /\n{3,}/g,
-            "\n\n"
-        )
-        .trim();
-
-}
-
-
-function escapeHTML(
-    value
-) {
-
-    return String(
-        value ?? ""
-    )
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
-
-}
-
-
-function escapeAttribute(
-    value
-) {
-
-    return escapeHTML(
-        value
-    );
-
-}
-
-
-/* =========================================================
-   TOAST
-========================================================= */
-
-let toastTimer = null;
-
-
-function showToast(
-    message
-) {
-
-    const toast =
-        $("#toast");
-
-
-    if (!toast) {
-        return;
-    }
-
-
-    toast.textContent =
-        message;
-
-
-    toast.classList.add(
-        "show"
-    );
-
-
-    clearTimeout(
-        toastTimer
-    );
-
-
-    toastTimer =
-        setTimeout(
+        tab.addEventListener(
+            "click",
             () => {
 
-                toast.classList.remove(
-                    "show"
+                $$(".moderation-tab")
+                    .forEach(other => {
+                        other.classList.remove("active");
+                    });
+
+                $$(".moderation-tab-content")
+                    .forEach(content => {
+                        content.classList.add("hidden");
+                    });
+
+                tab.classList.add("active");
+
+                const target =
+                    document.getElementById(
+                        tab.dataset.target
+                    );
+
+                target?.classList.remove(
+                    "hidden"
                 );
-
-            },
-            3500
+            }
         );
-
+    });
 }
 
 
 /* =========================================================
-   DEBUG HELPERS
-========================================================= */
+   62. MOBILE NAVIGATION
+   ========================================================= */
 
-/*
- * These are intentionally exposed so you can
- * test the application from your browser console.
- *
- * Example:
- *
- *   testAniList()
- *
- * or:
- *
- *   window.animeApp
- */
+function setupMobileNavigation() {
 
-window.testAniList =
-    async function () {
+    const menuButton =
+        getElement(
+            "#mobileMenuButton",
+            ".mobile-menu-button"
+        );
 
-        if (!state.token) {
+    menuButton?.addEventListener(
+        "click",
+        openSidebarMobile
+    );
 
-            console.log(
-                "No AniList token."
+    const closeButton =
+        getElement(
+            "#sidebarCloseButton",
+            ".sidebar-close-button"
+        );
+
+    closeButton?.addEventListener(
+        "click",
+        closeSidebarMobile
+    );
+
+    const overlay =
+        getElement(".mobile-overlay");
+
+    overlay?.addEventListener(
+        "click",
+        closeSidebarMobile
+    );
+}
+
+
+/* =========================================================
+   63. ONLINE USERS
+   ========================================================= */
+
+function setupOnlineUserInteractions() {
+
+    const container =
+        getElement(
+            "#onlineUsers",
+            ".online-users"
+        );
+
+    container?.addEventListener(
+        "click",
+        event => {
+
+            const user =
+                event.target.closest(
+                    ".online-user"
+                );
+
+            if (!user) {
+                return;
+            }
+
+            openUserProfile(
+                user.dataset.uid
             );
-
-            return;
-
         }
+    );
+}
 
 
-        try {
+/* =========================================================
+   64. MESSAGE INTERACTIONS
+   ========================================================= */
 
-            const data =
-                await anilistRequest(`
+function setupMessageInteractions() {
 
-                    query {
+    const container =
+        getElement(
+            "#messages",
+            ".messages"
+        );
 
-                        Viewer {
+    if (!container) {
+        return;
+    }
 
-                            id
-                            name
-                            siteUrl
+    container.addEventListener(
+        "click",
+        event => {
 
-                        }
+            const username =
+                event.target.closest(
+                    ".message-username"
+                );
 
-                    }
+            if (username) {
 
-                `);
+                openUserProfile(
+                    username.dataset.profileId
+                );
 
+                return;
+            }
 
-            console.log(
-                "AniList Viewer:",
-                data.Viewer
-            );
+            const action =
+                event.target.closest(
+                    ".message-action"
+                );
 
+            if (!action) {
+                return;
+            }
 
-        } catch (error) {
+            const message =
+                action.closest(".message");
 
-            console.error(
-                "AniList test failed:",
-                error
-            );
+            if (!message) {
+                return;
+            }
 
+            const messageId =
+                message.dataset.messageId;
+
+            switch (
+                action.dataset.action
+            ) {
+
+                case "reply":
+                    startReply(messageId);
+                    break;
+
+                case "edit":
+                    editMessage(messageId);
+                    break;
+
+                case "delete":
+                    deleteMessage(messageId);
+                    break;
+
+                case "report":
+                    openReport(messageId);
+                    break;
+            }
         }
-
-    };
-
-
-window.refreshAniList =
-    async function () {
-
-        await loadAniList();
-
-    };
+    );
+}
 
 
-window.animeApp =
-    state;
+/* =========================================================
+   65. GLOBAL CLICKS
+   ========================================================= */
+
+function setupGlobalClicks() {
+
+    document.addEventListener(
+        "click",
+        async event => {
+
+            const acceptRulesButton =
+                event.target.closest(
+                    "#acceptRulesButton"
+                );
+
+            if (acceptRulesButton) {
+
+                acceptRules();
+
+                return;
+            }
+
+            const colorOption =
+                event.target.closest(
+                    ".color-option"
+                );
+
+            if (colorOption) {
+                return;
+            }
+
+            const banButton =
+                event.target.closest(
+                    "[data-ban]"
+                );
+
+            if (banButton) {
+
+                await banUser(
+                    banButton.dataset.ban
+                );
+
+                return;
+            }
+
+            const unbanButton =
+                event.target.closest(
+                    "[data-unban]"
+                );
+
+            if (unbanButton) {
+
+                await unbanUser(
+                    unbanButton.dataset.unban
+                );
+
+                return;
+            }
+
+            const promoteButton =
+                event.target.closest(
+                    "[data-promote]"
+                );
+
+            if (promoteButton) {
+
+                const uid =
+                    promoteButton.dataset.promote;
+
+                const role =
+                    prompt(
+                        "Enter role: user, moderator, admin, owner"
+                    );
+
+                if (
+                    role === "user" ||
+                    role === "moderator" ||
+                    role === "admin" ||
+                    role === "owner"
+                ) {
+
+                    await changeUserRole(
+                        uid,
+                        role
+                    );
+                }
+
+                return;
+            }
+
+            const resolveButton =
+                event.target.closest(
+                    '[data-report-action="resolve"]'
+                );
+
+            if (resolveButton) {
+
+                await resolveReport(
+                    resolveButton.dataset.reportId
+                );
+
+                return;
+            }
+
+            const reportBanButton =
+                event.target.closest(
+                    '[data-report-action="ban"]'
+                );
+
+            if (reportBanButton) {
+
+                await banUser(
+                    reportBanButton.dataset.reportUser
+                );
+
+                return;
+            }
+        }
+    );
+}
+
+
+/* =========================================================
+   66. MODERATION VISIBILITY
+   ========================================================= */
+
+function updateModerationVisibility() {
+
+    const moderationButton =
+        getElement(
+            "#moderationButton",
+            '[data-open="moderationModal"]'
+        );
+
+    if (!moderationButton) {
+        return;
+    }
+
+    if (state.isModerator) {
+
+        moderationButton.classList.remove(
+            "hidden"
+        );
+
+    } else {
+
+        moderationButton.classList.add(
+            "hidden"
+        );
+    }
+}
+
+
+/* =========================================================
+   67. SETUP AFTER DOM
+   ========================================================= */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        state.acceptedRules =
+            getRulesAccepted();
+
+        loadLocalSettings();
+
+        setupModerationTabs();
+
+        applySettings();
+
+    }
+);
+
+
+/* =========================================================
+   68. START
+   ========================================================= */
+
+startAuthentication();
+
+
+/* =========================================================
+   69. DEBUG HELPERS
+   ========================================================= */
+
+window.Mochachat = {
+
+    state,
+
+    sendMessage,
+
+    switchRoom,
+
+    openModal,
+
+    closeModal,
+
+    openUserProfile,
+
+    banUser,
+
+    unbanUser,
+
+    changeUserRole,
+
+    generateUsername
+
+};
+
+console.log(
+    "%cMochachat ♡",
+    "font-size:22px;font-weight:900;color:#ff79a9"
+);
+
+console.log(
+    "Firebase chat system loaded."
+);
