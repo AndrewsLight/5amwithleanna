@@ -1,1509 +1,1825 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>kawaii chat ♡</title>
-
-<style>
-    * {
-        box-sizing: border-box;
-    }
-
-    :root {
-        --bg: #fff5fb;
-        --panel: rgba(255,255,255,.88);
-        --border: #f3cfe2;
-        --text: #514553;
-        --muted: #9b8998;
-        --pink: #ff8fbd;
-        --pink-dark: #e86c9e;
-        --shadow: 0 15px 45px rgba(190, 117, 157, .15);
-    }
-
-    body {
-        margin: 0;
-        min-height: 100vh;
-        font-family:
-            "Segoe UI",
-            "Trebuchet MS",
-            Arial,
-            sans-serif;
-        color: var(--text);
-        background:
-            radial-gradient(circle at 10% 15%, #ffd9eb 0 70px, transparent 71px),
-            radial-gradient(circle at 90% 10%, #e9dcff 0 90px, transparent 91px),
-            radial-gradient(circle at 85% 90%, #d8f6ff 0 100px, transparent 101px),
-            var(--bg);
-        overflow: hidden;
-    }
-
-    button,
-    input {
-        font: inherit;
-    }
-
-    /* ==============================
-       LOGIN / LOADING
-    ============================== */
-
-    #loadingScreen,
-    #welcomeScreen {
-        position: fixed;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-    }
-
-    #loadingScreen {
-        z-index: 20;
-        background: var(--bg);
-    }
-
-    .loading-box {
-        text-align: center;
-        animation: float 2.5s ease-in-out infinite;
-    }
-
-    .loading-face {
-        font-size: 50px;
-        margin-bottom: 15px;
-    }
-
-    .loading-text {
-        color: var(--muted);
-        font-size: 14px;
-    }
-
-    #welcomeScreen {
-        z-index: 10;
-    }
-
-    .welcome-card {
-        width: min(430px, 100%);
-        padding: 35px 30px;
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 28px;
-        box-shadow: var(--shadow);
-        backdrop-filter: blur(15px);
-        text-align: center;
-    }
-
-    .welcome-face {
-        font-size: 48px;
-        margin-bottom: 8px;
-    }
-
-    .welcome-card h1 {
-        margin: 0;
-        font-size: 28px;
-    }
-
-    .welcome-card p {
-        color: var(--muted);
-        line-height: 1.6;
-        font-size: 14px;
-    }
-
-    .identity-preview {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 13px;
-        margin: 20px 0;
-        border: 1px solid var(--border);
-        border-radius: 17px;
-        background: #fff9fc;
-        text-align: left;
-    }
-
-    .avatar {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 700;
-        flex-shrink: 0;
-        box-shadow: 0 5px 15px rgba(0,0,0,.12);
-    }
-
-    .identity-name {
-        font-weight: 700;
-    }
-
-    .identity-sub {
-        color: var(--muted);
-        font-size: 12px;
-    }
-
-    .enter-btn {
-        width: 100%;
-        border: 0;
-        padding: 14px;
-        border-radius: 16px;
-        cursor: pointer;
-        color: white;
-        background: linear-gradient(135deg, #ff91bf, #d98dff);
-        box-shadow: 0 8px 20px rgba(224, 130, 177, .25);
-        transition: .2s;
-    }
-
-    .enter-btn:hover {
-        transform: translateY(-2px);
-        filter: brightness(1.03);
-    }
-
-    .tiny-note {
-        margin-top: 16px;
-        color: #ad9ca9;
-        font-size: 11px;
-    }
-
-    /* ==============================
-       CHAT
-    ============================== */
-
-    #chatApp {
-        display: none;
-        height: 100vh;
-        padding: 20px;
-    }
-
-    .chat-shell {
-        width: min(1050px, 100%);
-        height: 100%;
-        margin: auto;
-        display: flex;
-        overflow: hidden;
-        border: 1px solid var(--border);
-        border-radius: 27px;
-        background: rgba(255,255,255,.78);
-        box-shadow: var(--shadow);
-        backdrop-filter: blur(18px);
-    }
-
-    /* SIDEBAR */
-
-    .sidebar {
-        width: 245px;
-        flex-shrink: 0;
-        padding: 22px;
-        border-right: 1px solid var(--border);
-        background: rgba(255,249,253,.65);
-    }
-
-    .logo {
-        font-size: 20px;
-        font-weight: 800;
-        margin-bottom: 25px;
-    }
-
-    .logo span {
-        color: var(--pink-dark);
-    }
-
-    .profile-card {
-        padding: 15px;
-        border-radius: 19px;
-        background: white;
-        border: 1px solid var(--border);
-    }
-
-    .profile-top {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .profile-name {
-        font-weight: 700;
-        font-size: 14px;
-        word-break: break-word;
-    }
-
-    .online-dot {
-        display: inline-block;
-        width: 7px;
-        height: 7px;
-        margin-right: 4px;
-        border-radius: 50%;
-        background: #74d69b;
-    }
-
-    .profile-status {
-        color: var(--muted);
-        font-size: 11px;
-        margin-top: 3px;
-    }
-
-    .side-decoration {
-        margin-top: 25px;
-        text-align: center;
-        color: #c3aabb;
-        line-height: 2;
-        font-size: 13px;
-    }
-
-    /* CHAT */
-
-    .chat-main {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .chat-header {
-        height: 75px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 23px;
-        border-bottom: 1px solid var(--border);
-        background: rgba(255,255,255,.55);
-    }
-
-    .room-title {
-        font-weight: 800;
-    }
-
-    .room-subtitle {
-        color: var(--muted);
-        font-size: 11px;
-        margin-top: 3px;
-    }
-
-    .online-count {
-        padding: 7px 11px;
-        border-radius: 20px;
-        background: #f2fff7;
-        color: #67b989;
-        font-size: 12px;
-        border: 1px solid #d5f2e1;
-    }
-
-    #messages {
-        flex: 1;
-        overflow-y: auto;
-        padding: 25px;
-        scroll-behavior: smooth;
-    }
-
-    #messages::-webkit-scrollbar {
-        width: 7px;
-    }
-
-    #messages::-webkit-scrollbar-thumb {
-        background: #efc8dc;
-        border-radius: 10px;
-    }
-
-    .empty-chat {
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        color: var(--muted);
-    }
-
-    .empty-face {
-        font-size: 40px;
-        margin-bottom: 10px;
-    }
-
-    /* MESSAGE */
-
-    .message {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 18px;
-        animation: messageIn .25s ease;
-    }
-
-    .message.mine {
-        flex-direction: row-reverse;
-    }
-
-    .message-content {
-        max-width: min(70%, 600px);
-    }
-
-    .message.mine .message-content {
-        text-align: right;
-    }
-
-    .message-name {
-        margin: 0 6px 5px;
-        font-size: 12px;
-        font-weight: 800;
-    }
-
-    .bubble {
-        display: inline-block;
-        padding: 10px 14px;
-        border-radius: 17px;
-        background: white;
-        border: 1px solid #f1dce7;
-        line-height: 1.5;
-        font-size: 14px;
-        white-space: pre-wrap;
-        word-break: break-word;
-        text-align: left;
-        box-shadow: 0 3px 12px rgba(0,0,0,.025);
-    }
-
-    .mine .bubble {
-        color: white;
-        border: 0;
-        background: linear-gradient(135deg, #ff91bd, #d98dff);
-    }
-
-    .message-meta {
-        margin: 4px 7px 0;
-        font-size: 10px;
-        color: #ae9eaa;
-    }
-
-    .delete-btn {
-        display: none;
-        border: 0;
-        background: transparent;
-        color: #d99ab9;
-        cursor: pointer;
-        font-size: 11px;
-        margin-top: 3px;
-    }
-
-    .message.mine:hover .delete-btn {
-        display: inline-block;
-    }
-
-    /* COMPOSER */
-
-    .composer {
-        padding: 15px;
-        border-top: 1px solid var(--border);
-        background: rgba(255,255,255,.65);
-    }
-
-    .composer-inner {
-        display: flex;
-        align-items: flex-end;
-        gap: 10px;
-        padding: 8px;
-        border: 1px solid var(--border);
-        border-radius: 19px;
-        background: white;
-    }
-
-    #messageInput {
-        flex: 1;
-        min-width: 0;
-        resize: none;
-        border: 0;
-        outline: 0;
-        padding: 8px;
-        max-height: 110px;
-        color: var(--text);
-        background: transparent;
-    }
-
-    #sendBtn {
-        width: 42px;
-        height: 42px;
-        border: 0;
-        border-radius: 14px;
-        cursor: pointer;
-        color: white;
-        background: linear-gradient(135deg, #ff91bd, #d98dff);
-        transition: .2s;
-        flex-shrink: 0;
-    }
-
-    #sendBtn:hover {
-        transform: scale(1.05);
-    }
-
-    #sendBtn:disabled {
-        opacity: .5;
-        cursor: not-allowed;
-    }
-
-    .kaomoji-bar {
-        display: flex;
-        gap: 7px;
-        margin-top: 8px;
-        overflow-x: auto;
-    }
-
-    .kaomoji {
-        border: 1px solid var(--border);
-        background: white;
-        color: #967e8e;
-        border-radius: 10px;
-        padding: 4px 8px;
-        font-size: 11px;
-        cursor: pointer;
-        white-space: nowrap;
-    }
-
-    .kaomoji:hover {
-        background: #fff2f8;
-    }
-
-    /* TOAST */
-
-    #toast {
-        position: fixed;
-        left: 50%;
-        bottom: 25px;
-        transform: translate(-50%, 20px);
-        padding: 10px 16px;
-        background: #514553;
-        color: white;
-        border-radius: 13px;
-        font-size: 12px;
-        opacity: 0;
-        pointer-events: none;
-        transition: .25s;
-        z-index: 100;
-    }
-
-    #toast.show {
-        opacity: 1;
-        transform: translate(-50%, 0);
-    }
-
-    @keyframes messageIn {
-        from {
-            opacity: 0;
-            transform: translateY(7px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @keyframes float {
-        0%, 100% {
-            transform: translateY(0);
-        }
-        50% {
-            transform: translateY(-7px);
-        }
-    }
-
-    /* MOBILE */
-
-    @media (max-width: 700px) {
-
-        body {
-            overflow: auto;
-        }
-
-        #chatApp {
-            padding: 0;
-            height: 100dvh;
-        }
-
-        .chat-shell {
-            border-radius: 0;
-            border: 0;
-        }
-
-        .sidebar {
-            display: none;
-        }
-
-        .chat-header {
-            height: 67px;
-            padding: 0 15px;
-        }
-
-        #messages {
-            padding: 18px 13px;
-        }
-
-        .message-content {
-            max-width: 82%;
-        }
-
-        .bubble {
-            font-size: 13px;
-        }
-
-        .composer {
-            padding: 10px;
-        }
-
-        .kaomoji-bar {
-            padding-bottom: 2px;
-        }
-    }
-</style>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Mochachat — a cute anonymous real-time chat."
+    >
+
+    <meta
+        name="theme-color"
+        content="#fff4fa"
+    >
+
+    <title>Mochachat ♡</title>
+
+    <!-- Main stylesheet -->
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<!-- =========================
-     LOADING
-========================= -->
+    <!-- =========================================================
+         APP LOADING SCREEN
+    ========================================================== -->
 
-<div id="loadingScreen">
-    <div class="loading-box">
-        <div class="loading-face">૮ ˶ᵔ ᵕ ᵔ˶ ა</div>
-        <div class="loading-text">connecting to the little chat...</div>
+    <div
+        id="loadingScreen"
+        class="screen"
+        aria-live="polite"
+    >
+        <div class="loading-card">
+
+            <div class="loading-kaomoji">
+                ૮ ˶ᵔ ᵕ ᵔ˶ ა
+            </div>
+
+            <div class="loading-title">
+                mochachat ♡
+            </div>
+
+            <div class="loading-message">
+                connecting to the little chat...
+            </div>
+
+            <div class="loading-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+        </div>
     </div>
-</div>
 
 
-<!-- =========================
-     WELCOME
-========================= -->
+    <!-- =========================================================
+         RULES / FIRST-TIME WELCOME
+    ========================================================== -->
 
-<div id="welcomeScreen" style="display:none;">
+    <div
+        id="rulesScreen"
+        class="screen hidden"
+        aria-hidden="true"
+    >
 
-    <div class="welcome-card">
+        <div
+            class="rules-card modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="rulesTitle"
+        >
 
-        <div class="welcome-face">૮₍ ˶ᵔ ᵕ ᵔ˶ ₎ა</div>
+            <div class="rules-decoration">
+                ✦ ♡ ✦
+            </div>
 
-        <h1>welcome to kawaii chat ♡</h1>
+            <div class="rules-kaomoji">
+                ૮₍ ˶ᵔ ᵕ ᵔ˶ ₎ა
+            </div>
 
-        <p>
-            no email. no password.<br>
-            just enter anonymously and start talking.
-        </p>
+            <h1 id="rulesTitle">
+                welcome to mochachat ♡
+            </h1>
 
-        <div class="identity-preview">
+            <p class="rules-intro">
+                you're about to enter a little anonymous
+                corner of the internet.
+            </p>
 
-            <div class="avatar" id="previewAvatar">?</div>
+            <div class="identity-preview">
 
-            <div>
-                <div class="identity-name" id="previewName">
-                    anonymous
+                <div
+                    id="rulesAvatar"
+                    class="avatar avatar-large"
+                >
+                    ?
                 </div>
 
-                <div class="identity-sub">
-                    your permanent anonymous identity
+                <div class="identity-information">
+
+                    <div
+                        id="rulesUsername"
+                        class="identity-username"
+                    >
+                        anonymous
+                    </div>
+
+                    <div class="identity-description">
+                        your anonymous identity
+                    </div>
+
                 </div>
+
+            </div>
+
+
+            <!-- RULES -->
+
+            <div class="rules-list">
+
+                <div class="rule-item">
+                    <div class="rule-icon">♡</div>
+
+                    <div>
+                        <strong>be respectful</strong>
+
+                        <span>
+                            treat other people like actual humans.
+                        </span>
+                    </div>
+                </div>
+
+
+                <div class="rule-item">
+                    <div class="rule-icon">☁</div>
+
+                    <div>
+                        <strong>no harassment</strong>
+
+                        <span>
+                            don't bully, threaten, or repeatedly
+                            target other users.
+                        </span>
+                    </div>
+                </div>
+
+
+                <div class="rule-item">
+                    <div class="rule-icon">✦</div>
+
+                    <div>
+                        <strong>no spam</strong>
+
+                        <span>
+                            don't flood the chat or abuse the service.
+                        </span>
+                    </div>
+                </div>
+
+
+                <div class="rule-item">
+                    <div class="rule-icon">♡</div>
+
+                    <div>
+                        <strong>keep it appropriate</strong>
+
+                        <span>
+                            no explicit or inappropriate content.
+                        </span>
+                    </div>
+                </div>
+
+
+                <div class="rule-item">
+                    <div class="rule-icon">🔒</div>
+
+                    <div>
+                        <strong>protect your privacy</strong>
+
+                        <span>
+                            don't post passwords, addresses, or
+                            other sensitive information.
+                        </span>
+                    </div>
+                </div>
+
+
+                <div class="rule-item">
+                    <div class="rule-icon">૮</div>
+
+                    <div>
+                        <strong>don't impersonate people</strong>
+
+                        <span>
+                            everyone here has their own identity.
+                        </span>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <div class="rules-warning">
+                By entering Mochachat, you agree to follow
+                these rules.
+            </div>
+
+
+            <button
+                id="acceptRulesButton"
+                class="primary-button"
+                type="button"
+            >
+                I understand ♡
+            </button>
+
+
+            <div class="rules-footer">
+                (｡•̀ᴗ-)✧ be nice • have fun • make friends
             </div>
 
         </div>
 
-        <button class="enter-btn" id="enterBtn">
-            enter chat ♡
-        </button>
-
-        <div class="tiny-note">
-            (｡•̀ᴗ-)✧ your identity is remembered on this browser
-        </div>
-
     </div>
 
-</div>
 
+    <!-- =========================================================
+         MAIN APPLICATION
+    ========================================================== -->
 
-<!-- =========================
-     CHAT APP
-========================= -->
+    <div
+        id="chatApp"
+        class="app hidden"
+        aria-hidden="true"
+    >
 
-<div id="chatApp">
+        <!-- =====================================================
+             MOBILE HEADER
+        ====================================================== -->
 
-    <div class="chat-shell">
+        <header class="mobile-header">
 
-        <aside class="sidebar">
+            <button
+                id="mobileMenuButton"
+                class="icon-button"
+                type="button"
+                aria-label="Open menu"
+                aria-expanded="false"
+            >
+                ☰
+            </button>
 
-            <div class="logo">
-                kawaii<span>chat</span> ♡
+            <div class="mobile-logo">
+                mochachat <span>♡</span>
             </div>
 
-            <div class="profile-card">
+            <button
+                id="mobileProfileButton"
+                class="mobile-avatar-button"
+                type="button"
+                aria-label="Open profile"
+            >
+                <span
+                    id="mobileAvatar"
+                    class="avatar avatar-small"
+                >
+                    ?
+                </span>
+            </button>
 
-                <div class="profile-top">
-
-                    <div class="avatar" id="myAvatar">
-                        ?
-                    </div>
-
-                    <div>
-                        <div class="profile-name" id="myName">
-                            anonymous
-                        </div>
-
-                        <div class="profile-status">
-                            <span class="online-dot"></span>
-                            chatting anonymously
-                        </div>
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="side-decoration">
-                (づ｡◕‿‿◕｡)づ<br>
-                be nice ♡<br>
-                have fun!<br>
-                ٩(◕‿◕｡)۶
-            </div>
-
-        </aside>
+        </header>
 
 
-        <main class="chat-main">
+        <!-- =====================================================
+             APPLICATION SHELL
+        ====================================================== -->
 
-            <header class="chat-header">
-
-                <div>
-                    <div class="room-title">
-                        💬 main room
-                    </div>
-
-                    <div class="room-subtitle">
-                        everyone is anonymous ♡
-                    </div>
-                </div>
-
-                <div class="online-count">
-                    ● live chat
-                </div>
-
-            </header>
+        <div class="app-shell">
 
 
-            <section id="messages">
+            <!-- =================================================
+                 SIDEBAR
+            ================================================== -->
 
-                <div class="empty-chat" id="emptyChat">
+            <aside
+                id="sidebar"
+                class="sidebar"
+                aria-label="Main navigation"
+            >
 
-                    <div>
-                        <div class="empty-face">
-                            (｡•́‿•̀｡)
+                <!-- LOGO -->
+
+                <div class="sidebar-header">
+
+                    <div class="brand">
+
+                        <div class="brand-mark">
+                            ♡
                         </div>
 
                         <div>
-                            nobody has said anything yet...
+
+                            <div class="brand-name">
+                                mochachat
+                            </div>
+
+                            <div class="brand-subtitle">
+                                little talks, big smiles
+                            </div>
+
                         </div>
 
-                        <small>
-                            be the first ♡
-                        </small>
                     </div>
 
-                </div>
 
-            </section>
-
-
-            <footer class="composer">
-
-                <div class="composer-inner">
-
-                    <textarea
-                        id="messageInput"
-                        rows="1"
-                        maxlength="1000"
-                        placeholder="say something... (｡•̀ᴗ-)✧"
-                    ></textarea>
-
-                    <button id="sendBtn">
-                        ➤
+                    <button
+                        id="closeSidebarButton"
+                        class="sidebar-close-button"
+                        type="button"
+                        aria-label="Close menu"
+                    >
+                        ×
                     </button>
 
                 </div>
 
-                <div class="kaomoji-bar">
 
-                    <button class="kaomoji">(｡•̀ᴗ-)✧</button>
-                    <button class="kaomoji">૮ ˶ᵔ ᵕ ᵔ˶ ა</button>
-                    <button class="kaomoji">૮₍ ˶ᵔ ᵕ ᵔ˶ ₎ა</button>
-                    <button class="kaomoji">(*≧ω≦*)</button>
-                    <button class="kaomoji">♡</button>
-                    <button class="kaomoji">(╥﹏╥)</button>
-                    <button class="kaomoji">ヽ(>∀<☆)ノ</button>
+                <!-- USER PROFILE CARD -->
+
+                <button
+                    id="sidebarProfileButton"
+                    class="sidebar-profile"
+                    type="button"
+                >
+
+                    <span
+                        id="sidebarAvatar"
+                        class="avatar"
+                    >
+                        ?
+                    </span>
+
+                    <span class="sidebar-profile-information">
+
+                        <span
+                            id="sidebarUsername"
+                            class="sidebar-username"
+                        >
+                            anonymous
+                        </span>
+
+                        <span class="sidebar-user-status">
+                            <span class="status-dot"></span>
+                            anonymous
+                        </span>
+
+                    </span>
+
+                    <span class="sidebar-profile-arrow">
+                        ›
+                    </span>
+
+                </button>
+
+
+                <!-- ROOMS -->
+
+                <nav class="room-navigation">
+
+                    <div class="navigation-label">
+                        ROOMS
+                    </div>
+
+
+                    <button
+                        class="room-button active"
+                        type="button"
+                        data-room-id="general"
+                    >
+
+                        <span class="room-icon">
+                            ♡
+                        </span>
+
+                        <span class="room-information">
+
+                            <span class="room-name">
+                                General
+                            </span>
+
+                            <span class="room-description">
+                                talk about anything
+                            </span>
+
+                        </span>
+
+                    </button>
+
+
+                    <button
+                        class="room-button"
+                        type="button"
+                        data-room-id="anime"
+                    >
+
+                        <span class="room-icon">
+                            ✦
+                        </span>
+
+                        <span class="room-information">
+
+                            <span class="room-name">
+                                Anime
+                            </span>
+
+                            <span class="room-description">
+                                anime & manga
+                            </span>
+
+                        </span>
+
+                    </button>
+
+
+                    <button
+                        class="room-button"
+                        type="button"
+                        data-room-id="gaming"
+                    >
+
+                        <span class="room-icon">
+                            🎮
+                        </span>
+
+                        <span class="room-information">
+
+                            <span class="room-name">
+                                Gaming
+                            </span>
+
+                            <span class="room-description">
+                                games & gaming
+                            </span>
+
+                        </span>
+
+                    </button>
+
+
+                    <button
+                        class="room-button"
+                        type="button"
+                        data-room-id="music"
+                    >
+
+                        <span class="room-icon">
+                            ♫
+                        </span>
+
+                        <span class="room-information">
+
+                            <span class="room-name">
+                                Music
+                            </span>
+
+                            <span class="room-description">
+                                songs & artists
+                            </span>
+
+                        </span>
+
+                    </button>
+
+
+                    <button
+                        class="room-button"
+                        type="button"
+                        data-room-id="random"
+                    >
+
+                        <span class="room-icon">
+                            ☁
+                        </span>
+
+                        <span class="room-information">
+
+                            <span class="room-name">
+                                Random
+                            </span>
+
+                            <span class="room-description">
+                                completely random
+                            </span>
+
+                        </span>
+
+                    </button>
+
+                </nav>
+
+
+                <!-- SIDEBAR BOTTOM -->
+
+                <div class="sidebar-bottom">
+
+                    <button
+                        id="rulesButton"
+                        class="sidebar-action"
+                        type="button"
+                    >
+                        <span>📜</span>
+                        <span>Community rules</span>
+                    </button>
+
+
+                    <button
+                        id="settingsButton"
+                        class="sidebar-action"
+                        type="button"
+                    >
+                        <span>⚙️</span>
+                        <span>Settings</span>
+                    </button>
+
+
+                    <!-- This will later only appear for
+                         moderators/admins/owner -->
+
+                    <button
+                        id="moderationButton"
+                        class="sidebar-action staff-only hidden"
+                        type="button"
+                    >
+                        <span>🛡️</span>
+                        <span>Moderation</span>
+
+                        <span
+                            id="reportCountBadge"
+                            class="notification-badge hidden"
+                        >
+                            0
+                        </span>
+
+                    </button>
 
                 </div>
 
-            </footer>
+            </aside>
 
-        </main>
+
+            <!-- =================================================
+                 CHAT AREA
+            ================================================== -->
+
+            <main class="chat-area">
+
+
+                <!-- CHAT HEADER -->
+
+                <header class="chat-header">
+
+                    <div class="chat-header-information">
+
+                        <div class="chat-room-icon">
+                            ♡
+                        </div>
+
+                        <div>
+
+                            <h1
+                                id="currentRoomName"
+                                class="chat-room-name"
+                            >
+                                General
+                            </h1>
+
+                            <p
+                                id="currentRoomDescription"
+                                class="chat-room-description"
+                            >
+                                talk about anything ♡
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="chat-header-actions">
+
+                        <div
+                            id="connectionStatus"
+                            class="connection-status"
+                        >
+                            <span class="status-dot"></span>
+                            <span>connected</span>
+                        </div>
+
+
+                        <button
+                            id="rulesHeaderButton"
+                            class="header-icon-button"
+                            type="button"
+                            aria-label="Community rules"
+                            title="Community rules"
+                        >
+                            📜
+                        </button>
+
+                    </div>
+
+                </header>
+
+
+                <!-- =================================================
+                     MESSAGE AREA
+                ================================================== -->
+
+                <section
+                    id="messageContainer"
+                    class="message-container"
+                    aria-label="Chat messages"
+                >
+
+                    <!-- Empty state -->
+
+                    <div
+                        id="emptyChat"
+                        class="empty-chat"
+                    >
+
+                        <div class="empty-chat-decoration">
+                            ✦
+                        </div>
+
+                        <div class="empty-chat-kaomoji">
+                            (｡•́‿•̀｡)
+                        </div>
+
+                        <h2>
+                            it's quiet here...
+                        </h2>
+
+                        <p>
+                            be the first little bean
+                            to say something ♡
+                        </p>
+
+                    </div>
+
+
+                    <!-- Messages are inserted here by app.js -->
+
+                    <div
+                        id="messages"
+                        class="messages"
+                    ></div>
+
+                </section>
+
+
+                <!-- =================================================
+                     TYPING INDICATOR
+                ================================================== -->
+
+                <div
+                    id="typingIndicator"
+                    class="typing-indicator hidden"
+                    aria-live="polite"
+                >
+
+                    <span class="typing-name">
+                        someone
+                    </span>
+
+                    <span>
+                        is typing
+                    </span>
+
+                    <span class="typing-dots">
+                        <i></i>
+                        <i></i>
+                        <i></i>
+                    </span>
+
+                </div>
+
+
+                <!-- =================================================
+                     MESSAGE COMPOSER
+                ================================================== -->
+
+                <footer class="composer">
+
+                    <div class="composer-box">
+
+                        <button
+                            id="emojiButton"
+                            class="composer-icon-button"
+                            type="button"
+                            aria-label="Open kaomoji picker"
+                            title="Kaomoji"
+                        >
+                            ☺
+                        </button>
+
+
+                        <textarea
+                            id="messageInput"
+                            class="message-input"
+                            rows="1"
+                            maxlength="1000"
+                            placeholder="say something... (｡•̀ᴗ-)✧"
+                            aria-label="Message"
+                        ></textarea>
+
+
+                        <div class="composer-actions">
+
+                            <span
+                                id="characterCounter"
+                                class="character-counter"
+                            >
+                                0/1000
+                            </span>
+
+                            <button
+                                id="sendButton"
+                                class="send-button"
+                                type="button"
+                                aria-label="Send message"
+                                title="Send message"
+                            >
+                                ➤
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- KAO MOJI QUICK BAR -->
+
+                    <div
+                        id="kaomojiBar"
+                        class="kaomoji-bar"
+                    >
+
+                        <button
+                            class="kaomoji-button"
+                            type="button"
+                            data-kaomoji="(｡•̀ᴗ-)✧"
+                        >
+                            (｡•̀ᴗ-)✧
+                        </button>
+
+                        <button
+                            class="kaomoji-button"
+                            type="button"
+                            data-kaomoji="૮ ˶ᵔ ᵕ ᵔ˶ ა"
+                        >
+                            ૮ ˶ᵔ ᵕ ᵔ˶ ა
+                        </button>
+
+                        <button
+                            class="kaomoji-button"
+                            type="button"
+                            data-kaomoji="(*≧ω≦*)"
+                        >
+                            (*≧ω≦*)
+                        </button>
+
+                        <button
+                            class="kaomoji-button"
+                            type="button"
+                            data-kaomoji="(╥﹏╥)"
+                        >
+                            (╥﹏╥)
+                        </button>
+
+                        <button
+                            class="kaomoji-button"
+                            type="button"
+                            data-kaomoji="ヽ(>∀<☆)ノ"
+                        >
+                            ヽ(>∀<☆)ノ
+                        </button>
+
+                        <button
+                            class="kaomoji-button"
+                            type="button"
+                            data-kaomoji="♡"
+                        >
+                            ♡
+                        </button>
+
+                    </div>
+
+                </footer>
+
+            </main>
+
+
+            <!-- =================================================
+                 ONLINE USERS PANEL
+            ================================================== -->
+
+            <aside
+                id="usersPanel"
+                class="users-panel"
+                aria-label="People in chat"
+            >
+
+                <div class="users-panel-header">
+
+                    <div>
+
+                        <h2>
+                            little beans
+                        </h2>
+
+                        <p>
+                            people around the chat
+                        </p>
+
+                    </div>
+
+                    <span
+                        id="onlineCount"
+                        class="online-count"
+                    >
+                        0
+                    </span>
+
+                </div>
+
+
+                <div
+                    id="onlineUsers"
+                    class="online-users"
+                >
+
+                    <!-- Online users will be inserted by app.js -->
+
+                </div>
+
+            </aside>
+
+        </div>
 
     </div>
 
-</div>
 
+    <!-- =========================================================
+         MOBILE OVERLAY
+    ========================================================== -->
 
-<div id="toast"></div>
+    <div
+        id="mobileOverlay"
+        class="mobile-overlay hidden"
+    ></div>
+
+
+    <!-- =========================================================
+         PROFILE MODAL
+    ========================================================== -->
+
+    <div
+        id="profileModal"
+        class="modal hidden"
+        aria-hidden="true"
+    >
+
+        <div
+            class="modal-backdrop"
+            data-close-modal="profileModal"
+        ></div>
+
+        <div
+            class="modal-content profile-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="profileModalTitle"
+        >
+
+            <button
+                class="modal-close"
+                type="button"
+                data-close-modal="profileModal"
+                aria-label="Close"
+            >
+                ×
+            </button>
+
+
+            <div class="profile-modal-decoration">
+                ✦ ♡ ✦
+            </div>
+
+
+            <div
+                id="profileModalAvatar"
+                class="avatar avatar-profile"
+            >
+                ?
+            </div>
+
+
+            <h2 id="profileModalTitle">
+                your little profile
+            </h2>
+
+
+            <div
+                id="profileModalUsername"
+                class="profile-modal-username"
+            >
+                anonymous
+            </div>
+
+
+            <div class="profile-edit-section">
+
+                <label for="usernameInput">
+                    username
+                </label>
+
+                <input
+                    id="usernameInput"
+                    type="text"
+                    maxlength="24"
+                    autocomplete="off"
+                    spellcheck="false"
+                    placeholder="your username"
+                >
+
+                <div class="input-hint">
+                    3–24 characters • letters, numbers,
+                    underscores and hyphens
+                </div>
+
+            </div>
+
+
+            <div class="profile-edit-section">
+
+                <label>
+                    favorite color
+                </label>
+
+                <div
+                    id="colorPicker"
+                    class="color-picker"
+                >
+
+                    <button
+                        type="button"
+                        class="color-option"
+                        data-color="#ff7eaf"
+                        style="--color:#ff7eaf"
+                        aria-label="Pink"
+                    ></button>
+
+                    <button
+                        type="button"
+                        class="color-option"
+                        data-color="#b77cff"
+                        style="--color:#b77cff"
+                        aria-label="Purple"
+                    ></button>
+
+                    <button
+                        type="button"
+                        class="color-option"
+                        data-color="#65b9ff"
+                        style="--color:#65b9ff"
+                        aria-label="Blue"
+                    ></button>
+
+                    <button
+                        type="button"
+                        class="color-option"
+                        data-color="#ff9c61"
+                        style="--color:#ff9c61"
+                        aria-label="Orange"
+                    ></button>
+
+                    <button
+                        type="button"
+                        class="color-option"
+                        data-color="#67cfa0"
+                        style="--color:#67cfa0"
+                        aria-label="Green"
+                    ></button>
+
+                    <button
+                        type="button"
+                        class="color-option"
+                        data-color="#e786c9"
+                        style="--color:#e786c9"
+                        aria-label="Rose"
+                    ></button>
+
+                </div>
+
+            </div>
+
+
+            <div class="profile-edit-section">
+
+                <label for="statusInput">
+                    little status
+                </label>
+
+                <input
+                    id="statusInput"
+                    type="text"
+                    maxlength="60"
+                    placeholder="probably watching anime..."
+                >
 
+            </div>
+
+
+            <div class="profile-modal-actions">
+
+                <button
+                    id="saveProfileButton"
+                    class="primary-button"
+                    type="button"
+                >
+                    save profile ♡
+                </button>
+
+            </div>
 
-<script type="module">
+        </div>
 
-/* =========================================
-   FIREBASE
-========================================= */
+    </div>
 
-import { initializeApp }
-from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
 
-import {
-    getAuth,
-    signInAnonymously,
-    onAuthStateChanged
-}
-from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+    <!-- =========================================================
+         OTHER USER PROFILE MODAL
+    ========================================================== -->
 
-import {
-    getFirestore,
-    collection,
-    addDoc,
-    query,
-    orderBy,
-    limit,
-    onSnapshot,
-    serverTimestamp,
-    doc,
-    getDoc,
-    setDoc,
-    deleteDoc
-}
-from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+    <div
+        id="userProfileModal"
+        class="modal hidden"
+        aria-hidden="true"
+    >
+
+        <div
+            class="modal-backdrop"
+            data-close-modal="userProfileModal"
+        ></div>
 
+        <div
+            class="modal-content user-profile-modal"
+            role="dialog"
+            aria-modal="true"
+        >
 
-const firebaseConfig = {
+            <button
+                class="modal-close"
+                type="button"
+                data-close-modal="userProfileModal"
+                aria-label="Close"
+            >
+                ×
+            </button>
 
-    apiKey: "AIzaSyCvhhLbOUom3CVWKq6pHqrK_nHiMGbW_-E",
 
-    authDomain: "chat-14103.firebaseapp.com",
+            <div
+                id="viewUserAvatar"
+                class="avatar avatar-profile"
+            >
+                ?
+            </div>
 
-    projectId: "chat-14103",
 
-    storageBucket: "chat-14103.firebasestorage.app",
+            <h2 id="viewUserUsername">
+                anonymous
+            </h2>
 
-    messagingSenderId: "432992246016",
 
-    appId: "1:432992246016:web:9775ddf67ab3fe6a1ebbe5"
+            <div
+                id="viewUserRole"
+                class="user-role-badge hidden"
+            >
+                MEMBER
+            </div>
+
 
-};
+            <p
+                id="viewUserStatus"
+                class="view-user-status"
+            >
+                just hanging out ♡
+            </p>
 
 
-const app = initializeApp(firebaseConfig);
+            <div class="profile-stats">
 
-const auth = getAuth(app);
+                <div class="profile-stat">
 
-const db = getFirestore(app);
+                    <strong
+                        id="viewUserMessageCount"
+                    >
+                        0
+                    </strong>
 
+                    <span>
+                        messages
+                    </span>
 
-/* =========================================
-   ELEMENTS
-========================================= */
+                </div>
 
-const loadingScreen =
-    document.getElementById("loadingScreen");
 
-const welcomeScreen =
-    document.getElementById("welcomeScreen");
+                <div class="profile-stat">
 
-const chatApp =
-    document.getElementById("chatApp");
+                    <strong
+                        id="viewUserJoined"
+                    >
+                        —
+                    </strong>
 
-const enterBtn =
-    document.getElementById("enterBtn");
+                    <span>
+                        joined
+                    </span>
 
-const previewName =
-    document.getElementById("previewName");
+                </div>
 
-const previewAvatar =
-    document.getElementById("previewAvatar");
+            </div>
 
-const myName =
-    document.getElementById("myName");
 
-const myAvatar =
-    document.getElementById("myAvatar");
+            <div class="user-profile-actions">
 
-const messages =
-    document.getElementById("messages");
+                <button
+                    id="blockUserButton"
+                    class="secondary-button"
+                    type="button"
+                >
+                    block
+                </button>
 
-const emptyChat =
-    document.getElementById("emptyChat");
+                <button
+                    id="reportUserButton"
+                    class="danger-outline-button"
+                    type="button"
+                >
+                    report
+                </button>
 
-const messageInput =
-    document.getElementById("messageInput");
+            </div>
 
-const sendBtn =
-    document.getElementById("sendBtn");
-
-const toast =
-    document.getElementById("toast");
-
-
-/* =========================================
-   USERNAME GENERATOR
-========================================= */
-
-const adjectives = [
-    "sleepy",
-    "tiny",
-    "fluffy",
-    "happy",
-    "sparkly",
-    "soft",
-    "dreamy",
-    "silly",
-    "cozy",
-    "bubbly",
-    "shy",
-    "sweet",
-    "little",
-    "kawaii",
-    "cloudy",
-    "peachy"
-];
+        </div>
 
-const animals = [
-    "bunny",
-    "cat",
-    "fox",
-    "bear",
-    "panda",
-    "otter",
-    "hamster",
-    "kitten",
-    "duck",
-    "koala",
-    "momo",
-    "penguin",
-    "puppy",
-    "mouse",
-    "frog",
-    "raccoon"
-];
+    </div>
 
 
-function randomItem(array) {
-    return array[
-        Math.floor(Math.random() * array.length)
-    ];
-}
+    <!-- =========================================================
+         REPORT MODAL
+    ========================================================== -->
 
+    <div
+        id="reportModal"
+        class="modal hidden"
+        aria-hidden="true"
+    >
 
-function generateUsername() {
+        <div
+            class="modal-backdrop"
+            data-close-modal="reportModal"
+        ></div>
 
-    const adjective =
-        randomItem(adjectives);
+        <div
+            class="modal-content report-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reportTitle"
+        >
 
-    const animal =
-        randomItem(animals);
+            <button
+                class="modal-close"
+                type="button"
+                data-close-modal="reportModal"
+                aria-label="Close"
+            >
+                ×
+            </button>
 
-    const number =
-        Math.floor(100 + Math.random() * 900);
 
-    return `${adjective}_${animal}_${number}`;
-}
+            <div class="modal-kaomoji">
+                (｡•́︿•̀｡)
+            </div>
 
 
-/* =========================================
-   COLORS
-========================================= */
+            <h2 id="reportTitle">
+                report something
+            </h2>
 
-const colors = [
-    "#ff7eaf",
-    "#b77cff",
-    "#65b9ff",
-    "#ff9c61",
-    "#67cfa0",
-    "#e786c9",
-    "#e6a447",
-    "#7e9fff",
-    "#ef6e78",
-    "#61c6bd"
-];
 
+            <p class="modal-description">
+                tell the moderators what's going on.
+            </p>
 
-function randomColor() {
 
-    return randomItem(colors);
+            <div class="report-target">
 
-}
+                <div class="report-target-label">
+                    reporting
+                </div>
 
+                <div id="reportTargetText">
+                    message
+                </div>
 
-/* =========================================
-   USER PROFILE
-========================================= */
+            </div>
 
-let currentUser = null;
-let currentProfile = null;
 
+            <div class="report-options">
 
-async function createOrLoadProfile(user) {
+                <label class="radio-option">
 
-    const userRef =
-        doc(db, "users", user.uid);
+                    <input
+                        type="radio"
+                        name="reportReason"
+                        value="spam"
+                    >
 
-    const snapshot =
-        await getDoc(userRef);
+                    <span>spam</span>
 
+                </label>
 
-    if (snapshot.exists()) {
 
-        return snapshot.data();
+                <label class="radio-option">
 
-    }
+                    <input
+                        type="radio"
+                        name="reportReason"
+                        value="harassment"
+                    >
 
+                    <span>harassment</span>
 
-    const profile = {
+                </label>
 
-        username: generateUsername(),
 
-        color: randomColor(),
+                <label class="radio-option">
 
-        createdAt: serverTimestamp()
+                    <input
+                        type="radio"
+                        name="reportReason"
+                        value="inappropriate"
+                    >
 
-    };
+                    <span>inappropriate content</span>
 
+                </label>
 
-    await setDoc(
-        userRef,
-        profile
-    );
 
+                <label class="radio-option">
 
-    return profile;
+                    <input
+                        type="radio"
+                        name="reportReason"
+                        value="impersonation"
+                    >
 
-}
+                    <span>impersonation</span>
 
+                </label>
 
-/* =========================================
-   FIREBASE AUTH
-========================================= */
 
-onAuthStateChanged(auth, async (user) => {
+                <label class="radio-option">
 
-    if (!user) {
+                    <input
+                        type="radio"
+                        name="reportReason"
+                        value="other"
+                    >
 
-        try {
+                    <span>other</span>
 
-            await signInAnonymously(auth);
+                </label>
 
-        } catch (error) {
+            </div>
 
-            console.error(error);
 
-            showToast(
-                "couldn't connect to Firebase ♡"
-            );
+            <label
+                class="textarea-label"
+                for="reportDetails"
+            >
+                additional details
+            </label>
 
-        }
+            <textarea
+                id="reportDetails"
+                maxlength="500"
+                placeholder="tell us what happened..."
+            ></textarea>
 
-        return;
 
-    }
+            <button
+                id="submitReportButton"
+                class="primary-button"
+                type="button"
+            >
+                send report ♡
+            </button>
 
+        </div>
 
-    currentUser = user;
+    </div>
 
 
-    try {
+    <!-- =========================================================
+         RULES MODAL
+    ========================================================== -->
 
-        currentProfile =
-            await createOrLoadProfile(user);
+    <div
+        id="rulesModal"
+        class="modal hidden"
+        aria-hidden="true"
+    >
 
+        <div
+            class="modal-backdrop"
+            data-close-modal="rulesModal"
+        ></div>
 
-        previewName.textContent =
-            currentProfile.username;
+        <div
+            class="modal-content rules-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="communityRulesTitle"
+        >
 
-        previewAvatar.textContent =
-            currentProfile.username
-                .charAt(0)
-                .toUpperCase();
+            <button
+                class="modal-close"
+                type="button"
+                data-close-modal="rulesModal"
+                aria-label="Close"
+            >
+                ×
+            </button>
 
-        previewAvatar.style.background =
-            currentProfile.color;
 
+            <div class="modal-kaomoji">
+                ૮₍ ˶ᵔ ᵕ ᵔ˶ ₎ა
+            </div>
 
-        myName.textContent =
-            currentProfile.username;
 
-        myAvatar.textContent =
-            currentProfile.username
-                .charAt(0)
-                .toUpperCase();
+            <h2 id="communityRulesTitle">
+                community rules ♡
+            </h2>
 
-        myAvatar.style.background =
-            currentProfile.color;
 
+            <div class="rules-modal-list">
 
-        loadingScreen.style.display =
-            "none";
+                <div>
+                    <strong>01 · Be kind</strong>
+                    <p>
+                        Treat people with respect.
+                    </p>
+                </div>
 
-        welcomeScreen.style.display =
-            "flex";
+                <div>
+                    <strong>02 · No harassment</strong>
+                    <p>
+                        Don't target, threaten, or bully people.
+                    </p>
+                </div>
 
+                <div>
+                    <strong>03 · No spam</strong>
+                    <p>
+                        Don't flood rooms or abuse the service.
+                    </p>
+                </div>
 
-    } catch (error) {
+                <div>
+                    <strong>04 · Keep it appropriate</strong>
+                    <p>
+                        Keep content suitable for the community.
+                    </p>
+                </div>
 
-        console.error(error);
+                <div>
+                    <strong>05 · Protect privacy</strong>
+                    <p>
+                        Don't share sensitive personal information.
+                    </p>
+                </div>
 
-        showToast(
-            "couldn't load your identity ♡"
-        );
+                <div>
+                    <strong>06 · Listen to moderators</strong>
+                    <p>
+                        Moderators help keep the community safe.
+                    </p>
+                </div>
 
-    }
+            </div>
 
-});
+        </div>
 
+    </div>
 
-/* =========================================
-   ENTER CHAT
-========================================= */
 
-enterBtn.addEventListener(
-    "click",
-    () => {
+    <!-- =========================================================
+         SETTINGS MODAL
+    ========================================================== -->
 
-        welcomeScreen.style.display =
-            "none";
+    <div
+        id="settingsModal"
+        class="modal hidden"
+        aria-hidden="true"
+    >
 
-        chatApp.style.display =
-            "block";
+        <div
+            class="modal-backdrop"
+            data-close-modal="settingsModal"
+        ></div>
 
-        messageInput.focus();
+        <div
+            class="modal-content settings-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="settingsTitle"
+        >
 
-    }
-);
+            <button
+                class="modal-close"
+                type="button"
+                data-close-modal="settingsModal"
+                aria-label="Close"
+            >
+                ×
+            </button>
 
 
-/* =========================================
-   SEND MESSAGE
-========================================= */
+            <div class="modal-kaomoji">
+                ✿
+            </div>
 
-async function sendMessage() {
 
-    const text =
-        messageInput.value.trim();
+            <h2 id="settingsTitle">
+                settings
+            </h2>
 
 
-    if (!text) return;
+            <div class="settings-section">
 
-    if (!currentUser || !currentProfile)
-        return;
+                <div class="settings-section-title">
+                    appearance
+                </div>
 
 
-    sendBtn.disabled = true;
+                <div class="setting-row">
 
+                    <div>
 
-    try {
+                        <strong>
+                            theme
+                        </strong>
 
-        await addDoc(
-            collection(db, "messages"),
-            {
+                        <span>
+                            choose your little aesthetic
+                        </span>
 
-                text: text,
+                    </div>
 
-                uid: currentUser.uid,
 
-                username:
-                    currentProfile.username,
+                    <select
+                        id="themeSelect"
+                        class="settings-select"
+                    >
 
-                color:
-                    currentProfile.color,
+                        <option value="sakura">
+                            Sakura
+                        </option>
 
-                createdAt:
-                    serverTimestamp()
+                        <option value="matcha">
+                            Matcha
+                        </option>
 
-            }
-        );
+                        <option value="lavender">
+                            Lavender
+                        </option>
 
+                        <option value="blueberry">
+                            Blueberry
+                        </option>
 
-        messageInput.value = "";
+                        <option value="night">
+                            Night
+                        </option>
 
-        messageInput.style.height =
-            "auto";
+                    </select>
 
+                </div>
 
-    } catch (error) {
+            </div>
 
-        console.error(error);
 
-        showToast(
-            "message failed to send ♡"
-        );
+            <div class="settings-section">
 
-    }
+                <div class="settings-section-title">
+                    chat
+                </div>
 
 
-    sendBtn.disabled = false;
+                <div class="setting-row">
 
-    messageInput.focus();
+                    <div>
 
-}
+                        <strong>
+                            message sounds
+                        </strong>
 
+                        <span>
+                            tiny sound when messages arrive
+                        </span>
 
-sendBtn.addEventListener(
-    "click",
-    sendMessage
-);
+                    </div>
 
 
-/* ENTER TO SEND */
+                    <label class="toggle">
 
-messageInput.addEventListener(
-    "keydown",
-    (event) => {
+                        <input
+                            id="soundToggle"
+                            type="checkbox"
+                        >
 
-        if (
-            event.key === "Enter" &&
-            !event.shiftKey
-        ) {
+                        <span class="toggle-slider"></span>
 
-            event.preventDefault();
+                    </label>
 
-            sendMessage();
+                </div>
 
-        }
 
-    }
-);
+                <div class="setting-row">
 
+                    <div>
 
-/* =========================================
-   AUTO RESIZE TEXTAREA
-========================================= */
+                        <strong>
+                            show kaomoji bar
+                        </strong>
 
-messageInput.addEventListener(
-    "input",
-    () => {
+                        <span>
+                            quick access to cute faces
+                        </span>
 
-        messageInput.style.height =
-            "auto";
+                    </div>
 
-        messageInput.style.height =
-            Math.min(
-                messageInput.scrollHeight,
-                110
-            ) + "px";
 
-    }
-);
+                    <label class="toggle">
 
+                        <input
+                            id="kaomojiToggle"
+                            type="checkbox"
+                            checked
+                        >
 
-/* =========================================
-   KAOMOJI BUTTONS
-========================================= */
+                        <span class="toggle-slider"></span>
 
-document.querySelectorAll(
-    ".kaomoji"
-).forEach(button => {
+                    </label>
 
-    button.addEventListener(
-        "click",
-        () => {
+                </div>
 
-            messageInput.value +=
-                button.textContent;
+            </div>
 
-            messageInput.focus();
+        </div>
 
-            messageInput.dispatchEvent(
-                new Event("input")
-            );
+    </div>
 
-        }
-    );
 
-});
+    <!-- =========================================================
+         MODERATION PANEL
+         Hidden from normal members.
+         app.js will only reveal this for authorized staff.
+    ========================================================== -->
 
+    <div
+        id="moderationModal"
+        class="modal hidden"
+        aria-hidden="true"
+    >
 
-/* =========================================
-   LOAD REAL-TIME MESSAGES
-========================================= */
+        <div
+            class="modal-backdrop"
+            data-close-modal="moderationModal"
+        ></div>
 
-const messagesQuery = query(
-    collection(db, "messages"),
-    orderBy("createdAt", "asc"),
-    limit(100)
-);
+        <div
+            class="modal-content moderation-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="moderationTitle"
+        >
 
+            <button
+                class="modal-close"
+                type="button"
+                data-close-modal="moderationModal"
+                aria-label="Close"
+            >
+                ×
+            </button>
 
-onSnapshot(
-    messagesQuery,
-    (snapshot) => {
 
-        messages.innerHTML = "";
+            <div class="modal-kaomoji">
+                🛡️
+            </div>
 
-        if (snapshot.empty) {
 
-            messages.appendChild(
-                emptyChat
-            );
+            <h2 id="moderationTitle">
+                moderation
+            </h2>
 
-            emptyChat.style.display =
-                "flex";
 
-            return;
+            <div class="moderation-tabs">
 
-        }
+                <button
+                    class="moderation-tab active"
+                    type="button"
+                    data-mod-tab="reports"
+                >
+                    reports
+                    <span
+                        id="moderationReportsBadge"
+                        class="notification-badge"
+                    >
+                        0
+                    </span>
+                </button>
 
 
-        emptyChat.style.display =
-            "none";
+                <button
+                    class="moderation-tab"
+                    type="button"
+                    data-mod-tab="users"
+                >
+                    users
+                </button>
 
 
-        snapshot.forEach(
-            messageDoc => {
+                <button
+                    class="moderation-tab"
+                    type="button"
+                    data-mod-tab="logs"
+                >
+                    logs
+                </button>
 
-                renderMessage(
-                    messageDoc.id,
-                    messageDoc.data()
-                );
+            </div>
 
-            }
-        );
 
+            <!-- REPORTS -->
 
-        requestAnimationFrame(
-            () => {
+            <div
+                id="moderationReports"
+                class="moderation-tab-content active"
+            >
 
-                messages.scrollTop =
-                    messages.scrollHeight;
+                <div
+                    id="reportsList"
+                    class="reports-list"
+                >
 
-            }
-        );
+                    <div class="moderation-empty">
+                        no reports right now ♡
+                    </div>
 
-    },
+                </div>
 
-    error => {
+            </div>
 
-        console.error(error);
 
-        showToast(
-            "couldn't load messages ♡"
-        );
+            <!-- USERS -->
 
-    }
-);
+            <div
+                id="moderationUsers"
+                class="moderation-tab-content hidden"
+            >
 
+                <div class="moderation-search">
 
-/* =========================================
-   RENDER MESSAGE
-========================================= */
+                    <input
+                        id="moderationUserSearch"
+                        type="search"
+                        placeholder="search users..."
+                    >
 
-function renderMessage(id, data) {
+                </div>
 
-    const wrapper =
-        document.createElement("div");
 
+                <div
+                    id="moderationUsersList"
+                    class="moderation-users-list"
+                >
 
-    wrapper.className =
-        "message";
+                    <div class="moderation-empty">
+                        search for a user ♡
+                    </div>
 
+                </div>
 
-    const isMine =
-        currentUser &&
-        data.uid === currentUser.uid;
+            </div>
 
 
-    if (isMine) {
+            <!-- LOGS -->
 
-        wrapper.classList.add("mine");
+            <div
+                id="moderationLogs"
+                class="moderation-tab-content hidden"
+            >
 
-    }
+                <div
+                    id="moderationLogsList"
+                    class="moderation-logs-list"
+                >
 
+                    <div class="moderation-empty">
+                        no moderation actions yet.
+                    </div>
 
-    const avatar =
-        document.createElement("div");
+                </div>
 
-    avatar.className =
-        "avatar";
+            </div>
 
-    avatar.textContent =
-        (data.username || "?")
-            .charAt(0)
-            .toUpperCase();
+        </div>
 
-    avatar.style.background =
-        data.color || "#ff8fbd";
+    </div>
 
 
-    const content =
-        document.createElement("div");
+    <!-- =========================================================
+         CONTEXT MENU
+         Used for message actions.
+    ========================================================== -->
 
-    content.className =
-        "message-content";
+    <div
+        id="messageContextMenu"
+        class="context-menu hidden"
+    >
 
+        <button
+            type="button"
+            data-action="reply"
+        >
+            ↩ Reply
+        </button>
 
-    const name =
-        document.createElement("div");
 
-    name.className =
-        "message-name";
+        <button
+            type="button"
+            data-action="react"
+        >
+            ♡ React
+        </button>
 
-    name.textContent =
-        data.username || "anonymous";
 
-    name.style.color =
-        data.color || "#ff8fbd";
+        <button
+            type="button"
+            data-action="copy"
+        >
+            ⧉ Copy
+        </button>
 
 
-    const bubble =
-        document.createElement("div");
+        <button
+            type="button"
+            data-action="edit"
+            class="own-message-action"
+        >
+            ✎ Edit
+        </button>
 
-    bubble.className =
-        "bubble";
 
-    /*
-       IMPORTANT:
-       textContent is used instead of innerHTML.
-       This prevents users from injecting HTML
-       or scripts into the chat.
-    */
+        <button
+            type="button"
+            data-action="delete"
+            class="own-message-action danger-action"
+        >
+            ♡ Delete
+        </button>
 
-    bubble.textContent =
-        data.text || "";
 
+        <button
+            type="button"
+            data-action="report"
+            class="other-message-action"
+        >
+            ⚑ Report
+        </button>
 
-    const meta =
-        document.createElement("div");
+    </div>
 
-    meta.className =
-        "message-meta";
 
+    <!-- =========================================================
+         TOAST NOTIFICATIONS
+    ========================================================== -->
 
-    meta.textContent =
-        formatTime(data.createdAt);
+    <div
+        id="toastContainer"
+        class="toast-container"
+        aria-live="polite"
+        aria-atomic="true"
+    ></div>
 
 
-    content.appendChild(name);
+    <!-- =========================================================
+         JAVASCRIPT
+    ========================================================== -->
 
-    content.appendChild(bubble);
-
-    content.appendChild(meta);
-
-
-    /* DELETE */
-
-    if (isMine) {
-
-        const deleteButton =
-            document.createElement("button");
-
-        deleteButton.className =
-            "delete-btn";
-
-        deleteButton.textContent =
-            "delete";
-
-        deleteButton.addEventListener(
-            "click",
-            async () => {
-
-                try {
-
-                    await deleteDoc(
-                        doc(
-                            db,
-                            "messages",
-                            id
-                        )
-                    );
-
-                } catch (error) {
-
-                    console.error(error);
-
-                    showToast(
-                        "couldn't delete message"
-                    );
-
-                }
-
-            }
-        );
-
-
-        content.appendChild(
-            deleteButton
-        );
-
-    }
-
-
-    wrapper.appendChild(avatar);
-
-    wrapper.appendChild(content);
-
-
-    messages.appendChild(wrapper);
-
-}
-
-
-/* =========================================
-   TIME
-========================================= */
-
-function formatTime(timestamp) {
-
-    if (!timestamp)
-        return "sending...";
-
-
-    const date =
-        timestamp.toDate();
-
-
-    return date.toLocaleTimeString(
-        [],
-        {
-            hour: "numeric",
-            minute: "2-digit"
-        }
-    );
-
-}
-
-
-/* =========================================
-   TOAST
-========================================= */
-
-let toastTimer;
-
-
-function showToast(text) {
-
-    toast.textContent =
-        text;
-
-    toast.classList.add("show");
-
-
-    clearTimeout(toastTimer);
-
-
-    toastTimer =
-        setTimeout(
-            () => {
-
-                toast.classList.remove(
-                    "show"
-                );
-
-            },
-            2500
-        );
-
-}
-
-</script>
+    <script type="module" src="app.js"></script>
 
 </body>
 </html>
